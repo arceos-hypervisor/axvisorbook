@@ -19,7 +19,7 @@ export default {
   url: 'https://arceos-hypervisor.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/docs',
+  baseUrl: '/axvisorbook',
   // Allow to customize the presence/absence of a trailing slash at the end of 
   // URLs/links, and how static HTML files are generated:
   // undefined (default): keeps URLs untouched, and emit /docs/myDoc/index.html for /docs/myDoc.md
@@ -30,7 +30,7 @@ export default {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'arceos-hypervisor', // Usually your GitHub org/user name.
-  projectName: 'docs', // Usually your repo name.
+  projectName: 'axvisorbook', // Usually your repo name.
   deploymentBranch: 'gh-pages',
   // The behavior of Docusaurus when it detects any broken link.
   // he broken links detection is only available for a production build (docusaurus build).
@@ -84,7 +84,7 @@ export default {
           sidebarPath: './sidebars.docs.js',
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl: 'https://github.com/arceos-hypervisor/docs',
+          editUrl: 'https://github.com/arceos-hypervisor/axvisorbook',
           showLastUpdateAuthor: true,
           showLastUpdateTime: true,
         },
@@ -100,7 +100,7 @@ export default {
           },
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl:'https://github.com/arceos-hypervisor/docs',
+          editUrl:'https://github.com/arceos-hypervisor/axvisorbook',
           // Useful options to enforce blogging best practices
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
@@ -223,7 +223,7 @@ export default {
                 value: '<hr style="margin: 0.3rem 0;">',
               },
               {
-                href: 'https://github.com/arceos-hypervisor/docs',
+                href: 'https://github.com/arceos-hypervisor/axvisorbook',
                 label: 'Help Us Translate',
               },
             ],
