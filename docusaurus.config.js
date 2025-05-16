@@ -244,7 +244,7 @@ export default {
             items: [
               {
                 label: 'Tutorial',
-                to: '/docs/introduction/introduction',
+                to: '/docs/introduction',
               },
             ],
           },
