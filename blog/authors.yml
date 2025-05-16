@@ -1,0 +1,23 @@
+ZCShou:
+  name: ZCShou
+  title: AxVisor Kernel Engineer @ QCLIC
+  url: https://github.com/zcshou
+  image_url: https://github.com/zcshou.png
+  page: true
+  socials:
+    x: ZCShou
+    github: ZCShou
+
+test:
+  name: Test
+  title: Test for authors
+  url: https://test.com
+  image_url: https://github.com/test.png
+  page:
+    # customize the url of the author page at /blog/authors/<permalink>
+    permalink: '/all-sebastien-lorber-articles'
+  socials:
+    x: test
+    linkedin: test
+    github: test
+    newsletter: https://test.com
