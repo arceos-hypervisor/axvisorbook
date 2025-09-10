@@ -23,13 +23,21 @@ AxVisor 及飞腾派的 SDK 仅支持在 Linux 系统进中进行开发。本文
 
 从飞腾官方 Gitee 仓库下载飞腾派官方 OS 构建系统 `git clone https://gitee.com/phytium_embedded/phytium-pi-os.git` 以此来构建相关镜像，下载的 Phytium-Pi-OS 实际上是基于 Buildroot 移植适配的构建系统。
 
+![sdk_src](./imgs_phytiumpi/sdk_src.png)
+
 其中，master 分支是基于 Buildroot 2022.02 版本的，默认适配了 Linux 5.10 和 Linux 4.19 内核版本，而 2024.02 分支是基于 Buildroot 2024.02 版本的，默认适配了 Linux 6.6 内核版本。
 
 #### 构建过程
 
 1. 执行 `make phytiumpi_desktop_defconfig` 生成配置文件。官方 SDK 给出了多种不同配置文件，根据需要选择即可。
 
-2. 执行 `make` 启动构建，整个系统基于 Debian 构建的！
+2. master 分支的 Buildroot 版本比较旧，在 Ubuntu 24.04 上构建会出错，需要如下修复
+
+    ![sdk_fix](./imgs_phytiumpi/sdk_fix.png)
+
+3. 执行 `make` 启动构建，整个系统基于 Debian 构建的，构建完成后 `output` 目录下生成相关镜像
+ 
+    ![sdk_images](./imgs_phytiumpi/sdk_images.png)
 
 ### 构建 ArceOS 客户机镜像
 
