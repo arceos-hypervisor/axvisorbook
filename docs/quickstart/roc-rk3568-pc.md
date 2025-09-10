@@ -21,7 +21,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 
 ### 构建 Linux 客户机镜像
 
-根据 ROC-RK3568-PC 开发板官方文档，构建 Linux 客户机镜像。
+根据 ROC-RK3568-PC 开发板[官方文档](https://wiki.t-firefly.com/ROC-RK3568-PC/index.html)，构建 Linux 客户机镜像。
 
 #### 获取 SDK
 
