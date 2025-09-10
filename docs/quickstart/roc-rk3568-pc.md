@@ -5,7 +5,7 @@ sidebar_label: "ROC-RK3568-PC"
 
 # ROC-RK3568-PC
 
-本文同时验证 AxVisor + Linux 客户机、AxVisor + ArceOS 客户机 以及 AxVisor + Linux 客户机 和 ArceOS 客户机三种情况！
+本文详细介绍 AxVisor + Linux 客户机、AxVisor + ArceOS 客户机 以及 AxVisor + Linux 客户机 和 ArceOS 客户机三种情况在 ROC-RK3568-PC 开发板上的构建、部署及运行！
 
 ## 开发环境
 
