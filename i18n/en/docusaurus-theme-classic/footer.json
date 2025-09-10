@@ -1,0 +1,38 @@
+{
+  "link.title.Document": {
+    "message": "Document",
+    "description": "The title of the footer links column with title=Document in the footer"
+  },
+  "link.title.Community": {
+    "message": "Community",
+    "description": "The title of the footer links column with title=Community in the footer"
+  },
+  "link.title.More": {
+    "message": "More",
+    "description": "The title of the footer links column with title=More in the footer"
+  },
+  "link.item.label.Tutorial": {
+    "message": "Tutorial",
+    "description": "The label of footer link with label=Tutorial linking to /docs/introduction"
+  },
+  "link.item.label.arceos-hypervisor": {
+    "message": "arceos-hypervisor",
+    "description": "The label of footer link with label=arceos-hypervisor linking to https://github.com/arceos-hypervisor"
+  },
+  "link.item.label.ArceOS": {
+    "message": "ArceOS",
+    "description": "The label of footer link with label=ArceOS linking to https://github.com/arceos-org"
+  },
+  "link.item.label.openEuler": {
+    "message": "openEuler",
+    "description": "The label of footer link with label=openEuler linking to https://www.openeuler.org/"
+  },
+  "link.item.label.Phytium": {
+    "message": "Phytium",
+    "description": "The label of footer link with label=Phytium linking to https://gitee.com/phytium_embedded"
+  },
+  "copyright": {
+    "message": "Copyright © 2025 ArceOS team",
+    "description": "The footer copyright"
+  }
+}

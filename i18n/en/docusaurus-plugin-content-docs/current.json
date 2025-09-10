@@ -1,0 +1,18 @@
+{
+  "version.label": {
+    "message": "Next",
+    "description": "The label for version current"
+  },
+  "sidebar.docs.category.Introduction": {
+    "message": "Introduction",
+    "description": "The label for category Introduction in sidebar docs"
+  },
+  "sidebar.docs.category.QuickStart": {
+    "message": "QuickStart",
+    "description": "The label for category QuickStart in sidebar docs"
+  },
+  "sidebar.docs.category.Design": {
+    "message": "Design",
+    "description": "The label for category Design in sidebar docs"
+  }
+}
