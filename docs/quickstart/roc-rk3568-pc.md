@@ -498,7 +498,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 
 	![sdk_src](./imgs_roc-rk3568-pc/sdk_src.png)
 
-#### 构建
+#### 构建过程
 
 1. 首先 `sudo apt install git ssh make gcc libssl-dev liblz4-tool expect expect-dev g++ patchelf chrpath gawk texinfo chrpath diffstat binfmt-support qemu-user-static live-build bison flex fakeroot cmake gcc-multilib g++-multilib unzip device-tree-compiler ncurses-dev libgucharmap-2-90-dev bzip2 expat cpp-aarch64-linux-gnu libgmp-dev libmpc-dev bc python-is-python3` 安装依赖工具包。
 	> 如果使用 Python2 环境，则不要安装 `python-is-python3` 这个包
@@ -549,7 +549,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 
 其他配置项根据需要自行修改，否则直接采用默认值即可！
 
-#### 构建
+#### 构建过程
 
 1. 执行 `./axvisor.sh defconfig` 以设置开发环境并生成 AxVisor 配置文件 `.hvconfig.toml`。
 
