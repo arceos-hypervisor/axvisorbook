@@ -32,7 +32,7 @@
     "description": "The label of footer link with label=Phytium linking to https://gitee.com/phytium_embedded"
   },
   "copyright": {
-    "message": "Copyright © 2025 ArceOS team",
+    "message": "Copyright © 2025 AxVisor team",
     "description": "The footer copyright"
   }
 }

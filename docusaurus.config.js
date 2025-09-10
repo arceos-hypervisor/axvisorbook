@@ -184,10 +184,10 @@ export default {
           autoCollapseCategories: true,
         },
       },
-          // 关键配置：显示更多层级的标题
+      // 显示更多层级的标题
       tableOfContents: {
         minHeadingLevel: 2,
-        maxHeadingLevel: 4,  // 显示到h4（####）
+        maxHeadingLevel: 4,
       },
       navbar: {
         title: 'AxVisor',
@@ -280,7 +280,7 @@ export default {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} ArceOS team`,
+        copyright: `Copyright © ${new Date().getFullYear()} AxVisor team`,
       },
       prism: {
         aditionalLanguages: [

@@ -539,13 +539,13 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 
 -  从文件系统加载时，则确保如下配置项内容：
 	- `image_location = "fs"`
-	- `kernel_path = "/guest/Image"`， 这里需要配置为客户机镜像在 ROC-RK3568-PC 开发板中的文件系统中的绝对路径，客户机镜像就是上一步[构建 Linux 客户机镜像](#构建Linux客户机镜像)生成的 Linux 内核镜像 `kernel/arch/arm64/boot/Image`
-	- `dtb_path = "/guest/linux-aarch64-rk3568_smp1.dtb"`，这里配置为客户机设备树在 ROC-RK3568-PC 开发板中的文件系统中的绝对路，客户机设备树就是上一步[准备客户机设备树](#准备客户机设备树) 中构建的 DTB 文件
+	- `kernel_path = "/guest/Image"`， 这里需要配置为客户机镜像在 ROC-RK3568-PC 开发板中的文件系统中的绝对路径，客户机镜像就是上一步 **构建 Linux 客户机镜像** 生成的 Linux 内核镜像 `kernel/arch/arm64/boot/Image`
+	- `dtb_path = "/guest/linux-aarch64-rk3568_smp1.dtb"`，这里配置为客户机设备树在 ROC-RK3568-PC 开发板中的文件系统中的绝对路，客户机设备树就是上一步 **准备客户机设备树** 中构建的 DTB 文件
 
 - 从内存加载时，则确保如下配置项内容：
 	- `image_location = "memory"`
-	- `kernel_path = "客户机镜像在当前构建环境中的绝对路径"`，客户机镜像就是上一步[构建 Linux 客户机镜像](#构建Linux客户机镜像)生成的 Linux 内核镜像 `kernel/arch/arm64/boot/Image`
-	- `dtb_path = "客户机设备树在当前构建环境中的绝对路径"`，客户机设备树就是上一步[准备客户机设备树](#准备客户机设备树)中构建的 DTB 文件
+	- `kernel_path = "客户机镜像在当前构建环境中的绝对路径"`，客户机镜像就是上一步 **构建 Linux 客户机镜像** 生成的 Linux 内核镜像 `kernel/arch/arm64/boot/Image`
+	- `dtb_path = "客户机设备树在当前构建环境中的绝对路径"`，客户机设备树就是上一步 **准备客户机设备树** 中构建的 DTB 文件
 
 其他配置项根据需要自行修改，否则直接采用默认值即可！
 
@@ -621,5 +621,3 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 替换完成相关文件之后，分别将修改之后的 `rootfs.img` 和用 SDK 生成原始的 `boot.img`（Linux 客户机启动之后会使用） 烧写的对应的位置即可。最后上电启动开发板即可
 
 ![deploy_download](./imgs_roc-rk3568-pc/deploy_download.png)
-
-sss
