@@ -39,11 +39,11 @@ function HomepageBanner() {
         </div>
 
         <div className="axvisor-banner-button">
-          <Link className="axvisor-banner-explore-button" to={useBaseUrl("docs/introduction")}>
+          <Link className="axvisor-banner-explore-button" to={useBaseUrl("docs/overview")}>
             <Translate>Quick Start</Translate>
           </Link>
 
-          <Link className="axvisor-banner-download-button" to={useBaseUrl("docs/introduction")}>
+          <Link className="axvisor-banner-download-button" to={useBaseUrl("docs/overview")}>
             <Translate>Get Started</Translate>
           </Link>
         </div>
