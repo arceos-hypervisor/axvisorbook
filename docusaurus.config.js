@@ -249,7 +249,7 @@ export default {
             items: [
               {
                 label: 'Tutorial',
-                to: '/docs/introduction',
+                to: '/docs/overview',
               },
             ],
           },

@@ -7,7 +7,7 @@ sidebar_label: "Overview"
 
 AxVisor 是一个基于 [ArceOS](https://github.com/arceos-org/arceos) 框架实现的 Hypervisor（也叫 Virtual Machine Manager，VMM）。其目标是利用 ArceOS 提供的基础操作系统功能作为基础实现一个统一的模块化 Hypervisor。
 
-![AxVisor](./imgs/axvisor.png)
+![AxVisor](./design/images/axvisor.png)
 
 **统一**是指使用同一套代码同时支持 x86_64、AArch64 、RISC-V LoongArch 这四种架构，以最大化复用架构无关代码，简化代码开发和维护成本。
 
@@ -30,9 +30,7 @@ AxVisor 是一个基于 [ArceOS](https://github.com/arceos-org/arceos) 框架实
 
 ### Linux
 
-* currently only Linux with passthrough device on aarch64 is tested.
-* single core: [config.toml](configs/vms/linux-qemu-aarch64.toml) | [dts](configs/vms/linux-qemu.dts)
-* smp: [config.toml](configs/vms/linux-qemu-aarch64-smp2.toml) | [dts](configs/vms/linux-qemu-smp2.dts)
+TODO
 
 ## 硬件平台
 
