@@ -184,6 +184,11 @@ export default {
           autoCollapseCategories: true,
         },
       },
+          // 关键配置：显示更多层级的标题
+      tableOfContents: {
+        minHeadingLevel: 2,
+        maxHeadingLevel: 4,  // 显示到h4（####）
+      },
       navbar: {
         title: 'AxVisor',
         hideOnScroll: true,
