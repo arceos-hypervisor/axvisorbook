@@ -94,7 +94,7 @@ AxVisor 及飞腾派的 SDK 仅支持在 Linux 系统进中进行开发。本文
 
 ## 部署
 
-飞腾固件以及 U-boot 并不开源，Phytium-Pi-OS 中默认以二进制文件的形式提供飞腾固件 + U-Boot 固件组合体 `fip-all.bin`，`fip-all.bin` 会被直接写导入最终 IMAGE 镜像的开头位置。
+飞腾固件以及 U-boot 并不开源，Phytium-Pi-OS 中默认以二进制文件的形式提供飞腾固件 + U-Boot 固件组合体 `fip-all.bin`，`fip-all.bin` 会被直接写导入最终 IMAGE 镜像的开头位置。整个部署操作要求在上面构建的 Linux 客户机镜像的 SDK 目录中来执行相关命令，以便直接借用 SDK 生成的各种镜像和工具。
 
 ### 从文件系统部署
 
