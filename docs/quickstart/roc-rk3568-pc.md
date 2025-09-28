@@ -38,13 +38,16 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 	![sdk_repo](./imgs_roc-rk3568-pc/sdk_repo.png)
 
 4. 使用 `./sdk_tools.sh --sync -C ../firefly_rk3568_sdk` 命令恢复 SDK 内容。
+
 	![sdk_repo_content](./imgs_roc-rk3568-pc/sdk_repo_content.png)
 
 	也可以 `cd ../firefly_rk3568_sdk` 之后，手动执行如下命令：
+
     ```bash
     .repo/repo/repo sync -l
     .repo/repo/repo start firefly --all
     ```
+
     **注意：** 如果当前构建环境系统中 Python 版本是 3.12 及以上，由于 SDK 中的 `repo` 版本比较旧，则需要进行修改才能适配 Python 的 3.10 及以上版本
     1. 编辑 `../firefly_rk3568_sdk/.repo/repo/main.py` 中的如下所示的内容(`imp` 在 Python 的 3.4 版本中被标记为过时（由 `importlib` 代替），并最终在 3.12 版本中被删除)：
 
@@ -498,19 +501,29 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 
 	![sdk_src](./imgs_roc-rk3568-pc/sdk_src.png)
 
+#### 移植适配
+
+ROC-RK3568-PC 的 SDK 不支持使用 Python3 来构建，如果当前构建环境系统中 Python 版本是 Python3 版本，则需要做如下修改：
+
+1. 修改 `u-boot/make.sh` 中的如下位置来取消对于 Python2 的检测
+
+	![sdk_build_c1](./imgs_roc-rk3568-pc/sdk_build_c1.png)
+
+> 实际上，U-Boot 源码中还有大量基于 Python2 的脚本文件，在默认的构建中没有用的，因此这里不再继续修改
+
 #### 构建过程
 
 1. 首先 `sudo apt install git ssh make gcc libssl-dev liblz4-tool expect expect-dev g++ patchelf chrpath gawk texinfo chrpath diffstat binfmt-support qemu-user-static live-build bison flex fakeroot cmake gcc-multilib g++-multilib unzip device-tree-compiler ncurses-dev libgucharmap-2-90-dev bzip2 expat cpp-aarch64-linux-gnu libgmp-dev libmpc-dev bc python-is-python3` 安装依赖工具包。
 	> 如果使用 Python2 环境，则不要安装 `python-is-python3` 这个包
 
 2. 默认的构建使用官方预编译（SDK 不支持从源码构建）的 Ubuntu 的 rootfs 来打包相关镜像。因此需要首先下载并放置到 SDK 根目路的 `prebuilt_rootfs` 文件夹中
+
 	1. 从 https://www.t-firefly.com/doc/download/107.html 中给出网盘中下载任意一个 rootfs 镜像，例如 `Ubuntu20.04-xxx_RK3568_KERNEL-5.10_xxx.7z`
+
 	2. 执行 `7z x Ubuntu20.04-xxx_RK3568_KERNEL-5.10_xxx.7z` 解压到 SDK 根目录的 `prebuilt_rootfs`（需自行创建） 中，并将其命名为 `rk356x_ubuntu_rootfs.img`
 
-3. ROC-RK3568-PC 的 SDK 不支持使用 Python3 来构建，如果当前构建环境系统中 Python 版本是 Python3 版本，则需要修改 `u-boot/make.sh` 中的如下位置来取消对于 Python2 的检测即可：
-	![sdk_build_c1](./imgs_roc-rk3568-pc/sdk_build_c1.png)
+3. 直接 `make` 或者 `./build.sh`，然后选择 `firefly_rk3568_roc-rk3568-pc_ubuntu_defconfig` 对应编号 30 号进行构建即可。正常编译完成之后，就会在 `output` 目录下生成各个镜像文件，我们需要编辑某些镜像，将其中的文件替换或添加成我们自己的文件
 
-4. 直接 `make` 或者 `./build.sh`，然后选择 `firefly_rk3568_roc-rk3568-pc_ubuntu_defconfig` 对应编号 30 号进行构建即可。正常编译完成之后，就会在 `output` 目录下生成各个镜像文件，我们需要编辑某些镜像，将其中的文件替换或添加成我们自己的文件
 	![sdk_build_images](./imgs_roc-rk3568-pc/sdk_build_images.png)
 
 ### 构建 ArceOS 客户机镜像
