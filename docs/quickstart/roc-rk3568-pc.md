@@ -497,7 +497,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		    test()
 		```
 
-1. 更新 SDK。上面的 4 个步骤只需要执行一次，后续更新则都在 `firefly_rk3568_sdk` 目录中执行 `.repo/repo/repo sync -c --no-tags`
+5. 更新 SDK。上面的 4 个步骤只需要执行一次，后续更新则都在 `firefly_rk3568_sdk` 目录中执行 `.repo/repo/repo sync -c --no-tags` 即可，其中的 `build.sh` 就是构建入口。
 
 	![sdk_src](./imgs_roc-rk3568-pc/sdk_src.png)
 
@@ -513,16 +513,20 @@ ROC-RK3568-PC 的 SDK 不支持使用 Python3 来构建，如果当前构建环�
 
 #### 构建过程
 
+在初次执行 `./build.sh` 时会强制选择配置文件，选择之后会创建 `output/defconfig` ，后续构建时就会默认使用此配置文件（可以通过 `./build.sh cleanall` 清理后再次选择）。
+
+![sdk_help](./imgs_roc-rk3568-pc/sdk_help.png)
+
 1. 首先 `sudo apt install git ssh make gcc libssl-dev liblz4-tool expect expect-dev g++ patchelf chrpath gawk texinfo chrpath diffstat binfmt-support qemu-user-static live-build bison flex fakeroot cmake gcc-multilib g++-multilib unzip device-tree-compiler ncurses-dev libgucharmap-2-90-dev bzip2 expat cpp-aarch64-linux-gnu libgmp-dev libmpc-dev bc python-is-python3` 安装依赖工具包。
 	> 如果使用 Python2 环境，则不要安装 `python-is-python3` 这个包
 
-2. 默认的构建使用官方预编译（SDK 不支持从源码构建）的 Ubuntu 的 rootfs 来打包相关镜像。因此需要首先下载并放置到 SDK 根目路的 `prebuilt_rootfs` 文件夹中
+2. 如果要构建 Ubuntu 的 rootfs(下一步配置文件时选择)，则需要首先下载预编译的 Ubuntu 镜像（SDK 不支持从源码构建）并放置到 SDK 根目录的 `prebuilt_rootfs` 文件夹中
 
 	1. 从 https://www.t-firefly.com/doc/download/107.html 中给出网盘中下载任意一个 rootfs 镜像，例如 `Ubuntu20.04-xxx_RK3568_KERNEL-5.10_xxx.7z`
 
 	2. 执行 `7z x Ubuntu20.04-xxx_RK3568_KERNEL-5.10_xxx.7z` 解压到 SDK 根目录的 `prebuilt_rootfs`（需自行创建） 中，并将其命名为 `rk356x_ubuntu_rootfs.img`
 
-3. 直接 `make` 或者 `./build.sh`，然后选择 `firefly_rk3568_roc-rk3568-pc_ubuntu_defconfig` 对应编号 30 号进行构建即可。正常编译完成之后，就会在 `output` 目录下生成各个镜像文件，我们需要编辑某些镜像，将其中的文件替换或添加成我们自己的文件
+3. 执行`./build.sh`，然后选择 `firefly_rk3568_roc-rk3568-pc_ubuntu_defconfig` 对应编号 `30` 号（也可以选 `firefly_rk3568_roc-rk3568-pc_buildroot_defconfig` 对应的 `31` 号）进行构建即可。正常编译完成之后，就会在 `output` 目录下生成各个镜像文件，我们需要编辑某些镜像，将其中的文件替换或添加成我们自己的文件
 
 	![sdk_build_images](./imgs_roc-rk3568-pc/sdk_build_images.png)
 
