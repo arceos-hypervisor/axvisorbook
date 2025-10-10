@@ -36,8 +36,13 @@ export default {
   // he broken links detection is only available for a production build (docusaurus build).
   onBrokenLinks: 'throw',
   // The behavior of Docusaurus when it detects any broken Markdown link.
-  // he broken links detection is only available for a production build (docusaurus build).
-  onBrokenMarkdownLinks: 'warn',
+  // This option was moved under `markdown.hooks.onBrokenMarkdownLinks` in Docusaurus v4.
+  // The deprecated top-level `onBrokenMarkdownLinks` has been removed.
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
+  },
 
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
