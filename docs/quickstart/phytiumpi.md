@@ -66,7 +66,7 @@ AxVisor 及飞腾派的 SDK 仅支持在 Linux 系统进中进行开发。本文
 - 从文件系统加载时，则确保如下配置项内容：
 	- `image_location = "fs"`
 	- `kernel_path = "/guest/Image"`， 这里需要配置为客户机镜像在 ROC-e2000-PC 开发板中的文件系统中的绝对路径，客户机镜像就是上一步 **构建 Linux 客户机镜像** 生成的 Linux 内核镜像 `kernel/arch/arm64/boot/Image`
-	- `dtb_path = "/guest/linux-aarch64-e2000_smp1.dtb"`，这里配置为客户机设备树在 ROC-e2000-PC 开发板中的文件系统中的绝对路，客户机设备树就是上一步 **准备客户机设备树** 中构建的 DTB 文件
+	- `dtb_path = "/guest/linux-aarch64-e2000_smp1.dtb"`，这里配置为客户机设备树在 ROC-e2000-PC 开发板中的文件系统中的绝对路径，客户机设备树就是上一步 **准备客户机设备树** 中构建的 DTB 文件
 
 - 从内存加载时，则确保如下配置项内容：
 	- `image_location = "memory"`
