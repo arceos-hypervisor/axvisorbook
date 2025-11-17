@@ -43,6 +43,7 @@ sidebar_position: 1
 
 - Rust toolchain（与仓库 `rust-toolchain.toml` 一致）。
 - 系统安装 QEMU（例如 `qemu-system-aarch64`）以便 `ostool` 能够启动模拟器。
+- 安装 ostool 构建工具（`cargo install ostool`）以便 `xtask` 可以调用它。
 - 在第一次运行 `qemu` 之前，最好通过 `cargo xtask defconfig <board>` 初始化 `.build.toml`，或者手工创建 `.build.toml` 并确保 `target` 字段正确（例如包含 `aarch64-`）。
 
 ## 快速上手
@@ -66,7 +67,7 @@ cargo xtask qemu --vmconfigs configs/vms/arceos-aarch64-qemu-smp1.toml
 ```
 
 - 说明：
-  - `--vmconfigs` 接受一个或多个 VM 名称（与仓库 `configs/vms/` 下的 TOML 文件名对应，但不一定要带路径）。
+  - `--vmconfigs` 接受一个或多个 VM 配置文件路径（与仓库 `configs/vms/` 下的 TOML 文件对应）。
   - 运行时，xtask 会根据 `.build.toml` 决定 target，自动创建 `.qemu-<arch>.toml`（若缺失），并通过 `ostool` 的 cargo runner 启动 QEMU。
 
 ##  完整示例：从 0 到启动
