@@ -58,7 +58,9 @@ cargo xtask defconfig qemu-aarch64
 
 2. 可选：编辑 `.build.toml` 来调整构建选项或 target（例如确保 `target = "aarch64-unknown-none-softfloat"` 或其他关于目标的字段）。
 
-3. 运行 QEMU：
+3. 将 VM 配置文件中的 [客户机镜像](https://github.com/arceos-hypervisor/axvisor-guest/releases/download/v0.0.17/qemu_arceos_aarch64.tar.gz)（`kernel_path`）改为实际路径，示例客户机镜像可从[此处](https://github.com/arceos-hypervisor/axvisor-guest/releases)下载。
+
+4. 运行 QEMU：
 
 - 使用 VM 配置名（示例）：
 
