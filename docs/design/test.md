@@ -25,13 +25,13 @@ sidebar_label: "集成测试"
 
 [ROC-RK3568-PC](https://www.t-firefly.com/product/industry/rocrk3568pc.html) 是天启智能科技的 Filefly 团队推出的一款采用 RK3568 四核 64 位 Cortex-A55 处理器的嵌入式开发板。主频最高 2.0GHz、集成双核心架构 GPU 以及高效能 NPU；最大支持 8G 大内存；支持 WiFi6, 双千兆以太网。
 
-![ROC-RK3568-PC](./images_test/ROC-RK3568-PC.png)
+![ROC-RK3568-PC](./images_test/roc-rk3568-pc.png)
 
 ##### 调试接口
 
 使用 USB 转 TTL 工具将 ROC-RK3568-PC 上的 Debug 接口与本地测试服务器相连，默认串口参数 1500000 N 8 1。当系统运行时，运行日志将通过 Debug 接口直接输出到本地测试服务器。
 
-![ROC-RK3568-PC-DEBUG](./images_test/ROC-RK3568-PC-DEBUG.png)
+![ROC-RK3568-PC-DEBUG](./images_test/roc-rk3568-pc-debug.png)
 
 ##### 固件加载
 
