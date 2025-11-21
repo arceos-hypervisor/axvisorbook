@@ -151,7 +151,7 @@ Github Actions 本身支持使用自定义服务器（Runners）来运行所有�
 
 ![Runner](./images_test/runner.png)
 
-我们可以选择为仓库单独注册自定义服务器，也可以为组织注册全局的自定义服务器，然后分配给该组织下的所有或者部分仓库使用。官方也有详细的教程 https://docs.github.com/zh/actions/how-tos/manage-runners/self-hosted-runners/configure-the-application，下面是注册的详细步骤。
+我们可以选择为仓库单独注册自定义服务器，也可以为组织注册全局的自定义服务器，然后分配给该组织下的所有或者部分仓库使用。官方也有详细的教程 https://docs.github.com/zh/actions/how-tos/manage-runners/self-hosted-runners/configure-the-application ，下面是注册的详细步骤。
 
 1. 在仓库或者组织的设置界面中找到 Action 配置界面。在仓库的 `Runners` 界面中选择 `New self-hosted runner` 或者在组织的 `Runners` 界面 `New runner`，然后选择 `New self-hosted runner` 来进行创建。
 
@@ -197,9 +197,9 @@ Github Actions 本身支持使用自定义服务器（Runners）来运行所有�
 
 ### 基于 Docker 的 Runner 服务器
 
-官方提供的 self-hosted Runner 可执行程序是一个 Go 应用程序，默认直接运行与本地服务器，这会导致一些安全问题。此外，一个 Runner 可执行程序只能注册一个 Runner，不利于并行处理作业。基于 Docker 部署则可以避免一些安全问题，并且每个容器对应一个 Runner，方便并行处理作用！
+官方提供的 self-hosted Runner 可执行程序是一个 Go 应用程序，默认直接运行与本地服务器，这会导致一些安全问题。此外，一个 Runner 可执行程序只能注册一个 Runner，不利于并行处理作业。
 
-为此，我们提供了一套完整的基于 Docker 的 Runner 服务器部署脚本，可以方便地一键部署多个 Runner 服务器。脚本可以从 https://github.com/arceos-hypervisor/github-runners 下载。
+基于 Docker 部署则可以避免一些安全问题，并且每个容器对应一个 Runner，方便并行处理作用！为此，我们提供了一套完整的基于 Docker 的 Runner 服务器部署脚本，可以方便地一键部署多个 Runner 服务器。脚本可以从 https://github.com/arceos-hypervisor/github-runners 下载。
 
 ```bash
 runner@s1lqc:~/github-runners$ ./runner.sh 
