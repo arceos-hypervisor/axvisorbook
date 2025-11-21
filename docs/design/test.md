@@ -1,9 +1,8 @@
 ---
 sidebar_position: 4
-sidebar_label: "集成测试方案"
 ---
 
-# 简介
+# 集成测试方案
 
 由于 AxVisor 本身是一个运行于各种硬件平台的 Hypervisor，直接使用 Gihub 提供的 Action 脚本命令执行服务器（官方称为 Runner）无法满足我们的测试需求，因此，需要将测试本地化，在本地服务器上执行所有测试过程。
 
