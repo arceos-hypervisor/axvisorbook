@@ -147,9 +147,11 @@ x86 平台的引导程序（BIOS）各厂家通常差别较大，但是，他们
 
 ## 注册 Runner 服务器
 
-为了实现自动化测试，我们可以将本地服务器注册为 Github Actions 的 Runner 服务器。Github Actions 本身支持使用自定义服务器（Runners）来运行所有的 Action 命令。我们可以选择为仓库单独注册自定义服务器，也可以为组织注册全局的自定义服务器，然后分配给该组织下的所有或者部分仓库使用。官方也有详细的教程 https://docs.github.com/zh/actions/how-tos/manage-runners/self-hosted-runners/configure-the-application
+Github Actions 本身支持使用自定义服务器（Runners）来运行所有的 Action 命令。因此，我们可以将本地服务器注册为 Github Actions 的 Runner 服务器，从而直接在源码仓库中执行 CI 测试，最终实现自动化测试。
 
 ![Runner](./images_test/runner.png)
+
+我们可以选择为仓库单独注册自定义服务器，也可以为组织注册全局的自定义服务器，然后分配给该组织下的所有或者部分仓库使用。官方也有详细的教程 https://docs.github.com/zh/actions/how-tos/manage-runners/self-hosted-runners/configure-the-application，下面是注册的详细步骤。
 
 1. 在仓库或者组织的设置界面中找到 Action 配置界面。在仓库的 `Runners` 界面中选择 `New self-hosted runner` 或者在组织的 `Runners` 界面 `New runner`，然后选择 `New self-hosted runner` 来进行创建。
 
@@ -179,7 +181,7 @@ x86 平台的引导程序（BIOS）各厂家通常差别较大，但是，他们
 
 	- 注意，如果以普通用户启动，在实际使用中会提示输入用户密码
 	
-5. 当最后配置完成后，重新点击 Runner 菜单（新增界面没有返回按钮）返回到 Runner 配置界面，就会显示我们的自定义服务器。可以点击每个自定义服务器进行一些设置！
+4. 当最后配置完成后，重新点击 Runner 菜单（新增界面没有返回按钮）返回到 Runner 配置界面，就会显示我们的自定义服务器。可以点击每个自定义服务器进行一些设置！
 
     ![Runner6](./images_test/runner6.png)
 
@@ -197,75 +199,70 @@ x86 平台的引导程序（BIOS）各厂家通常差别较大，但是，他们
 
 官方提供的 self-hosted Runner 可执行程序是一个 Go 应用程序，默认直接运行与本地服务器，这会导致一些安全问题。此外，一个 Runner 可执行程序只能注册一个 Runner，不利于并行处理作业。基于 Docker 部署则可以避免一些安全问题，并且每个容器对应一个 Runner，方便并行处理作用！
 
-为此，我们提供了一套完整的部署脚本，可以方便地部署 Runner 服务器。脚本可以从 https://github.com/arceos-hypervisor/github-runners 下载。
+为此，我们提供了一套完整的基于 Docker 的 Runner 服务器部署脚本，可以方便地一键部署多个 Runner 服务器。脚本可以从 https://github.com/arceos-hypervisor/github-runners 下载。
 
-### Actions 配置文件
+```bash
+runner@s1lqc:~/github-runners$ ./runner.sh 
+Usage: ./runner.sh COMMAND [options]    Where [options] depend on COMMAND. Available COMMANDs:
 
-Actions 配置文件是源码仓库中记录 Github Actions 执行过程的命令脚本文件。
+1. Creation commands:
+  ./runner.sh init -n N                            Generate docker-compose.yml then create runners and start
+  ./runner.sh compose                              Regenerate docker-compose.yml with existing generic and board-specific runners
 
-#### 基本语法
+2. Instance operation commands:
+  ./runner.sh register [s1lqc-runner-<id> ...]     Register specified instances; no args will iterate over all existing instances
+  ./runner.sh start [s1lqc-runner-<id> ...]        Start specified instances (will register if needed); no args will iterate all existing instances
+  ./runner.sh stop [s1lqc-runner-<id> ...]         Stop Runner containers; no args will iterate all existing instances
+  ./runner.sh restart [s1lqc-runner-<id> ...]      Restart specified instances; no args will iterate all existing instances
+  ./runner.sh log s1lqc-runner-<id>                Follow logs of a specified instance
 
-Actions 配置文件中包含了执行触发方式、要使用的 Runner 服务器、执行的步骤等等所有内容。此外，还可以通过特定接口与 Github 仓库特定功能交互，例如直接发布构建后的程序！
+3. Query commands:
+  ./runner.sh ps|ls|list|status                    Show container status and registered Runner status
 
-```yaml
-# name 字段用于指定 Workflow 的名字
-name: Build Check
+4. Deletion commands:
+  ./runner.sh rm|remove|delete [s1lqc-runner-<id> ...] Delete specified instances; no args will delete all (confirmation required, -y to skip)
+  ./runner.sh purge [-y]                           On top of remove, also delete the dynamically generated docker-compose.yml
 
-# 在 on 字段下列举触发条件（事件），可以有多种
-on:
-  # 手动使用 Github WebUI 触发
-  workflow_dispatch:
-  # 仓库收到 Push 时触发
-  push:
-    branches:
-      - master
-  # 仓库收到 pull_request 时触发
-  pull_request:
-    branches:
-      - master
+5. Image management commands:
+  ./runner.sh image                                Rebuild Docker image based on Dockerfile
 
-# 一个 workflow 执行一个或多个 job，这些 job 被组织在 jobs 字段下
-# 每一个Job都是并发执行的并不是按照申明的先后顺序执行的
-# 如果多个job 之间存在依赖关系，需要使用 needs
-# job1:
-#   xxx
-# job2:
-#   needs: job1
-#   xxx
-jobs:
-  job1_name:
-    # 该 job 运行的系统环境，支持 ubuntu 、windows、macOS
-    runs-on: ubuntu-latest
-    
-    # 该 job 的一系列步骤。每个以“-”开头
-    steps:
-      # 检出我们的源代码
-      - uses: actions/checkout@v4
+6. Help
+  ./runner.sh help                                 Show this help
 
-      # 启动构建
-      - name: Build with Gradle
-        run: ./gradlew build
-  job2_name:
-    内容同上
+Environment variables (from .env or interactive input):
+  GH_PAT                   Classic PAT (requires admin:org), used for org API and registration token
+  ORG                      Organization name or user name (required)
+  REPO                     Optional repository name (when set, operate on repo-scoped runners under ORG/REPO instead of organization-wide runners)
+  RUNNER_NAME_PREFIX       Runner name prefix
+  RUNNER_IMAGE             Image used for compose generation (default ghcr.io/actions/actions-runner:latest)
+  RUNNER_CUSTOM_IMAGE      Image tag used for auto-build (can override)
+
+Example workflow runs-on: runs-on: [self-hosted, linux, docker]
+
+Tips:
+- docker-compose.yml must exist. The script will not generate or modify it.
+- Re-start/up will reuse existing volumes; Runner configuration and tool caches will not be lost.
+runner@s1lqc:~/github-runners$ 
 ```
-一个 workflow 执行一个或多个 job，这些 job 被组织在 `jobs` 字段下。每一个 Job 都是并发执行的并不是按照申明的先后顺序执行的。如果多个 job 之间存在依赖关系，需要使用 `needs` 来指定依赖。
 
-#### 使用自定义 Runner
+### 使用自定义 Runner 服务器
 
-要使用自定义 Runner 服务器，我们只需要将 Actions 配置文件中的 `runs-on` 字段设置为 `self-hosted`（`runs-on: self-hosted`）即可，不需要其他任何更改。
+要使用自定义 Runner 服务器，我们只需要将源码仓库中的 Actions 配置文件中的 `runs-on` 字段设置为 `self-hosted`（`runs-on: self-hosted`）即可，不需要其他任何更改。
 
 实际上，GitHub 是根据 `runs-on` 中的内容来匹配 Runner 的标签，因此可以指定更多标签来进行精确匹配（`runs-on: [self-hosted, linux, ARM64]`）！
 
--   如果 GitHub 找到一个在线的空闲 Runner 与作业的 `runs-on` 标签和组匹配，则作业将分配并发送到该 Runner。
+- 如果 GitHub 找到一个在线的空闲 Runner 与作业的 `runs-on` 标签和组匹配，则作业将分配并发送到该 Runner。
 
-    -   如果 Runner 在 60 秒内未收到分配的任务，任务将被重新排队，以便新的 Runner 能够接纳它。
+    - 如果 Runner 在 60 秒内未收到分配的任务，任务将被重新排队，以便新的 Runner 能够接纳它。
 
--   如果 GitHub 找不到与作业的 `runs-on` 标签和组匹配的在线和空闲 Runner，则作业将继续排队，直到某个 Runner 上线为止。
+- 如果 GitHub 找不到与作业的 `runs-on` 标签和组匹配的在线和空闲 Runner，则作业将继续排队，直到某个 Runner 上线为止。
 
--   如果作业排队的时间超过 24 小时，则作业将失败。
+- 如果作业排队的时间超过 24 小时，则作业将失败。
 
 > 注意，要正常运行 Actions 过程，需要在自定义服务器上安装一些依赖包
 
 ## 遗留问题
 
 1. 由于测试过程需要共用硬件资源，因此需要实现多个测试任务之间的资源隔离，防止相互干扰。
+
+2. 部分开发板可以优化为使用网络传输固件
