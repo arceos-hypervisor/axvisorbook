@@ -117,7 +117,7 @@ Cargo xtask 是 Rust 生态系统中的一种常见模式，用于管理项目�
 5. **类型安全**：利用 Rust 的类型系统，在编译时就能发现构建脚本中的错误
 6. **丰富的生态系统**：可以使用 Cargo 生态系统中的所有库来编写构建脚本
 
-## `ostool` 库
+## ostool 库
 
 Axvisor 的整个 xtask 系统构建在 `ostool` 库之上，这是一个专门为嵌入式和操作系统开发而设计的功能完整的 Rust 工具库，提供了从构建配置到系统运行的全流程支持。
 
@@ -147,7 +147,7 @@ ostool/
 
 #### AppContext
 
-[`AppContext`](ostool/ostool/src/ctx.rs:18) 是 `ostool` 的核心数据结构，封装了构建和运行过程中的所有状态信息：
+[`AppContext`](https://github.com/ZR233/ostool/tree/main/ostool/src/ctx.rs) 是 `ostool` 的核心数据结构，封装了构建和运行过程中的所有状态信息：
 
 ```rust
 #[derive(Default, Clone)]
@@ -172,7 +172,7 @@ pub struct AppContext {
 
 #### 构建系统支持
 
-`ostool` 支持两种构建系统，通过 [`BuildSystem`](ostool/ostool/src/build/config.rs:11) 枚举定义：
+`ostool` 支持两种构建系统，通过 [`BuildSystem`](https://github.com/ZR233/ostool/tree/main/ostool/src/build/config.rs) 枚举定义：
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -197,7 +197,7 @@ pub enum BuildSystem {
 
 #### 运行环境支持
 
-`ostool` 提供了完整的运行环境支持，通过 [`CargoRunnerKind`](ostool/ostool/src/run/cargo.rs:10) 枚举定义：
+`ostool` 提供了完整的运行环境支持，通过 [`CargoRunnerKind`](https://github.com/ZR233/ostool/tree/main/ostool/src/run/cargo.rs) 枚举定义：
 
 ```rust
 pub enum CargoRunnerKind {
@@ -226,7 +226,7 @@ pub enum CargoRunnerKind {
 
 #### jkconfig
 
-[`jkconfig`](ostool/jkconfig/) 是一个基于 JSON Schema 的配置编辑器，提供了现代化的 TUI 界面：
+[`jkconfig`](https://github.com/ZR233/ostool/tree/main/jkconfig/) 是一个基于 JSON Schema 的配置编辑器，提供了现代化的 TUI 界面：
 
 **核心特性**：
 - **类型安全**：基于 JSON Schema 的类型验证和自动完成
@@ -241,7 +241,7 @@ pub enum CargoRunnerKind {
 
 #### fitimage
 
-[`fitimage`](ostool/fitimage/) 是用于创建 U-Boot 兼容的 FIT (Flattened Image Tree) 镜像的专业工具：
+[`fitimage`](https://github.com/ZR233/ostool/tree/main/fitimage/) 是用于创建 U-Boot 兼容的 FIT (Flattened Image Tree) 镜像的专业工具：
 
 **核心功能**：
 - **标准兼容**：完全符合 U-Boot FIT 规范
@@ -256,7 +256,7 @@ pub enum CargoRunnerKind {
 
 #### uboot-shell
 
-[`uboot-shell`](ostool/uboot-shell/) 提供了与 U-Boot 引导程序的通信功能：
+[`uboot-shell`](https://github.com/ZR233/ostool/tree/main/uboot-shell/) 提供了与 U-Boot 引导程序的通信功能：
 
 **核心功能**：
 - **串口通信**：通过串口与 U-Boot 进行命令交互
@@ -360,7 +360,7 @@ xtask/
 
 #### 主入口点
 
-[`main.rs`](xtask/src/main.rs:1) 是 xtask 的入口点，使用 `clap` 库进行命令行参数解析。该文件定义了所有可用的命令和它们的参数结构。通过使用 Rust 的强类型系统和 `clap` 的派生宏，代码既简洁又类型安全。
+[`main.rs`](https://github.com/arceos-hypervisor/axvisor/tree/next/xtask/src/main.rs) 是 xtask 的入口点，使用 `clap` 库进行命令行参数解析。该文件定义了所有可用的命令和它们的参数结构。通过使用 Rust 的强类型系统和 `clap` 的派生宏，代码既简洁又类型安全。
 
 ```rust
 #[derive(Parser)]
@@ -391,7 +391,7 @@ enum Commands {
 
 #### 与 ostool 的集成
 
-[`ctx.rs`](xtask/src/ctx.rs:1) 提供了构建上下文管理，这是整个 xtask 系统的核心数据结构。它封装了构建过程中需要的所有状态信息，包括工作目录、构建配置路径和虚拟机配置列表等。
+[`ctx.rs`](https://github.com/arceos-hypervisor/axvisor/tree/next/xtask/src/ctx.rs) 提供了构建上下文管理，这是整个 xtask 系统的核心数据结构。它封装了构建过程中需要的所有状态信息，包括工作目录、构建配置路径和虚拟机配置列表等。
 
 ```rust
 pub struct Context {
@@ -410,7 +410,7 @@ pub struct Context {
 
 #### 构建配置管理
 
-[`tbuld.rs`](xtask/src/tbuld.rs:1) 定义了构建配置结构和管理逻辑，这是 xtask 系统中最复杂的模块之一。它负责解析构建配置文件，验证参数，并将配置转换为 Cargo 可以理解的格式。
+[`tbuld.rs`](https://github.com/arceos-hypervisor/axvisor/tree/next/xtask/src/tbuld.rs) 定义了构建配置结构和管理逻辑，这是 xtask 系统中最复杂的模块之一。它负责解析构建配置文件，验证参数，并将配置转换为 Cargo 可以理解的格式。
 
 ```rust
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq)]
@@ -473,13 +473,13 @@ Axvisor 的构建配置系统是其最复杂的部分之一，需要支持多种
 
 #### 板级配置
 
-项目支持多种开发板的配置，存储在 [`configs/board/`](configs/board/) 目录下。每个开发板都有自己的特定配置，包括目标架构、编译特性、调试选项等。这种设计使得同一个代码库可以支持多种不同的硬件平台，而无需修改核心代码。
+项目支持多种开发板的配置，存储在 [`configs/board/`](https://github.com/arceos-hypervisor/axvisor/tree/next/configs/board/) 目录下。每个开发板都有自己的特定配置，包括目标架构、编译特性、调试选项等。这种设计使得同一个代码库可以支持多种不同的硬件平台，而无需修改核心代码。
 
 支持的开发板包括：
-- [`qemu-aarch64.toml`](configs/board/qemu-aarch64.toml:1)：QEMU 模拟的 ARM64 平台
-- [`orangepi-5-plus.toml`](configs/board/orangepi-5-plus.toml:1)：Orange Pi 5 Plus 开发板
-- [`phytiumpi.toml`](configs/board/phytiumpi.toml:1)：Phytium Pi 开发板
-- [`roc-rk3568-pc.toml`](configs/board/roc-rk3568-pc.toml:1)：ROC-RK3568-PC 开发板
+- [`qemu-aarch64.toml`](https://github.com/arceos-hypervisor/axvisor/tree/next/configs/board/qemu-aarch64.toml)：QEMU 模拟的 ARM64 平台
+- [`orangepi-5-plus.toml`](https://github.com/arceos-hypervisor/axvisor/tree/next/configs/board/orangepi-5-plus.toml)：Orange Pi 5 Plus 开发板
+- [`phytiumpi.toml`](https://github.com/arceos-hypervisor/axvisor/tree/next/configs/board/phytiumpi.toml)：Phytium Pi 开发板
+- [`roc-rk3568-pc.toml`](https://github.com/arceos-hypervisor/axvisor/tree/next/configs/board/roc-rk3568-pc.toml)：ROC-RK3568-PC 开发板
 
 每个板级配置文件定义了目标架构、特性、日志级别等构建参数：
 
@@ -506,7 +506,7 @@ vm_configs = []
 
 #### 虚拟机配置
 
-虚拟机配置存储在 [`configs/vms/`](configs/vms/) 目录下，定义了每个虚拟机的详细参数。这些配置比板级配置更加详细，包括内存布局、设备配置、中断处理等虚拟化相关的设置。每个虚拟机配置文件都包含了虚拟机的完整定义：
+虚拟机配置存储在 [`configs/vms/`](https://github.com/arceos-hypervisor/axvisor/tree/next/configs/vms/) 目录下，定义了每个虚拟机的详细参数。这些配置比板级配置更加详细，包括内存布局、设备配置、中断处理等虚拟化相关的设置。每个虚拟机配置文件都包含了虚拟机的完整定义：
 
 ```toml
 [base]
@@ -538,7 +538,7 @@ kernel_load_addr = 0x8020_0000
 
 #### 内核构建脚本
 
-[`kernel/build.rs`](kernel/build.rs:1) 是构建系统的核心组件之一，负责处理最复杂的构建逻辑。这个脚本在内核编译时执行，主要职责包括：
+[`kernel/build.rs`](https://github.com/arceos-hypervisor/axvisor/tree/next/kernel/build.rs) 是构建系统的核心组件之一，负责处理最复杂的构建逻辑。这个脚本在内核编译时执行，主要职责包括：
 
 1. **读取虚拟机配置文件**：从环境变量或配置文件中读取虚拟机配置
 2. **生成链接脚本**：根据目标架构和平台参数生成适当的链接脚本
@@ -604,7 +604,7 @@ fn gen_linker_script(arch: &str, platform: &str, smp: usize) -> io::Result<()> {
 
 #### 链接脚本模板
 
-[`scripts/lds/linker.lds.S`](scripts/lds/linker.lds.S:1) 是链接脚本的模板，使用占位符支持参数化。这个模板定义了内核的内存布局，包括各个段的排列、对齐要求和符号定义。
+[`scripts/lds/linker.lds.S`](https://github.com/arceos-hypervisor/axvisor/tree/next/scripts/lds/linker.lds.S) 是链接脚本的模板，使用占位符支持参数化。这个模板定义了内核的内存布局，包括各个段的排列、对齐要求和符号定义。
 
 ```ld
 OUTPUT_ARCH(%ARCH%)
@@ -729,7 +729,7 @@ pub async fn run_build(&mut self) -> anyhow::Result<()> {
 
 这个命令的复杂性在于它需要处理多种配置选项和环境变量，确保构建过程的一致性和可重现性。通过自动生成 Schema 文件和严格的配置验证，构建系统能够在编译前捕获配置错误，提高开发效率。
 
-build 命令的核心是 [`load_config()`](xtask/src/tbuld.rs:27) 函数，它负责加载和处理构建配置：
+build 命令的核心是 [`load_config()`](https://github.com/arceos-hypervisor/axvisor/tree/next/xtask/src/tbuld.rs) 函数，它负责加载和处理构建配置：
 
 1. **生成 JSON Schema**：使用 `schemars` 库为 `Config` 结构体生成 JSON Schema
 2. **写入 .build-schema.json**：将生成的 Schema 写入 `.build-schema.json` 文件，用于配置验证
@@ -876,7 +876,7 @@ clippy 命令实现了全面的代码质量检查，远超标准的 `cargo clipp
 cargo xtask clippy
 ```
 
-[`clippy.rs`](xtask/src/clippy.rs:1) 实现了全面的代码检查：
+[`clippy.rs`](https://github.com/arceos-hypervisor/axvisor/tree/next/xtask/src/clippy.rs) 实现了全面的代码检查：
 
 1. **多目标架构检查**：自动检查所有支持的目标架构
 2. **特性组合检查**：测试各种特性组合，确保兼容性
@@ -970,7 +970,7 @@ cargo xtask image download evm3588_arceos --output-dir ./images
 cargo xtask image rm evm3588_arceos
 ```
 
-[`image.rs`](xtask/src/image.rs:1) 实现了完整的镜像管理功能：
+[`image.rs`](https://github.com/arceos-hypervisor/axvisor/tree/next/xtask/src/image.rs) 实现了完整的镜像管理功能：
 
 1. **列出可用镜像**：显示所有支持的镜像及其描述
 2. **下载并验证镜像**：自动下载并使用 SHA-256 验证完整性
@@ -1041,7 +1041,7 @@ Axvisor 的构建系统包含了许多高级特性，这些特性使得它能够
 - `x86_64-unknown-none`：x86_64 架构，无操作系统
 - `riscv64gc-unknown-none-elf`：RISC-V 64位架构，通用，无操作系统
 
-通过 [`rust-toolchain.toml`](rust-toolchain.toml:1) 配置：
+通过 `rust-toolchain.toml` 配置：
 
 ```toml
 [toolchain]
@@ -1096,7 +1096,7 @@ targets = ["x86_64-unknown-none", "riscv64gc-unknown-none-elf", "aarch64-unknown
 
 ### 代码质量保证
 
-[`clippy.rs`](xtask/src/clippy.rs:1) 实现了全面的代码质量检查系统，这是确保项目长期可维护性的关键组件。代码质量检查不仅仅是发现错误，更是维护代码风格、性能和安全性的重要工具。
+[`clippy.rs`](https://github.com/arceos-hypervisor/axvisor/tree/next/xtask/src/clippy.rs) 实现了全面的代码质量检查系统，这是确保项目长期可维护性的关键组件。代码质量检查不仅仅是发现错误，更是维护代码风格、性能和安全性的重要工具。
 
 代码质量检查功能：
 
