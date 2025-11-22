@@ -2,2338 +2,11 @@
 sidebar_position: 2
 ---
 
-# AxVisor 客户机管理
+# 客户机管理工具
 
-## 客户机配置
+## VM 列表管理
 
-### 配置体系架构
-
-#### 三层配置模型
-
-AxVisor 采用**分层配置架构**，将用户友好的声明式配置（TOML）转换为高效的运行时配置：
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Layer 1: TOML 文件                                              │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  功能：                                                          │
-│  • 用户可编辑的配置文件                                          │
-│  • 支持注释、可选字段、默认值                                    │
-│  • 人类可读的声明式语法                                          │
-│                                                                  │
-│  示例：                                                          │
-│  [base]                                                          │
-│  id = 1                                                          │
-│  name = "linux-qemu"                                             │
-│  cpu_num = 4                                                     │
-│  phys_cpu_ids = [0x0, 0x100, 0x200, 0x300]                      │
-└──────────────────────────┬───────────────────────────────────────┘
-                           │
-                           │ serde_toml::from_str()
-                           │ (反序列化，类型检查)
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Layer 2: AxVMCrateConfig (axvmconfig crate)                    │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  功能：                                                          │
-│  • TOML 的 Rust 类型表示                                         │
-│  • 保留所有 TOML 字段（包括可选字段）                            │
-│  • 由 serde 自动反序列化                                         │
-│  • 可序列化回 TOML（双向转换）                                   │
-│                                                                  │
-│  结构：                                                          │
-│  pub struct AxVMCrateConfig {                                    │
-│      pub base: BaseConfig,        // [base] section             │
-│      pub kernel: KernelConfig,    // [kernel] section           │
-│      pub devices: DeviceConfig,   // [devices] section          │
-│  }                                                               │
-│                                                                  │
-│  特点：                                                          │
-│  • 字段使用 Option<T> 表示可选项                                 │
-│  • 包含嵌套结构体（BaseConfig, KernelConfig 等）                │
-│  • 实现 Deserialize trait（serde 自动派生）                     │
-└──────────────────────────┬───────────────────────────────────────┘
-                           │
-                           │ From<AxVMCrateConfig> for AxVMConfig
-                           │ (字段转换，计算派生值，类型转换)
-                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Layer 3: AxVMConfig (axvm crate)                               │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  功能：                                                          │
-│  • 运行时配置结构                                                │
-│  • 所有字段已填充、验证、计算                                    │
-│  • 用于 VM 创建和运行                                            │
-│  • 支持动态修改（通过 with_config）                              │
-│                                                                  │
-│  结构：                                                          │
-│  pub struct AxVMConfig {                                         │
-│      id: usize,                                                  │
-│      name: String,                                               │
-│      vm_type: VMType,                                            │
-│      phys_cpu_ls: PhysCpuList,        // CPU 管理结构            │
-│      cpu_config: AxVCpuConfig,        // VCpu 配置               │
-│      image_config: VMImageConfig,     // 镜像加载地址            │
-│      emu_devices: Vec<EmulatedDeviceConfig>,                     │
-│      pass_through_devices: Vec<PassThroughDeviceConfig>,         │
-│      spi_list: Vec<u32>,              // 运行时填充              │
-│      interrupt_mode: VMInterruptMode,                            │
-│  }                                                               │
-│                                                                  │
-│  特点：                                                          │
-│  • 使用具体类型代替 Option（已验证的值）                        │
-│  • 包含派生字段（如 spi_list 由 FDT 解析填充）                  │
-│  • 地址类型转换为 GuestPhysAddr                                 │
-│  • 提供运行时修改接口                                            │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**设计优势**：
-
-1. **关注点分离**：
-   - Layer 1：用户关注点（易读、易写）
-   - Layer 2：序列化关注点（类型安全、验证）
-   - Layer 3：运行时关注点（性能、内存布局）
-
-2. **类型安全**：
-   - TOML 字符串 → Rust 类型（编译时检查）
-   - `usize` → `GuestPhysAddr`（防止地址误用）
-   - `Vec<String>` → `BTreeMap<usize, DeviceConfig>`（加速查找）
-
-3. **灵活性**：
-   - 可选字段在 Layer 2 保留为 `Option<T>`
-   - 必需字段在 Layer 3 转换为 T
-   - 运行时可动态修改 Layer 3
-
-#### 关键结构体详解
-
-**Layer 2: AxVMCrateConfig**（`axvmconfig` crate）
-
-```rust
-/// TOML 配置的直接表示
-/// 所有字段都是公开的，便于 serde 反序列化
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct AxVMCrateConfig {
-    pub base: BaseConfig,
-    pub kernel: KernelConfig,
-    pub devices: DeviceConfig,
-}
-
-/// [base] section: 基本配置
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct BaseConfig {
-    /// VM 唯一标识符 (0-255)
-    pub id: usize,
-
-    /// VM 名称（用于日志和显示）
-    pub name: String,
-
-    /// 虚拟化类型：1 = 完全虚拟化
-    pub vm_type: u8,
-
-    /// VCpu 数量
-    pub cpu_num: usize,
-
-    /// 物理 CPU MPIDR 值（ARM 特定）
-    /// 长度必须等于 cpu_num
-    pub phys_cpu_ids: Option<Vec<usize>>,
-
-    /// CPU 亲和性掩码（已弃用，由 FDT 计算）
-    #[deprecated]
-    pub phys_cpu_sets: Option<Vec<usize>>,
-}
-
-/// [kernel] section: 内核和镜像配置
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct KernelConfig {
-    /// 内核入口点（vCPU PC 寄存器初始值）
-    pub entry_point: usize,
-
-    /// 镜像位置："memory" 或 "fs"
-    pub image_location: Option<String>,
-
-    /// 内核镜像路径
-    pub kernel_path: String,
-
-    /// 内核加载地址（GPA）
-    pub kernel_load_addr: usize,
-
-    /// DTB 文件路径（可选）
-    pub dtb_path: Option<String>,
-
-    /// DTB 加载地址（可选，未指定则自动计算）
-    pub dtb_load_addr: Option<usize>,
-
-    /// BIOS 文件路径（可选，用于 UEFI 启动）
-    pub bios_path: Option<String>,
-
-    /// BIOS 加载地址（可选）
-    pub bios_load_addr: Option<usize>,
-
-    /// Ramdisk 文件路径（可选）
-    pub ramdisk_path: Option<String>,
-
-    /// Ramdisk 加载地址（可选）
-    pub ramdisk_load_addr: Option<usize>,
-
-    /// 内存区域列表（至少一个）
-    pub memory_regions: Vec<VmMemConfig>,
-}
-
-/// 内存区域配置
-/// TOML 数组格式：[GPA, 大小, 标志, 映射类型]
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct VmMemConfig {
-    pub gpa: usize,               // Guest Physical Address
-    pub size: usize,              // 区域大小（字节）
-    pub flags: usize,             // ARM 页表标志（RWX）
-    pub map_type: VmMemMappingType,  // 映射类型
-}
-
-/// 内存映射类型
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
-#[repr(u8)]
-pub enum VmMemMappingType {
-    MapAlloc = 0,      // 分配新物理内存
-    MapIdentical = 1,  // 恒等映射（GPA = HPA）
-    MapReserved = 2,   // 映射保留的物理地址
-}
-
-/// [devices] section: 设备配置
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct DeviceConfig {
-    /// 模拟设备列表
-    pub emu_devices: Vec<EmulatedDeviceConfig>,
-
-    /// 直通设备列表
-    /// 格式 1: [["/soc/serial@fe660000"]]（FDT 路径）
-    /// 格式 2: [["uart", 0xfe660000, 0xfe660000, 0x10000, 23]]（手动配置）
-    pub passthrough_devices: Vec<PassThroughDeviceConfig>,
-
-    /// 排除设备列表（不直通的设备）
-    pub excluded_devices: Vec<Vec<String>>,
-
-    /// 直通地址列表（不依赖 FDT）
-    pub passthrough_addresses: Vec<PassThroughAddressConfig>,
-
-    /// 中断模式："passthrough" 或 "emulated"
-    pub interrupt_mode: VMInterruptMode,
-}
-```
-
-**Layer 3: AxVMConfig**（`axvm` crate）
-
-```rust
-/// 运行时 VM 配置
-/// 所有字段都是私有的，通过方法访问
-#[derive(Debug)]
-pub struct AxVMConfig {
-    // ═══════════════════════════════════════
-    // 基本信息（不可变）
-    // ═══════════════════════════════════════
-    id: usize,
-    name: String,
-    vm_type: VMType,
-
-    // ═══════════════════════════════════════
-    // CPU 配置
-    // ═══════════════════════════════════════
-    /// CPU 列表管理器
-    /// 封装 cpu_num、phys_cpu_ids、phys_cpu_sets
-    phys_cpu_ls: PhysCpuList,
-
-    /// VCpu 配置（BSP/AP 入口地址）
-    pub cpu_config: AxVCpuConfig,
-
-    // ═══════════════════════════════════════
-    // 镜像配置（运行时可修改）
-    // ═══════════════════════════════════════
-    /// 镜像加载地址配置
-    /// 可通过 with_config 修改（如恒等映射调整）
-    pub image_config: VMImageConfig,
-
-    // ═══════════════════════════════════════
-    // 设备配置（运行时可修改）
-    // ═══════════════════════════════════════
-    emu_devices: Vec<EmulatedDeviceConfig>,
-    pass_through_devices: Vec<PassThroughDeviceConfig>,
-    excluded_devices: Vec<Vec<String>>,
-    pass_through_addresses: Vec<PassThroughAddressConfig>,
-
-    /// SPI 中断列表（运行时由 FDT 解析填充）
-    spi_list: Vec<u32>,
-
-    interrupt_mode: VMInterruptMode,
-}
-
-/// VCpu 配置
-#[derive(Clone, Copy, Debug, Default)]
-pub struct AxVCpuConfig {
-    /// BSP（Bootstrap Processor）入口地址
-    pub bsp_entry: GuestPhysAddr,
-
-    /// AP（Application Processor）入口地址
-    pub ap_entry: GuestPhysAddr,
-}
-
-/// 镜像加载地址配置
-#[derive(Debug, Default, Clone)]
-pub struct VMImageConfig {
-    pub kernel_load_gpa: GuestPhysAddr,
-    pub bios_load_gpa: Option<GuestPhysAddr>,
-    pub dtb_load_gpa: Option<GuestPhysAddr>,
-    pub ramdisk_load_gpa: Option<GuestPhysAddr>,
-}
-
-/// CPU 列表管理器
-#[derive(Debug, Default, Clone)]
-pub struct PhysCpuList {
-    cpu_num: usize,
-    phys_cpu_ids: Option<Vec<usize>>,   // ARM MPIDR 值
-    phys_cpu_sets: Option<Vec<usize>>,  // CPU 亲和性掩码
-}
-```
-
-**GuestPhysAddr 类型**（类型安全的地址）：
-
-```rust
-/// 客户机物理地址（GPA）
-/// 使用 newtype 模式防止地址误用
-#[repr(transparent)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
-pub struct GuestPhysAddr(usize);
-
-impl GuestPhysAddr {
-    /// 创建 GPA
-    pub fn from_usize(addr: usize) -> Self {
-        Self(addr)
-    }
-
-    /// 转换为 usize
-    pub fn as_usize(&self) -> usize {
-        self.0
-    }
-
-    /// 2MB 向下对齐
-    pub fn align_down(&self, align: usize) -> Self {
-        Self(self.0 & !(align - 1))
-    }
-
-    /// 2MB 向上对齐
-    pub fn align_up(&self, align: usize) -> Self {
-        Self((self.0 + align - 1) & !(align - 1))
-    }
-
-    /// 偏移
-    pub fn offset(&self, offset: isize) -> Self {
-        Self((self.0 as isize + offset) as usize)
-    }
-}
-
-// 支持算术运算
-impl std::ops::Add<usize> for GuestPhysAddr {
-    type Output = Self;
-    fn add(self, rhs: usize) -> Self {
-        Self(self.0 + rhs)
-    }
-}
-
-impl std::ops::Sub<usize> for GuestPhysAddr {
-    type Output = Self;
-    fn sub(self, rhs: usize) -> Self {
-        Self(self.0 - rhs)
-    }
-}
-
-// 从 usize 隐式转换
-impl From<usize> for GuestPhysAddr {
-    fn from(addr: usize) -> Self {
-        Self(addr)
-    }
-}
-```
-
-**VMType 枚举**：
-
-```rust
-/// 虚拟化类型
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VMType {
-    /// 完全虚拟化（Full Virtualization）
-    /// 客户机不知道自己运行在虚拟环境中
-    VmTFull = 1,
-
-    // 未来扩展：
-    // VmTPara = 2,  // 半虚拟化
-    // VmTContainer = 3,  // 容器
-}
-
-impl From<u8> for VMType {
-    fn from(val: u8) -> Self {
-        match val {
-            1 => VMType::VmTFull,
-            _ => panic!("Invalid VM type: {}", val),
-        }
-    }
-}
-```
-
-### TOML 解析流程
-
-#### 文件发现和加载
-
-**静态配置加载**（编译时嵌入，`kernel/src/vmm/config.rs`）：
-
-```rust
-// ═══════════════════════════════════════════════════
-// build.rs 生成的代码（位于 OUT_DIR/vm_configs.rs）
-// ═══════════════════════════════════════════════════
-
-/// 返回静态嵌入的 VM 配置字符串
-pub fn static_vm_configs() -> Vec<&'static str> {
-    vec![
-        // include_str! 在编译时将文件内容嵌入二进制
-        include_str!("../configs/vms/linux-aarch64-qemu-smp1.toml"),
-        include_str!("../configs/vms/linux-aarch64-rk3588-smp8.toml"),
-        include_str!("../configs/vms/arceos-aarch64-rk3568-smp2.toml"),
-        // ... 更多配置文件
-    ]
-}
-
-/// 返回静态嵌入的 VM 镜像
-pub fn get_memory_images() -> Vec<VMImages> {
-    vec![
-        VMImages {
-            id: 1,
-            // include_bytes! 在编译时嵌入二进制文件
-            kernel: include_bytes!("../tmp/Image"),
-            dtb: Some(include_bytes!("../tmp/linux.dtb")),
-            bios: None,
-            ramdisk: None,
-        },
-        VMImages {
-            id: 2,
-            kernel: include_bytes!("../tmp/arceos.bin"),
-            dtb: Some(include_bytes!("../tmp/arceos.dtb")),
-            bios: None,
-            ramdisk: None,
-        },
-    ]
-}
-
-/// 镜像结构体
-pub struct VMImages {
-    pub id: usize,
-    pub kernel: &'static [u8],
-    pub dtb: Option<&'static [u8]>,
-    pub bios: Option<&'static [u8]>,
-    pub ramdisk: Option<&'static [u8]>,
-}
-```
-
-**build.rs 实现**（自动扫描配置文件）：
-
-```rust
-// build.rs（项目根目录）
-
-use std::env;
-use std::fs;
-use std::path::Path;
-
-fn main() {
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let dest_path = Path::new(&out_dir).join("vm_configs.rs");
-
-    // 扫描 configs/vms/ 目录
-    let config_dir = Path::new("configs/vms");
-    let mut config_files = Vec::new();
-
-    if config_dir.exists() {
-        for entry in fs::read_dir(config_dir).unwrap() {
-            let entry = entry.unwrap();
-            let path = entry.path();
-
-            if path.extension().and_then(|s| s.to_str()) == Some("toml") {
-                config_files.push(path);
-            }
-        }
-    }
-
-    // 生成代码
-    let mut code = String::from("pub fn static_vm_configs() -> Vec<&'static str> {\n    vec![\n");
-
-    for config_file in &config_files {
-        code.push_str(&format!(
-            "        include_str!(\"{}\"),\n",
-            config_file.display()
-        ));
-    }
-
-    code.push_str("    ]\n}\n");
-
-    fs::write(&dest_path, code).unwrap();
-
-    // 重新构建触发器
-    println!("cargo:rerun-if-changed=configs/vms/");
-}
-```
-
-**动态配置加载**（运行时从文件系统，需要 `fs` feature）：
-
-```rust
-#[cfg(feature = "fs")]
-pub fn filesystem_vm_configs() -> Vec<String> {
-    use axstd::fs;
-    use axstd::io::{BufReader, Read};
-
-    let config_dir = "/guest/vm_default";
-    let mut configs = Vec::new();
-
-    debug!("Scanning VM configs from: {}", config_dir);
-
-    // ═══════════════════════════════════════
-    // 步骤 1: 读取目录
-    // ═══════════════════════════════════════
-    let entries = match fs::read_dir(config_dir) {
-        Ok(entries) => {
-            info!("Found config directory: {}", config_dir);
-            entries
-        }
-        Err(e) => {
-            info!("Config directory not found: {} ({})", config_dir, e);
-            return configs;
-        }
-    };
-
-    // ═══════════════════════════════════════
-    // 步骤 2: 过滤 .toml 文件
-    // ═══════════════════════════════════════
-    for entry in entries.flatten() {
-        let path = entry.path();
-        let path_str = path.as_str();
-
-        debug!("Considering file: {}", path_str);
-
-        // 仅处理 .toml 文件
-        if !path_str.ends_with(".toml") {
-            debug!("Skipping non-TOML file: {}", path_str);
-            continue;
-        }
-
-        // ═══════════════════════════════════════
-        // 步骤 3: 读取文件内容
-        // ═══════════════════════════════════════
-        let toml_file = match fs::File::open(path_str) {
-            Ok(file) => file,
-            Err(e) => {
-                error!("Failed to open {}: {:?}", path_str, e);
-                continue;
-            }
-        };
-
-        let file_size = match toml_file.metadata() {
-            Ok(meta) => meta.len() as usize,
-            Err(e) => {
-                error!("Failed to get metadata of {}: {:?}", path_str, e);
-                continue;
-            }
-        };
-
-        info!("Reading config file: {} (size: {} bytes)", path_str, file_size);
-
-        // 检查空文件
-        if file_size == 0 {
-            warn!("Empty config file: {}", path_str);
-            continue;
-        }
-
-        // 读取文件内容到缓冲区
-        let mut file = BufReader::new(toml_file);
-        let mut buffer = vec![0u8; file_size];
-
-        if let Err(e) = file.read_exact(&mut buffer) {
-            error!("Failed to read {}: {:?}", path_str, e);
-            continue;
-        }
-
-        // ═══════════════════════════════════════
-        // 步骤 4: UTF-8 验证
-        // ═══════════════════════════════════════
-        let content = match String::from_utf8(buffer) {
-            Ok(s) => s,
-            Err(e) => {
-                error!("Invalid UTF-8 in {}: {:?}", path_str, e);
-                continue;
-            }
-        };
-
-        // ═══════════════════════════════════════
-        // 步骤 5: 快速验证必需字段
-        // ═══════════════════════════════════════
-        // 避免完整 TOML 解析，仅检查关键字段是否存在
-        if content.contains("[base]")
-            && content.contains("[kernel]")
-            && content.contains("[devices]")
-        {
-            configs.push(content);
-            info!("✓ Loaded valid config: {}", path_str);
-        } else {
-            warn!("✗ Invalid config structure in: {}", path_str);
-            debug!("Missing required sections: [base], [kernel], or [devices]");
-        }
-    }
-
-    info!("Loaded {} VM configs from filesystem", configs.len());
-    configs
-}
-
-// 未启用 fs feature 时的回退实现
-#[cfg(not(feature = "fs"))]
-pub fn filesystem_vm_configs() -> Vec<String> {
-    Vec::new()
-}
-```
-
-**配置加载优先级**（`init_guest_vms`）：
-
-```rust
-pub fn init_guest_vms() {
-    // ═══════════════════════════════════════
-    // 步骤 1: 初始化 DTB 缓存（仅 aarch64）
-    // ═══════════════════════════════════════
-    #[cfg(target_arch = "aarch64")]
-    {
-        init_dtb_cache();
-        info!("DTB cache initialized");
-    }
-
-    // ═══════════════════════════════════════
-    // 步骤 2: 尝试从文件系统加载（优先级最高）
-    // ═══════════════════════════════════════
-    let mut gvm_raw_configs = config::filesystem_vm_configs();
-
-    if !gvm_raw_configs.is_empty() {
-        info!("Using {} filesystem VM configs", gvm_raw_configs.len());
-    } else {
-        // ═══════════════════════════════════════
-        // 步骤 3: 回退到静态配置
-        // ═══════════════════════════════════════
-        let static_configs = config::static_vm_configs();
-
-        if static_configs.is_empty() {
-            info!("No VM configs found");
-            info!("Entering shell mode...");
-        } else {
-            info!("Using {} static VM configs", static_configs.len());
-        }
-
-        // 转换 &str -> String
-        gvm_raw_configs.extend(
-            static_configs.into_iter().map(|s| s.into())
-        );
-    }
-
-    // ═══════════════════════════════════════
-    // 步骤 4: 逐个初始化 VM
-    // ═══════════════════════════════════════
-    for (index, raw_cfg_str) in gvm_raw_configs.iter().enumerate() {
-        debug!("Initializing VM #{} from config:\n{}", index, raw_cfg_str);
-
-        if let Err(e) = init_guest_vm(raw_cfg_str) {
-            error!("Failed to initialize VM #{}: {:?}", index, e);
-            // 继续处理下一个配置，不中断
-        }
-    }
-
-    info!("Guest VM initialization complete");
-}
-```
-
-**配置加载流程图**：
-
-```
-启动 VMM
-    │
-    ▼
-init_guest_vms()
-    │
-    ├─→ [aarch64] init_dtb_cache()
-    │
-    ├─→ filesystem_vm_configs()
-    │   │
-    │   ├─→ 文件系统存在？
-    │   │   ├─→ 是：读取 /guest/vm_default/*.toml
-    │   │   │   └─→ 验证必需字段 → configs
-    │   │   └─→ 否：返回空 Vec
-    │   │
-    │   └─→ configs.is_empty()?
-    │       ├─→ 是：回退到 static_vm_configs()
-    │       └─→ 否：使用文件系统配置
-    │
-    └─→ for config in configs:
-        └─→ init_guest_vm(config)
-            └─→ 解析、创建、初始化 VM
-```
-
-#### TOML 反序列化详解
-
-**serde 自动反序列化**（`axvmconfig` crate）：
-
-```rust
-impl AxVMCrateConfig {
-    /// 从 TOML 字符串解析配置
-    ///
-    /// # 错误处理
-    /// - TOML 语法错误：返回 toml::de::Error
-    /// - 缺少必需字段：返回 toml::de::Error
-    /// - 类型不匹配：返回 toml::de::Error
-    pub fn from_toml(toml_str: &str) -> Result<Self, toml::de::Error> {
-        // serde_toml 自动将 TOML 映射到结构体
-        toml::from_str(toml_str)
-    }
-}
-```
-
-**字段映射示例**：
-
-TOML 输入：
-```toml
-[base]
-id = 1
-name = "linux-qemu"
-vm_type = 1
-cpu_num = 4
-phys_cpu_ids = [0x0, 0x100, 0x200, 0x300]
-# phys_cpu_sets 未指定
-```
-
-Rust 结构体：
-```rust
-BaseConfig {
-    id: 1,
-    name: String::from("linux-qemu"),
-    vm_type: 1,
-    cpu_num: 4,
-    phys_cpu_ids: Some(vec![0x0, 0x100, 0x200, 0x300]),
-    phys_cpu_sets: None,  // 未在 TOML 中指定
-}
-```
-
-**嵌套数组解析示例**：
-
-TOML 输入：
-```toml
-memory_regions = [
-    [0x8000_0000, 0x1000_0000, 0x7, 0],  # 256MB RAM
-    [0x920_0000, 0x2000, 0xf, 2],        # 8KB 保留区域
-]
-```
-
-Rust 结构体：
-```rust
-memory_regions: vec![
-    VmMemConfig {
-        gpa: 0x8000_0000,
-        size: 0x1000_0000,
-        flags: 0x7,  // RWX
-        map_type: VmMemMappingType::MapAlloc,  // 0 -> MapAlloc
-    },
-    VmMemConfig {
-        gpa: 0x920_0000,
-        size: 0x2000,
-        flags: 0xf,  // 全权限
-        map_type: VmMemMappingType::MapReserved,  // 2 -> MapReserved
-    },
-]
-```
-
-**嵌套结构解析示例**：
-
-TOML 输入：
-```toml
-[base]
-id = 1
-name = "test-vm"
-
-[kernel]
-entry_point = 0x8020_0000
-kernel_path = "Image"
-
-[devices]
-interrupt_mode = "passthrough"
-```
-
-Rust 结构体：
-```rust
-AxVMCrateConfig {
-    base: BaseConfig {
-        id: 1,
-        name: String::from("test-vm"),
-        // ... 其他字段
-    },
-    kernel: KernelConfig {
-        entry_point: 0x8020_0000,
-        kernel_path: String::from("Image"),
-        // ... 其他字段
-    },
-    devices: DeviceConfig {
-        interrupt_mode: VMInterruptMode::Passthrough,
-        // ... 其他字段
-    },
-}
-```
-
-**枚举类型映射**：
-
-```rust
-/// 内存映射类型枚举
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
-#[repr(u8)]
-pub enum VmMemMappingType {
-    MapAlloc = 0,
-    MapIdentical = 1,
-    MapReserved = 2,
-}
-
-// serde 自动处理整数 -> 枚举转换
-// TOML: map_type = 0 -> VmMemMappingType::MapAlloc
-// TOML: map_type = 1 -> VmMemMappingType::MapIdentical
-// TOML: map_type = 2 -> VmMemMappingType::MapReserved
-
-// 也可以使用字符串（需要额外配置）
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum VMInterruptMode {
-    Passthrough,
-    Emulated,
-}
-
-// TOML: interrupt_mode = "passthrough" -> VMInterruptMode::Passthrough
-// TOML: interrupt_mode = "emulated" -> VMInterruptMode::Emulated
-```
-
-**错误处理示例**：
-
-```rust
-match AxVMCrateConfig::from_toml(toml_str) {
-    Ok(config) => {
-        info!("Config parsed successfully");
-        // 继续处理
-    }
-    Err(e) => {
-        // serde 提供详细的错误信息
-        error!("Failed to parse TOML: {}", e);
-
-        // 常见错误类型：
-        // - 缺少必需字段: "missing field `id` at line 1"
-        // - 类型不匹配: "invalid type: string \"abc\", expected usize at line 5"
-        // - 语法错误: "expected `.` or `=`, found `,` at line 3"
-
-        return Err(...);
-    }
-}
-```
-
-#### 配置转换流程（Layer 2 → Layer 3）
-
-**From Trait 实现**（`axvm/src/config.rs`）：
-
-```rust
-impl From<AxVMCrateConfig> for AxVMConfig {
-    fn from(cfg: AxVMCrateConfig) -> Self {
-        // ═══════════════════════════════════════════════════
-        // 阶段 1: 基本信息直接复制
-        // ═══════════════════════════════════════════════════
-        let id = cfg.base.id;
-        let name = cfg.base.name;
-        let vm_type = VMType::from(cfg.base.vm_type);
-
-        // ═══════════════════════════════════════════════════
-        // 阶段 2: CPU 配置封装
-        // ═══════════════════════════════════════════════════
-        // 将分散的 CPU 字段封装到 PhysCpuList
-        let phys_cpu_ls = PhysCpuList {
-            cpu_num: cfg.base.cpu_num,
-            phys_cpu_ids: cfg.base.phys_cpu_ids,
-            phys_cpu_sets: cfg.base.phys_cpu_sets,
-        };
-
-        // ═══════════════════════════════════════════════════
-        // 阶段 3: VCpu 配置（BSP 和 AP 使用相同入口）
-        // ═══════════════════════════════════════════════════
-        let cpu_config = AxVCpuConfig {
-            bsp_entry: GuestPhysAddr::from(cfg.kernel.entry_point),
-            ap_entry: GuestPhysAddr::from(cfg.kernel.entry_point),
-        };
-
-        // ═══════════════════════════════════════════════════
-        // 阶段 4: 镜像加载地址转换
-        // ═══════════════════════════════════════════════════
-        // usize -> GuestPhysAddr（类型安全）
-        // Option<usize> -> Option<GuestPhysAddr>
-        let image_config = VMImageConfig {
-            kernel_load_gpa: GuestPhysAddr::from(cfg.kernel.kernel_load_addr),
-            bios_load_gpa: cfg.kernel.bios_load_addr.map(GuestPhysAddr::from),
-            dtb_load_gpa: cfg.kernel.dtb_load_addr.map(GuestPhysAddr::from),
-            ramdisk_load_gpa: cfg.kernel.ramdisk_load_addr.map(GuestPhysAddr::from),
-        };
-
-        // ═══════════════════════════════════════════════════
-        // 阶段 5: 设备配置直接复制
-        // ═══════════════════════════════════════════════════
-        let emu_devices = cfg.devices.emu_devices;
-        let pass_through_devices = cfg.devices.passthrough_devices;
-        let excluded_devices = cfg.devices.excluded_devices;
-        let pass_through_addresses = cfg.devices.passthrough_addresses;
-        let interrupt_mode = cfg.devices.interrupt_mode;
-
-        // ═══════════════════════════════════════════════════
-        // 阶段 6: 初始化运行时字段
-        // ═══════════════════════════════════════════════════
-        // SPI 列表初始为空，稍后由 FDT 解析填充
-        let spi_list = Vec::new();
-
-        // ═══════════════════════════════════════════════════
-        // 构造最终配置
-        // ═══════════════════════════════════════════════════
-        Self {
-            id,
-            name,
-            vm_type,
-            phys_cpu_ls,
-            cpu_config,
-            image_config,
-            emu_devices,
-            pass_through_devices,
-            excluded_devices,
-            pass_through_addresses,
-            spi_list,
-            interrupt_mode,
-        }
-    }
-}
-```
-
-**类型转换详解**：
-
-1. **基本类型转换**：
-   ```rust
-   // u8 -> VMType
-   let vm_type = VMType::from(cfg.base.vm_type);
-
-   // usize -> GuestPhysAddr
-   let kernel_gpa = GuestPhysAddr::from(cfg.kernel.kernel_load_addr);
-
-   // Option<usize> -> Option<GuestPhysAddr>
-   let dtb_gpa = cfg.kernel.dtb_load_addr.map(GuestPhysAddr::from);
-   ```
-
-2. **结构封装**：
-   ```rust
-   // 分散字段 -> 封装结构
-   let phys_cpu_ls = PhysCpuList {
-       cpu_num: cfg.base.cpu_num,
-       phys_cpu_ids: cfg.base.phys_cpu_ids,
-       phys_cpu_sets: cfg.base.phys_cpu_sets,
-   };
-   ```
-
-3. **派生字段计算**：
-   ```rust
-   // BSP 和 AP 使用相同入口（可能稍后修改）
-   let cpu_config = AxVCpuConfig {
-       bsp_entry: GuestPhysAddr::from(cfg.kernel.entry_point),
-       ap_entry: GuestPhysAddr::from(cfg.kernel.entry_point),
-   };
-   ```
-
-### 配置验证机制
-
-#### 编译时验证（类型系统）
-
-```rust
-// ✓ 类型系统保证：
-// 1. 必需字段必须存在
-pub struct BaseConfig {
-    pub id: usize,        // 必需
-    pub name: String,     // 必需
-    pub cpu_num: usize,   // 必需
-}
-
-// 2. 可选字段使用 Option<T>
-pub struct KernelConfig {
-    pub dtb_path: Option<String>,      // 可选
-    pub dtb_load_addr: Option<usize>,  // 可选
-}
-
-// 3. 枚举类型限制取值范围
-#[repr(u8)]
-pub enum VmMemMappingType {
-    MapAlloc = 0,
-    MapIdentical = 1,
-    MapReserved = 2,
-    // 不可能有其他值
-}
-
-// 4. newtype 模式防止类型混淆
-pub struct GuestPhysAddr(usize);  // 不能与 usize 混用
-pub struct HostPhysAddr(usize);   // 不同的地址类型
-```
-
-#### 运行时验证
-
-**TOML 反序列化验证**：
-
-```rust
-// serde 自动验证：
-// - 缺少必需字段
-// - 类型不匹配
-// - 枚举值超出范围
-
-let config = AxVMCrateConfig::from_toml(toml_str)
-    .expect("Failed to parse VM config");
-// 如果解析成功，则所有字段都已验证
-```
-
-**自定义验证逻辑**（`init_guest_vm`）：
-
-```rust
-pub fn init_guest_vm(raw_cfg: &str) -> AxResult<usize> {
-    // ═══════════════════════════════════════
-    // 步骤 1: 解析配置
-    // ═══════════════════════════════════════
-    let vm_create_config = AxVMCrateConfig::from_toml(raw_cfg)
-        .expect("Failed to parse TOML");
-
-    // ═══════════════════════════════════════
-    // 步骤 2: 验证 CPU 配置一致性
-    // ═══════════════════════════════════════
-    if let Some(phys_cpu_ids) = &vm_create_config.base.phys_cpu_ids {
-        if phys_cpu_ids.len() != vm_create_config.base.cpu_num {
-            panic!(
-                "CPU count mismatch: cpu_num={}, phys_cpu_ids.len()={}. \
-                 These must be equal!",
-                vm_create_config.base.cpu_num,
-                phys_cpu_ids.len()
-            );
-        }
-
-        // 验证 MPIDR 值唯一性
-        let mut seen = std::collections::HashSet::new();
-        for &mpidr in phys_cpu_ids {
-            if !seen.insert(mpidr) {
-                panic!("Duplicate MPIDR value: {:#x}", mpidr);
-            }
-        }
-    }
-
-    // ═══════════════════════════════════════
-    // 步骤 3: 验证内存配置
-    // ═══════════════════════════════════════
-    if vm_create_config.kernel.memory_regions.is_empty() {
-        panic!("VM must have at least one memory region");
-    }
-
-    // 验证内存地址对齐
-    const MB: usize = 1024 * 1024;
-    for (i, region) in vm_create_config.kernel.memory_regions.iter().enumerate() {
-        if region.gpa % (2 * MB) != 0 {
-            panic!(
-                "Memory region {} GPA {:#x} must be 2MB aligned",
-                i, region.gpa
-            );
-        }
-
-        if region.size == 0 {
-            panic!("Memory region {} has zero size", i);
-        }
-    }
-
-    // ═══════════════════════════════════════
-    // 步骤 4: 验证镜像配置
-    // ═══════════════════════════════════════
-    match vm_create_config.kernel.image_location.as_deref() {
-        Some("memory") | Some("fs") => {
-            // 有效的镜像位置
-        }
-        Some(other) => {
-            panic!("Invalid image_location: '{}'. Must be 'memory' or 'fs'", other);
-        }
-        None => {
-            panic!("image_location is required");
-        }
-    }
-
-    // ═══════════════════════════════════════
-    // 步骤 5: 验证设备配置
-    // ═══════════════════════════════════════
-    match vm_create_config.devices.interrupt_mode {
-        VMInterruptMode::Passthrough | VMInterruptMode::Emulated => {
-            // 有效的中断模式
-        }
-        _ => {
-            panic!("Invalid interrupt mode");
-        }
-    }
-
-    // ... 继续创建 VM
-}
-```
-
-**验证错误示例**：
-
-```rust
-// 错误 1: CPU 数量不匹配
-[base]
-cpu_num = 4
-phys_cpu_ids = [0, 1]  # ❌ 长度为 2，与 cpu_num 不符
-
-// Panic: CPU count mismatch: cpu_num=4, phys_cpu_ids.len()=2
-
-// 错误 2: 内存地址未对齐
-memory_regions = [
-    [0x8000_0001, 0x1000_0000, 0x7, 0],  # ❌ 未 2MB 对齐
-]
-
-// Panic: Memory region 0 GPA 0x80000001 must be 2MB aligned
-
-// 错误 3: 内存区域为空
-memory_regions = []  # ❌ 至少需要一个
-
-// Panic: VM must have at least one memory region
-
-// 错误 4: 无效的镜像位置
-[kernel]
-image_location = "network"  # ❌ 不支持
-
-// Panic: Invalid image_location: 'network'. Must be 'memory' or 'fs'
-```
-
-### 配置后处理
-
-#### 内存地址调整（恒等映射）
-
-**问题背景**：
-
-对于裸机操作系统（如 ArceOS），使用恒等映射（GPA = HPA）时，配置文件中的地址可能不是实际分配的物理地址。需要在运行时调整所有相关地址。
-
-**调整函数**（`kernel/src/vmm/config.rs`）：
-
-```rust
-fn config_guest_address(vm: &VM, main_memory: &VMMemoryRegion) {
-    const MB: usize = 1024 * 1024;
-
-    vm.with_config(|config| {
-        // 仅对恒等映射进行调整
-        if !main_memory.is_identical() {
-            debug!("Memory is not identical mapping, no adjustment needed");
-            return;
-        }
-
-        debug!(
-            "Adjusting addresses for identical mapping:\n\
-             - Original kernel GPA: {:#x}\n\
-             - Actual memory GPA:   {:#x}\n\
-             - Memory size:         {:#x}",
-            config.image_config.kernel_load_gpa.as_usize(),
-            main_memory.gpa.as_usize(),
-            main_memory.size()
-        );
-
-        // ═══════════════════════════════════════
-        // 计算内核加载地址
-        // ═══════════════════════════════════════
-        let mut kernel_addr = main_memory.gpa;
-
-        // 如果有 BIOS，内核地址需要偏移
-        if config.image_config.bios_load_gpa.is_some() {
-            kernel_addr += 2 * MB;  // BIOS 占用前 2MB
-            debug!("BIOS present, kernel offset by 2MB");
-        }
-
-        // ═══════════════════════════════════════
-        // 更新所有相关地址
-        // ═══════════════════════════════════════
-        config.image_config.kernel_load_gpa = kernel_addr;
-        config.cpu_config.bsp_entry = kernel_addr;
-        config.cpu_config.ap_entry = kernel_addr;
-
-        info!(
-            "Address adjustment complete:\n\
-             - New kernel GPA: {:#x}\n\
-             - BSP entry:      {:#x}\n\
-             - AP entry:       {:#x}",
-            kernel_addr.as_usize(),
-            config.cpu_config.bsp_entry.as_usize(),
-            config.cpu_config.ap_entry.as_usize()
-        );
-    });
-}
-```
-
-**调整示例**：
-
-```
-配置文件：
-  memory_regions = [[0x4000_0000, 0x800_0000, 0x7, 1]]  # 8MB 恒等映射
-  kernel_load_addr = 0x4020_0000
-  entry_point = 0x4020_0000
-
-实际分配：
-  vm.alloc_memory_region(..., None)
-  -> 系统分配物理地址 0x8000_0000
-
-调整后：
-  kernel_load_gpa = 0x8020_0000  (0x8000_0000 + 2MB)
-  bsp_entry       = 0x8020_0000
-  ap_entry        = 0x8020_0000
-```
-
-**为什么需要调整**：
-
-1. **恒等映射约束**：裸机 OS 期望 GPA = HPA
-2. **物理地址不确定**：实际分配的物理地址由系统决定
-3. **地址依赖**：内核加载地址、入口点、BIOS 偏移都相互关联
-4. **简化配置**：用户不需要猜测实际物理地址
-
----
-
-## FDT 设备树处理
-
-### FDT 处理概述和架构
-
-#### FDT 在 AxVisor 中的角色
-
-**设备树（Device Tree）** 是 ARM 平台描述硬件拓扑的标准方式。AxVisor 使用 FDT 实现：
-
-1. **设备发现**：从宿主机 FDT 提取硬件信息
-2. **资源分配**：为客户机分配 CPU、内存、设备
-3. **DTB 生成**：为客户机生成定制的 DTB
-4. **设备直通**：配置设备直接访问
-
-**FDT 处理流程图**：
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  宿主机 FDT (Host FDT)                                       │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  • Bootloader 传递的完整设备树                              │
-│  • 包含所有硬件信息（CPU、内存、设备、中断）                │
-│  • 格式：DTB (Device Tree Blob，二进制)                     │
-│  • 位置：通过 axhal::get_bootarg() 获取                     │
-└──────────────────┬──────────────────────────────────────────┘
-                   │
-                   │ get_host_fdt()
-                   │ fdt_parser::Fdt::from_bytes()
-                   ▼
-┌─────────────────────────────────────────────────────────────┐
-│  宿主机 FDT 解析                                             │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  1. set_phys_cpu_sets()                                      │
-│     └─ 提取 /cpus/cpu@* 节点                                │
-│        └─ 计算 VCpu 到物理 CPU 的亲和性掩码                 │
-│                                                              │
-│  2. setup_guest_fdt_from_vmm() 或 update_provided_fdt()     │
-│     ├─ 用户提供 DTB？                                       │
-│     │   ├─ 是：update_cpu_node() 更新 CPU 节点             │
-│     │   └─ 否：                                              │
-│     │       ├─ find_all_passthrough_devices()               │
-│     │       │   └─ 发现直通设备及其依赖                     │
-│     │       └─ crate_guest_fdt()                            │
-│     │           └─ 生成客户机 DTB                           │
-│     │                                                        │
-│     └─ crate_guest_fdt_with_cache()                         │
-│         └─ 缓存生成的 DTB                                   │
-└──────────────────┬──────────────────────────────────────────┘
-                   │
-                   │ get_vm_dtb_arc()
-                   ▼
-┌─────────────────────────────────────────────────────────────┐
-│  客户机 DTB 后处理                                           │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  1. parse_passthrough_devices_address()                      │
-│     └─ 提取设备物理地址和大小                               │
-│        └─ 填充 vm_config.pass_through_devices               │
-│                                                              │
-│  2. parse_vm_interrupt()                                     │
-│     └─ 提取 GIC SPI 中断                                    │
-│        └─ 填充 vm_config.spi_list                           │
-└──────────────────┬──────────────────────────────────────────┘
-                   │
-                   │ update_fdt() (镜像加载时)
-                   ▼
-┌─────────────────────────────────────────────────────────────┐
-│  客户机 DTB 最终处理                                         │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  1. 添加内存节点（根据 VM 实际分配的内存）                  │
-│  2. 计算 DTB 加载地址                                        │
-│  3. 加载到客户机内存                                         │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### FDT 模块架构
-
-**模块组织**（`kernel/src/vmm/fdt/`）：
-
-```
-kernel/src/vmm/fdt/
-├── mod.rs          # FDT 模块入口和协调逻辑
-│   ├─ handle_fdt_operations()   ★ 主入口
-│   ├─ init_dtb_cache()
-│   ├─ get_developer_provided_dtb()
-│   └─ crate_guest_fdt_with_cache()
-│
-├── parser.rs       # 设备树解析和配置提取
-│   ├─ get_host_fdt()             ★ 获取宿主机 FDT
-│   ├─ set_phys_cpu_sets()        ★ CPU 亲和性计算
-│   ├─ setup_guest_fdt_from_vmm() ★ 生成客户机 FDT
-│   ├─ parse_passthrough_devices_address()  ★ 设备地址解析
-│   ├─ parse_vm_interrupt()       ★ 中断解析
-│   └─ update_provided_fdt()
-│
-├── device.rs       # 设备依赖分析和直通设备发现
-│   ├─ find_all_passthrough_devices()  ★ 三阶段设备发现
-│   ├─ build_node_path()           # 构建节点路径
-│   ├─ build_optimized_node_cache() # 节点缓存
-│   ├─ build_phandle_map()         # phandle 映射表
-│   ├─ parse_phandle_property()    # phandle 解析
-│   └─ get_descendant_nodes_by_path() # 获取后代节点
-│
-├── create.rs       # 客户机 FDT 生成
-│   ├─ crate_guest_fdt()           ★ 生成 DTB
-│   ├─ update_fdt()                # 更新内存节点
-│   ├─ update_cpu_node()           # 更新 CPU 节点
-│   ├─ add_memory_node()           # 添加内存节点
-│   ├─ calculate_dtb_load_addr()   # 计算 DTB 地址
-│   └─ 各种辅助函数
-│
-└── print.rs        # FDT 调试输出工具
-    ├─ print_fdt()                 # 打印宿主机 FDT
-    └─ print_guest_fdt()           # 打印客户机 FDT
-```
-
-**数据流**：
-
-```
-TOML 配置
-    │
-    ├─ passthrough_devices: [["/soc/uart@fe660000"]]
-    └─ phys_cpu_ids: [0x0, 0x100]
-    │
-    ▼
-handle_fdt_operations()
-    │
-    ├─→ get_host_fdt()
-    │   └─→ 宿主机 DTB 二进制数据
-    │
-    ├─→ set_phys_cpu_sets()
-    │   ├─ 输入：phys_cpu_ids, host_fdt
-    │   └─ 输出：phys_cpu_sets (亲和性掩码)
-    │
-    ├─→ setup_guest_fdt_from_vmm()
-    │   ├─ find_all_passthrough_devices()
-    │   │   ├─ 输入：初始设备列表
-    │   │   └─ 输出：完整设备列表（包含依赖）
-    │   │
-    │   └─ crate_guest_fdt()
-    │       ├─ 输入：host_fdt, 设备列表
-    │       └─ 输出：客户机 DTB 二进制
-    │
-    ├─→ parse_passthrough_devices_address()
-    │   ├─ 输入：客户机 DTB
-    │   └─ 输出：填充 pass_through_devices（地址、大小）
-    │
-    └─→ parse_vm_interrupt()
-        ├─ 输入：客户机 DTB
-        └─ 输出：填充 spi_list（中断号）
-```
-
-### 宿主机 FDT 解析
-
-#### 获取宿主机 FDT
-
-**get_host_fdt() 实现**（`kernel/src/vmm/fdt/parser.rs`）：
-
-```rust
-/// 从 Bootloader 传递的地址获取宿主机 FDT
-///
-/// # ARM Boot Protocol
-/// - Bootloader 通过 x0 寄存器传递 DTB 地址
-/// - DTB 是 FDT 的二进制格式（Flattened Device Tree Blob）
-/// - Magic Number: 0xd00dfeed（大端序）
-///
-/// # 返回值
-/// 返回宿主机 FDT 的完整字节切片（生命周期 'static）
-pub fn get_host_fdt() -> &'static [u8] {
-    const FDT_VALID_MAGIC: u32 = 0xd00d_feed;
-
-    // ═══════════════════════════════════════
-    // 步骤 1: 获取 Bootloader 传递的 DTB 地址
-    // ═══════════════════════════════════════
-    // axhal::get_bootarg() 返回 x0 寄存器值
-    let bootarg: usize = std::os::arceos::modules::axhal::get_bootarg();
-    debug!("Bootloader DTB address: {:#x}", bootarg);
-
-    // ═══════════════════════════════════════
-    // 步骤 2: 读取 FDT 头部
-    // ═══════════════════════════════════════
-    let header_bytes = unsafe {
-        core::slice::from_raw_parts(
-            bootarg as *const u8,
-            core::mem::size_of::<FdtHeader>()
-        )
-    };
-
-    // 解析头部结构
-    let fdt_header = FdtHeader::from_bytes(header_bytes)
-        .map_err(|e| format!("Failed to parse FDT header: {:#?}", e))
-        .expect("Invalid FDT header");
-
-    // ═══════════════════════════════════════
-    // 步骤 3: 验证 Magic Number
-    // ═══════════════════════════════════════
-    if fdt_header.magic.get() != FDT_VALID_MAGIC {
-        error!(
-            "FDT magic check failed:\n\
-             - Expected: {:#x}\n\
-             - Got:      {:#x}",
-            FDT_VALID_MAGIC,
-            fdt_header.magic.get()
-        );
-        panic!("Invalid FDT magic number");
-    }
-
-    // ═══════════════════════════════════════
-    // 步骤 4: 读取完整 FDT
-    // ═══════════════════════════════════════
-    let total_size = fdt_header.total_size();
-    debug!(
-        "FDT header validated:\n\
-         - Magic: {:#x}\n\
-         - Total size: {} bytes\n\
-         - Version: {}",
-        fdt_header.magic.get(),
-        total_size,
-        fdt_header.version.get()
-    );
-
-    unsafe {
-        core::slice::from_raw_parts(bootarg as *const u8, total_size)
-    }
-}
-```
-
-**FDT 头部结构**（`fdt_parser` crate）：
-
-```rust
-/// FDT 头部结构（44 字节）
-#[repr(C)]
-pub struct FdtHeader {
-    pub magic: BigEndian<u32>,         // 0x00: Magic (0xd00dfeed)
-    pub totalsize: BigEndian<u32>,     // 0x04: 总大小
-    pub off_dt_struct: BigEndian<u32>, // 0x08: 结构块偏移
-    pub off_dt_strings: BigEndian<u32>,// 0x0C: 字符串块偏移
-    pub off_mem_rsvmap: BigEndian<u32>,// 0x10: 内存保留映射偏移
-    pub version: BigEndian<u32>,       // 0x14: FDT 版本
-    pub last_comp_version: BigEndian<u32>, // 0x18: 最后兼容版本
-    pub boot_cpuid_phys: BigEndian<u32>,   // 0x1C: 引导 CPU 物理 ID
-    pub size_dt_strings: BigEndian<u32>,   // 0x20: 字符串块大小
-    pub size_dt_struct: BigEndian<u32>,    // 0x24: 结构块大小
-}
-
-impl FdtHeader {
-    /// 解析头部
-    pub fn from_bytes(bytes: &[u8]) -> Result<&Self, FdtError> {
-        if bytes.len() < core::mem::size_of::<Self>() {
-            return Err(FdtError::BadSize);
-        }
-
-        unsafe {
-            Ok(&*(bytes.as_ptr() as *const Self))
-        }
-    }
-
-    /// 获取总大小
-    pub fn total_size(&self) -> usize {
-        self.totalsize.get() as usize
-    }
-}
-```
-
-**Big-Endian 处理**：
-
-```rust
-/// FDT 使用大端序（网络字节序）
-#[repr(transparent)]
-pub struct BigEndian<T>(T);
-
-impl BigEndian<u32> {
-    /// 转换为本地字节序
-    pub fn get(&self) -> u32 {
-        u32::from_be(self.0)
-    }
-}
-
-// 示例：
-// FDT 中存储：0x00 0x01 0x00 0x00（大端序）
-// 读取为 u32：0x00010000
-```
-
-**错误处理**：
-
-```rust
-// 场景 1: Bootloader 未传递 DTB
-// bootarg = 0
-// -> 读取地址 0 会导致段错误
-
-// 场景 2: DTB 地址错误
-// Magic 校验失败
-// -> 打印错误信息并 panic
-
-// 场景 3: DTB 损坏
-// total_size 过小或过大
-// -> 后续解析会失败
-```
-
-#### FDT 数据结构
-
-**FDT 布局**：
-
-```
-┌─────────────────────────────────────┐  ← bootarg (DTB 基地址)
-│  FDT Header (44 bytes)              │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  magic:         0xd00dfeed          │
-│  totalsize:     <total size>        │
-│  off_dt_struct: <offset>            │
-│  off_dt_strings:<offset>            │
-│  ...                                │
-├─────────────────────────────────────┤  ← off_mem_rsvmap
-│  Memory Reservation Block           │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  (address, size) pairs              │
-│  terminated by (0, 0)               │
-├─────────────────────────────────────┤  ← off_dt_struct
-│  Structure Block                    │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  FDT_BEGIN_NODE                     │
-│    "/"                              │
-│    FDT_PROP                         │
-│      compatible = "..."             │
-│    FDT_BEGIN_NODE                   │
-│      "cpus"                         │
-│      FDT_BEGIN_NODE                 │
-│        "cpu@0"                      │
-│        FDT_PROP                     │
-│          reg = <0x0>                │
-│      FDT_END_NODE                   │
-│    FDT_END_NODE                     │
-│  FDT_END_NODE                       │
-│  FDT_END                            │
-├─────────────────────────────────────┤  ← off_dt_strings
-│  Strings Block                      │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  "compatible\0"                     │
-│  "reg\0"                            │
-│  "device_type\0"                    │
-│  "rockchip,rk3588\0"                │
-│  ...                                │
-└─────────────────────────────────────┘  ← bootarg + totalsize
-```
-
-**Structure Block Token**：
-
-```rust
-const FDT_BEGIN_NODE: u32 = 0x1;  // 开始节点
-const FDT_END_NODE: u32 = 0x2;    // 结束节点
-const FDT_PROP: u32 = 0x3;        // 属性
-const FDT_NOP: u32 = 0x4;         // 空操作
-const FDT_END: u32 = 0x9;         // FDT 结束
-```
-
-**节点表示**（`fdt_parser` crate）：
-
-```rust
-/// FDT 节点
-pub struct Node<'a> {
-    /// 节点名称（如 "cpu@0"）
-    name: &'a str,
-
-    /// 节点层级（1 = 根节点）
-    pub level: usize,
-
-    /// 节点数据（原始字节）
-    data: &'a [u8],
-
-    /// 字符串块引用
-    strings: &'a [u8],
-}
-
-impl<'a> Node<'a> {
-    /// 获取节点名称
-    pub fn name(&self) -> &'a str {
-        self.name
-    }
-
-    /// 获取属性迭代器
-    pub fn propertys(&self) -> PropertyIter<'a> {
-        PropertyIter::new(self.data, self.strings)
-    }
-
-    /// 获取 'reg' 属性（地址和大小）
-    pub fn reg(&self) -> Option<RegIter<'a>> {
-        self.property("reg")
-            .map(|prop| RegIter::new(prop.raw_value()))
-    }
-
-    /// 获取 'compatible' 属性
-    pub fn compatible(&self) -> Option<Compatible<'a>> {
-        self.property("compatible")
-            .map(|prop| Compatible::new(prop.raw_value()))
-    }
-
-    /// 查找属性
-    pub fn property(&self, name: &str) -> Option<Property<'a>> {
-        self.propertys().find(|p| p.name == name)
-    }
-
-    /// 获取 phandle
-    pub fn phandle(&self) -> Option<Phandle> {
-        self.property("phandle")
-            .or_else(|| self.property("linux,phandle"))
-            .map(|prop| Phandle(prop.u32()))
-    }
-}
-```
-
-**属性表示**：
-
-```rust
-/// FDT 属性
-pub struct Property<'a> {
-    /// 属性名称（如 "reg", "compatible"）
-    pub name: &'a str,
-
-    /// 属性值（原始字节）
-    value: &'a [u8],
-}
-
-impl<'a> Property<'a> {
-    /// 获取原始值
-    pub fn raw_value(&self) -> &'a [u8] {
-        self.value
-    }
-
-    /// 作为 u32（大端序转本地序）
-    pub fn u32(&self) -> u32 {
-        u32::from_be_bytes([
-            self.value[0],
-            self.value[1],
-            self.value[2],
-            self.value[3],
-        ])
-    }
-
-    /// 作为字符串
-    pub fn as_str(&self) -> Option<&'a str> {
-        core::str::from_utf8(self.value).ok()
-    }
-
-    /// 作为 u32 数组
-    pub fn as_u32_array(&self) -> impl Iterator<Item = u32> + 'a {
-        self.value
-            .chunks_exact(4)
-            .map(|chunk| u32::from_be_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
-    }
-}
-```
-
-#### FDT 解析示例
-
-**遍历所有节点**：
-
-```rust
-let fdt_bytes = get_host_fdt();
-let fdt = Fdt::from_bytes(fdt_bytes)
-    .expect("Failed to parse FDT");
-
-for node in fdt.all_nodes() {
-    println!("Node: {} (level: {})", node.name(), node.level);
-
-    for prop in node.propertys() {
-        println!("  Property: {}", prop.name);
-    }
-}
-```
-
-**查找 CPU 节点**：
-
-```rust
-let cpu_nodes: Vec<_> = fdt.find_nodes("/cpus/cpu").collect();
-println!("Found {} CPU nodes", cpu_nodes.len());
-
-for cpu_node in cpu_nodes {
-    if let Some(mut reg_iter) = cpu_node.reg() {
-        if let Some(reg) = reg_iter.next() {
-            println!(
-                "CPU {}: MPIDR = {:#x}",
-                cpu_node.name(),
-                reg.address
-            );
-        }
-    }
-}
-```
-
-**读取 compatible 属性**：
-
-```rust
-let root = fdt.find_node("/").expect("Root node not found");
-
-if let Some(compat) = root.compatible() {
-    for comp_str in compat {
-        println!("Compatible: {}", comp_str);
-    }
-}
-
-// 输出示例：
-// Compatible: rockchip,rk3588
-// Compatible: rockchip,rk3588evb
-```
-
-**读取 reg 属性**：
-
-```rust
-let uart_node = fdt.find_node("/soc/serial@fe660000")
-    .expect("UART not found");
-
-if let Some(mut reg_iter) = uart_node.reg() {
-    while let Some(reg) = reg_iter.next() {
-        println!(
-            "UART region: base={:#x}, size={:#x}",
-            reg.address,
-            reg.size.unwrap_or(0)
-        );
-    }
-}
-```
-
-### CPU 亲和性计算
-
-#### ARM MPIDR 寄存器
-
-**MPIDR（Multiprocessor Affinity Register）**：
-
-ARM 处理器使用 MPIDR 寄存器标识每个 CPU 核心：
-
-```
-MPIDR_EL1 (64-bit)
-┌────────────┬─────────────┬─────────────┬─────────────┬─────────────┐
-│ [63:40]    │ [39:32]     │ [23:16]     │ [15:8]      │ [7:0]       │
-│ RES0       │ Aff3        │ Aff2        │ Aff1        │ Aff0        │
-└────────────┴─────────────┴─────────────┴─────────────┴─────────────┘
-
-Aff0: 核心 ID（同一个簇内）
-Aff1: 簇 ID
-Aff2: 集群 ID
-Aff3: 保留
-```
-
-**RK3588 示例**（8 核处理器）：
-
-```
-CPU 0 (Little Core 0): MPIDR = 0x0000_0000
-CPU 1 (Little Core 1): MPIDR = 0x0000_0100
-CPU 2 (Little Core 2): MPIDR = 0x0000_0200
-CPU 3 (Little Core 3): MPIDR = 0x0000_0300
-CPU 4 (Big Core 0):    MPIDR = 0x0000_0400
-CPU 5 (Big Core 1):    MPIDR = 0x0000_0500
-CPU 6 (Big Core 2):    MPIDR = 0x0000_0600
-CPU 7 (Big Core 3):    MPIDR = 0x0000_0700
-```
-
-#### CPU 亲和性计算算法
-
-**set_phys_cpu_sets() 实现**（`kernel/src/vmm/fdt/parser.rs`）：
-
-```rust
-/// 从宿主机 FDT 计算 VCpu 到物理 CPU 的亲和性掩码
-///
-/// # 输入
-/// - vm_cfg: VM 配置（将被修改）
-/// - fdt: 宿主机 FDT
-/// - crate_config: VM 创建配置（包含 phys_cpu_ids）
-///
-/// # 输出
-/// - 填充 vm_cfg.phys_cpu_ls.phys_cpu_sets
-pub fn set_phys_cpu_sets(
-    vm_cfg: &mut AxVMConfig,
-    fdt: &Fdt,
-    crate_config: &AxVMCrateConfig,
-) {
-    // ═══════════════════════════════════════════════════
-    // 步骤 1: 获取配置中的物理 CPU ID 列表
-    // ═══════════════════════════════════════════════════
-    let phys_cpu_ids = crate_config
-        .base
-        .phys_cpu_ids
-        .as_ref()
-        .expect("ERROR: phys_cpu_ids not found in config.toml");
-
-    debug!("Requested physical CPU IDs: {:x?}", phys_cpu_ids);
-
-    // ═══════════════════════════════════════════════════
-    // 步骤 2: 从宿主机 FDT 提取所有 CPU 节点
-    // ═══════════════════════════════════════════════════
-    let host_cpus: Vec<_> = fdt.find_nodes("/cpus/cpu").collect();
-    info!("Found {} host CPU nodes", host_cpus.len());
-
-    // ═══════════════════════════════════════════════════
-    // 步骤 3: 提取每个 CPU 节点的 MPIDR 值
-    // ═══════════════════════════════════════════════════
-    let cpu_nodes_info: Vec<(String, usize)> = host_cpus
-        .iter()
-        .filter_map(|cpu_node| {
-            // 获取 'reg' 属性（包含 MPIDR 值）
-            if let Some(mut cpu_reg) = cpu_node.reg() {
-                if let Some(r) = cpu_reg.next() {
-                    let cpu_address = r.address as usize;
-                    info!(
-                        "CPU node: {}, MPIDR: {:#x}",
-                        cpu_node.name(),
-                        cpu_address
-                    );
-                    return Some((cpu_node.name().to_string(), cpu_address));
-                }
-            }
-            None
-        })
-        .collect();
-
-    // ═══════════════════════════════════════════════════
-    // 步骤 4: 构建唯一 CPU 地址列表（按 FDT 顺序）
-    // ═══════════════════════════════════════════════════
-    let mut unique_cpu_addresses = Vec::new();
-    for (_, cpu_address) in &cpu_nodes_info {
-        if !unique_cpu_addresses.contains(cpu_address) {
-            unique_cpu_addresses.push(*cpu_address);
-        } else {
-            panic!("Duplicate CPU address found: {:#x}", cpu_address);
-        }
-    }
-
-    // 打印 CPU 索引分配
-    for (index, &cpu_address) in unique_cpu_addresses.iter().enumerate() {
-        for (cpu_name, node_address) in &cpu_nodes_info {
-            if *node_address == cpu_address {
-                debug!(
-                    "CPU node: {}, MPIDR: {:#x}, assigned index: {}",
-                    cpu_name, cpu_address, index
-                );
-                break;
-            }
-        }
-    }
-
-    // ═══════════════════════════════════════════════════
-    // 步骤 5: 计算亲和性掩码
-    // ═══════════════════════════════════════════════════
-    let mut new_phys_cpu_sets = Vec::new();
-
-    for phys_cpu_id in phys_cpu_ids {
-        // 在 unique_cpu_addresses 中查找索引
-        if let Some(cpu_index) = unique_cpu_addresses
-            .iter()
-            .position(|&addr| addr == *phys_cpu_id)
-        {
-            // 计算位掩码：1 << cpu_index
-            let cpu_mask = 1usize << cpu_index;
-
-            new_phys_cpu_sets.push(cpu_mask);
-
-            debug!(
-                "VCpu with phys_cpu_id {:#x} -> CPU index {} (mask: {:#x})",
-                phys_cpu_id, cpu_index, cpu_mask
-            );
-        } else {
-            error!(
-                "phys_cpu_id {:#x} not found in device tree!",
-                phys_cpu_id
-            );
-            panic!("Invalid phys_cpu_id");
-        }
-    }
-
-    // ═══════════════════════════════════════════════════
-    // 步骤 6: 更新 VM 配置
-    // ═══════════════════════════════════════════════════
-    info!("Calculated phys_cpu_sets: {:?}", new_phys_cpu_sets);
-
-    vm_cfg
-        .phys_cpu_ls_mut()
-        .set_guest_cpu_sets(new_phys_cpu_sets);
-
-    // 打印最终映射
-    debug!(
-        "Final VCpu mappings: {:?}",
-        vm_cfg.phys_cpu_ls_mut().get_vcpu_affinities_pcpu_ids()
-    );
-}
-```
-
-**算法详解**：
-
-1. **输入**：
-   ```
-   phys_cpu_ids = [0x0, 0x100, 0x200, 0x300]
-   ```
-
-2. **从 FDT 提取**：
-   ```
-   /cpus/cpu@0:   reg = <0x0>    -> MPIDR = 0x0
-   /cpus/cpu@100: reg = <0x100>  -> MPIDR = 0x100
-   /cpus/cpu@200: reg = <0x200>  -> MPIDR = 0x200
-   /cpus/cpu@300: reg = <0x300>  -> MPIDR = 0x300
-   ...
-   ```
-
-3. **构建唯一列表**（去重并保持顺序）：
-   ```
-   unique_cpu_addresses = [0x0, 0x100, 0x200, 0x300, 0x400, ...]
-   索引:                   [0,    1,     2,     3,     4,   ...]
-   ```
-
-4. **计算掩码**：
-   ```
-   phys_cpu_id = 0x0   -> index = 0 -> mask = 1 << 0 = 0b0001 = 1
-   phys_cpu_id = 0x100 -> index = 1 -> mask = 1 << 1 = 0b0010 = 2
-   phys_cpu_id = 0x200 -> index = 2 -> mask = 1 << 2 = 0b0100 = 4
-   phys_cpu_id = 0x300 -> index = 3 -> mask = 1 << 3 = 0b1000 = 8
-   ```
-
-5. **输出**：
-   ```
-   phys_cpu_sets = [1, 2, 4, 8]
-   ```
-
-**CPU 掩码的含义**：
-
-```
-掩码 0b0001 (1)  : 绑定到物理 CPU 索引 0
-掩码 0b0010 (2)  : 绑定到物理 CPU 索引 1
-掩码 0b0100 (4)  : 绑定到物理 CPU 索引 2
-掩码 0b1000 (8)  : 绑定到物理 CPU 索引 3
-掩码 0b1111 (15) : 可以在 CPU 0-3 上运行（多个位）
-```
-
-**使用掩码**（`kernel/src/vmm/vcpus.rs`）：
-
-```rust
-fn alloc_vcpu_task(vm: VMRef, vcpu: VCpuRef) -> AxTaskRef {
-    let mut vcpu_task = TaskInner::new(...);
-
-    // 设置 CPU 亲和性
-    if let Some(phys_cpu_set) = vcpu.phys_cpu_set() {
-        // phys_cpu_set 就是上面计算的掩码
-        vcpu_task.set_cpumask(AxCpuMask::from_raw_bits(phys_cpu_set));
-
-        info!(
-            "VCpu[{}] pinned to CPU mask: {:#b}",
-            vcpu.id(),
-            phys_cpu_set
-        );
-    }
-
-    axtask::spawn_task(vcpu_task)
-}
-```
-
-#### PhysCpuList 详解
-
-**数据结构**（`axvm/src/config.rs`）：
-
-```rust
-#[derive(Debug, Default, Clone)]
-pub struct PhysCpuList {
-    cpu_num: usize,                       // VCpu 总数
-    phys_cpu_ids: Option<Vec<usize>>,     // 物理 CPU MPIDR 值
-    phys_cpu_sets: Option<Vec<usize>>,    // CPU 亲和性掩码
-}
-```
-
-**核心方法**：
-
-```rust
-impl PhysCpuList {
-    /// 返回 (VCpu ID, 亲和性掩码, 物理 ID) 三元组列表
-    ///
-    /// # 返回值
-    /// Vec<(VCpu ID, Option<亲和性掩码>, 物理 CPU ID)>
-    ///
-    /// # 示例
-    /// ```
-    /// let mappings = phys_cpu_ls.get_vcpu_affinities_pcpu_ids();
-    /// // [
-    /// //   (0, Some(1), 0x0),    // VCpu 0 -> 掩码 1, MPIDR 0x0
-    /// //   (1, Some(2), 0x100),  // VCpu 1 -> 掩码 2, MPIDR 0x100
-    /// //   (2, Some(4), 0x200),  // VCpu 2 -> 掩码 4, MPIDR 0x200
-    /// //   (3, Some(8), 0x300),  // VCpu 3 -> 掩码 8, MPIDR 0x300
-    /// // ]
-    /// ```
-    pub fn get_vcpu_affinities_pcpu_ids(&self) -> Vec<(usize, Option<usize>, usize)> {
-        let mut vcpu_pcpu_tuples = Vec::new();
-
-        // ═══════════════════════════════════════
-        // 验证配置一致性
-        // ═══════════════════════════════════════
-        if let Some(phys_cpu_ids) = &self.phys_cpu_ids {
-            if self.cpu_num != phys_cpu_ids.len() {
-                error!(
-                    "CPU count mismatch: cpu_num={}, phys_cpu_ids.len()={}",
-                    self.cpu_num,
-                    phys_cpu_ids.len()
-                );
-            }
-        }
-
-        // ═══════════════════════════════════════
-        // 步骤 1: 初始化（vCPU ID, None, VCpu ID）
-        // ═══════════════════════════════════════
-        for vcpu_id in 0..self.cpu_num {
-            vcpu_pcpu_tuples.push((vcpu_id, None, vcpu_id));
-        }
-
-        // ═══════════════════════════════════════
-        // 步骤 2: 填充亲和性掩码
-        // ═══════════════════════════════════════
-        if let Some(phys_cpu_sets) = &self.phys_cpu_sets {
-            for (vcpu_id, pcpu_mask) in phys_cpu_sets.iter().enumerate() {
-                vcpu_pcpu_tuples[vcpu_id].1 = Some(*pcpu_mask);
-            }
-        }
-
-        // ═══════════════════════════════════════
-        // 步骤 3: 填充物理 CPU ID（MPIDR）
-        // ═══════════════════════════════════════
-        if let Some(phys_cpu_ids) = &self.phys_cpu_ids {
-            for (vcpu_id, phys_id) in phys_cpu_ids.iter().enumerate() {
-                vcpu_pcpu_tuples[vcpu_id].2 = *phys_id;
-            }
-        }
-
-        vcpu_pcpu_tuples
-    }
-
-    /// 设置亲和性掩码列表
-    pub fn set_guest_cpu_sets(&mut self, phys_cpu_sets: Vec<usize>) {
-        self.phys_cpu_sets = Some(phys_cpu_sets);
-    }
-
-    /// 获取 VCpu 数量
-    pub fn cpu_num(&self) -> usize {
-        self.cpu_num
-    }
-
-    /// 获取物理 CPU ID 列表
-    pub fn phys_cpu_ids(&self) -> &Option<Vec<usize>> {
-        &self.phys_cpu_ids
-    }
-
-    /// 获取亲和性掩码列表
-    pub fn phys_cpu_sets(&self) -> &Option<Vec<usize>> {
-        &self.phys_cpu_sets
-    }
-}
-```
-
-**使用场景**：
-
-1. **创建 VCpu 任务时设置亲和性**：
-   ```rust
-   let mappings = vm.get_vcpu_affinities_pcpu_ids();
-   for (vcpu_id, affinity, _) in mappings {
-       let vcpu_task = create_vcpu_task(...);
-       if let Some(mask) = affinity {
-           vcpu_task.set_cpumask(AxCpuMask::from_raw_bits(mask));
-       }
-   }
-   ```
-
-2. **CpuUp 时查找 VCpu ID**：
-   ```rust
-   // 客户机调用 PSCI CPU_ON，传递物理 CPU ID
-   let target_cpu = 0x100;  // MPIDR
-
-   let mappings = vm.get_vcpu_affinities_pcpu_ids();
-   let target_vcpu_id = mappings.iter()
-       .find_map(|(vid, _, pid)| {
-           if *pid == target_cpu {
-               Some(*vid)
-           } else {
-               None
-           }
-       })
-       .expect("CPU not found");
-
-   vcpu_on(vm, target_vcpu_id, entry_point, arg);
-   ```
-
-3. **调试输出**：
-   ```rust
-   vm show 0 --full
-   // VCpu Affinities:
-   //   VCpu[0] -> pCPU[0] (affinity: 0x1, MPIDR: 0x0)
-   //   VCpu[1] -> pCPU[1] (affinity: 0x2, MPIDR: 0x100)
-   //   VCpu[2] -> pCPU[2] (affinity: 0x4, MPIDR: 0x200)
-   //   VCpu[3] -> pCPU[3] (affinity: 0x8, MPIDR: 0x300)
-   ```
-
-### 设备发现与依赖分析
-
-#### 设备发现概述
-
-**问题背景**：
-
-在设备直通场景中，用户配置文件仅指定根设备节点（如 `/soc/uart@fe660000`），但实际上该设备可能依赖其他设备才能正常工作：
-
-1. **子设备**：设备节点下的后代节点（如 DMA 通道、子控制器）
-2. **依赖设备**：通过 phandle 引用的其他设备（如时钟控制器、电源域、复位控制器）
-
-**三阶段**（`find_all_passthrough_devices`）：
-
-```
-阶段 1: 发现后代节点
-   └─ 输入：用户配置的设备列表
-   └─ 输出：所有子设备、孙设备等后代节点
-
-阶段 2: 发现依赖设备
-   └─ 输入：阶段 1 的所有设备
-   └─ 输出：所有依赖设备（递归解析 phandle 引用）
-
-阶段 3: 移除排除设备
-   └─ 输入：阶段 2 的所有设备 + excluded_devices 列表
-   └─ 输出：最终的直通设备列表
-```
-
-#### 数据结构准备
-
-**节点缓存**（`build_optimized_node_cache`）：
-
-构建优化的节点缓存表用于避免多次遍历 FDT 树（O(n²) → O(n)），按完整路径索引节点，加速查找。
-
-**phandle 映射表**（`build_phandle_map`）：
-
-构建 phandle 到节点信息的映射表，数据结构为 `BTreeMap<phandle, (节点路径, #*-cells 属性)>`。
-
-cells 属性包括：
-- #clock-cells: 时钟指定器长度
-- #reset-cells: 复位指定器长度
-- #power-domain-cells: 电源域指定器长度
-- #phy-cells: PHY 指定器长度
-- 等等
-
-#### 阶段 1：后代节点发现
-
-该阶段遍历初始设备列表，对每个设备调用 `get_descendant_nodes_by_path()` 获取所有后代节点。后代节点查找算法在 node_cache 中查找所有以 parent_path 为前缀的节点。
-
-示例：
-```
-parent_path = "/soc/usb@fc000000"
-
-返回：[
-    "/soc/usb@fc000000/phy",
-    "/soc/usb@fc000000/connector",
-    "/soc/usb@fc000000/port@0",
-    "/soc/usb@fc000000/port@0/endpoint",
-]
-```
-
-####阶段 2：依赖设备发现
-
-使用工作队列算法递归查找所有依赖设备。对于每个设备，调用 `find_device_dependencies()` 查找其通过 phandle 引用的依赖设备，然后将这些依赖设备加入工作队列继续处理，直到队列为空。
-
-处理的属性包括：
-- clocks: 时钟依赖
-- power-domains: 电源域依赖
-- resets: 复位控制器依赖
-- phys: PHY 依赖
-- *-supply: 电源供应依赖
-- *-gpios: GPIO 依赖
-- dmas: DMA 依赖
-- 等等
-
-**phandle 属性解析**支持三种格式：
-1. 单 phandle: `<phandle>`
-2. phandle + 指定符: `<phandle specifier1 specifier2 ...>`
-3. 多 phandle 引用: `<phandle1 spec1 spec2 phandle2 spec1 spec2 ...>`
-
-**cells 数量计算**根据属性名称和目标节点的 cells 信息确定需要的 cells 数量，例如：
-- clocks → #clock-cells
-- resets → #reset-cells
-- power-domains → #power-domain-cells
-- phys → #phy-cells
-
-#### 阶段 3：排除设备处理
-
-该阶段处理 excluded_devices 列表：
-1. 查找排除设备的所有后代
-2. 合并所有设备名称列表
-3. 从最终列表中移除排除设备及其后代
-4. 移除根节点 "/"
-
-### 客户机 DTB 生成
-
-#### DTB 生成概述
-
-**目标**：从宿主机 FDT 提取必要节点，生成客户机专用的 DTB。
-
-**生成策略**：
-
-节点包含规则：
-1. 根节点 "/"：必须包含
-2. CPU 节点：仅包含 phys_cpu_ids 指定的 CPU
-3. 内存节点：跳过（稍后根据 VM 实际内存动态添加）
-4. 直通设备节点：包含（来自设备发现阶段）
-5. 设备后代节点：包含（子节点、孙节点等）
-6. 设备祖先节点：包含（父节点、祖父节点等，用于维护树结构）
-7. 其他节点：跳过
-
-#### DTB 生成实现
-
-主函数 `crate_guest_fdt()` 遍历所有节点，根据 `determine_node_action()` 返回的动作选择性包含节点：
-
-**节点动作枚举**：
-- Skip：跳过节点
-- RootNode：根节点
-- CpuNode：CPU 节点
-- IncludeAsPassthroughDevice：直通设备节点
-- IncludeAsChildNode：直通设备的子节点
-- IncludeAsAncestorNode：直通设备的祖先节点
-
-**CPU 节点过滤**：
-1. /cpus 节点：总是包含
-2. /cpus/cpu@* 节点：仅包含 phys_cpu_ids 中指定的 CPU
-
-**节点层级处理**：当节点层级降低时（从子节点回到父节点），需要结束中间的所有节点以确保正确的 FDT 结构。
-
-#### 内存节点更新
-
-客户机 DTB 生成后，内存节点需要根据 VM 实际分配的内存动态添加。这在镜像加载时通过 `update_fdt()` 完成。
-
-**添加内存节点** DTB 格式：
-```dts
-memory {
-    device_type = "memory";
-    reg = <address_high address_low size_high size_low>;
-};
-```
-
-**DTB 加载地址计算**策略：
-1. 如果配置中已指定 dtb_load_gpa 且不是恒等映射：使用配置值
-2. 否则：计算为内存末尾 - DTB 大小，2MB 对齐
-
-计算示例：
-```
-VM 内存配置：memory_regions = [[0x8000_0000, 0x1000_0000, 0x7, 0]]  # 256MB
-DTB 大小：0x5000  # 20KB
-计算结果：0x8fe00000
-```
-
-#### 用户提供 DTB 的处理
-
-用户可能提供自己的 DTB 文件（通过 `dtb_path` 配置），此时需要更新其中的 CPU 节点。`update_cpu_node()` 的策略是：
-1. 从用户 DTB 复制所有非 CPU 节点
-2. 从宿主机 FDT 复制过滤后的 CPU 节点
-
-### 设备地址和中断解析
-
-#### 解析概述
-
-生成的客户机 DTB 包含设备节点，但配置结构（`AxVMConfig`）需要提取设备的物理地址和中断信息，用于：
-1. **内存映射**：建立设备寄存器区域的 GPA → HPA 映射
-2. **中断注入**：配置 vGIC，转发设备中断到客户机
-
-#### 设备地址解析
-
-`parse_passthrough_devices_address()` 遍历所有节点，提取 reg 属性。
-
-**reg 属性格式**：
-```dts
-// 单个区域
-reg = <0x0 0xfe660000 0x0 0x100>;
-//     高32位 低32位   大小高 大小低
-
-// 多个区域
-reg = <0x0 0xfe660000 0x0 0x100>,   // 区域 0
-      <0x0 0xfe661000 0x0 0x1000>;  // 区域 1
-```
-
-对于多区域设备，第一个区域使用设备名称，后续区域使用 `{name}-region{index}` 格式。
-
-#### 中断解析
-
-`parse_vm_interrupt()` 遍历所有节点，提取 interrupts 属性。
-
-**interrupts 属性格式**：
-```dts
-interrupts = <GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>;
-//           类型     编号  触发方式
-
-// 原始数据格式（大端序）：
-// [0x00000000, 0x00000067, 0x00000004]
-//  类型 (0 = SPI)  中断号 (103)  标志 (LEVEL_HIGH)
-```
-
-每个中断占 3 个 u32：(type, number, flags)。仅提取 type = 0 (SPI) 的中断，结果去重并排序后存入 `vm_cfg.spi_list`。
-
-### 性能优化和缓存策略
-
-#### DTB 缓存机制
-
-DTB 生成是计算密集型操作，对于相同配置不应重复生成。使用全局 DTB 缓存 `GENERATED_DTB_CACHE` 存储生成的 DTB，以 VM ID 为键。
-
-缓存流程：
-```
-VM 初始化
-    ├─→ handle_fdt_operations()
-    │   ├─ setup_guest_fdt_from_vmm()
-    │   │   ├─ crate_guest_fdt()  ← 生成 DTB
-    │   │   └─ crate_guest_fdt_with_cache()  ← 存入缓存
-    │   └─ parse_passthrough_devices_address()
-    │       └─ get_vm_dtb_arc()  ← 从缓存读取
-    └─→ 镜像加载
-        └─ update_fdt()
-            └─ get_vm_dtb_arc()  ← 从缓存读取
-```
-
-### 调试工具
-
-#### FDT 打印工具
-
-`print_fdt()` 和 `print_guest_fdt()` 提供调试输出，遍历所有节点并格式化打印。对于常见属性（reg、compatible、phandle）提供特殊处理，其他属性显示原始十六进制数据（前 16 字节）。
-
-#### 设备发现日志
-
-关键日志点：
-- 阶段 1：`trace` 级别记录后代节点发现
-- 阶段 2：`trace` 级别记录依赖分析，`debug` 级别记录 phandle 解析
-- 阶段 3：`info` 级别记录排除设备
-- 最终结果：`info` 级别记录总设备数和新增数
-
-日志级别使用：
-- `trace`：详细的节点遍历信息
-- `debug`：phandle 解析、依赖查找
-- `info`：阶段完成、最终结果
-- `warn`：数据格式错误、预期外情况
-- `error`：严重错误（解析失败、重复路径）
-
----
-
-## 客户机管理工具
-
-### VM 列表管理
-
-#### 数据结构设计
+### 数据结构设计
 
 **VMList 结构**（`kernel/src/vmm/vm_list.rs`）：
 
@@ -2383,7 +56,7 @@ let vms_0_to_10: Vec<_> = vm_list
 // O(log n) vs O(1) 差异可忽略
 ```
 
-#### VMList 实现
+### VMList 实现
 
 ```rust
 impl VMList {
@@ -2434,7 +107,7 @@ impl VMList {
 }
 ```
 
-#### 全局 API
+### 全局 API
 
 ```rust
 /// 添加 VM 到全局列表
@@ -2478,9 +151,9 @@ pub fn get_vm_list() -> Vec<VMRef> {
 }
 ```
 
-### VCpu 任务管理
+## VCpu 任务管理
 
-#### VMVCpus 数据结构
+### VMVCpus 数据结构
 
 **结构定义**（`kernel/src/vmm/vcpus.rs`）：
 
@@ -2564,7 +237,7 @@ impl Queue {
 }
 ```
 
-#### VCpu 任务生命周期
+### VCpu 任务生命周期
 
 **主 VCpu 设置**（`setup_vm_primary_vcpu`）：
 
@@ -2693,7 +366,7 @@ fn alloc_vcpu_task(vm: VMRef, vcpu: VCpuRef) -> AxTaskRef {
 }
 ```
 
-#### VCpu 主循环
+### VCpu 主循环
 
 **vcpu_run 实现**：
 
@@ -2791,7 +464,7 @@ fn vcpu_run() {
 }
 ```
 
-#### VMExit 处理
+### VMExit 处理
 
 **Hypercall**：
 
@@ -2920,7 +593,7 @@ AxVCpuExitReason::SystemDown => {
 }
 ```
 
-### AxVisor Shell 实现
+## AxVisor Shell 实现
 
 AxVisor 提供了强大的交互式 Shell 命令系统,用于虚拟机的全生命周期管理。Shell 命令系统采用**命令树(Command Tree)**架构,支持子命令、选项标志和位置参数的灵活组合。本节深入分析 Shell 命令的内部实现机制,包括命令解析、状态验证、批处理等核心功能。
 AxVisor Shell 命令框架采用**命令树(Command Tree)**架构，提供灵活、可扩展的命令管理系统。框架的核心设计理念是：
@@ -2930,7 +603,7 @@ AxVisor Shell 命令框架采用**命令树(Command Tree)**架构，提供灵活
 3. **类型安全**: 利用 Rust 类型系统确保参数解析的正确性
 4. **零成本抽象**: 命令解析和分发在编译期完成大部分工作，运行时开销最小
 
-#### 设计目标
+### 设计目标
 
 - **用户友好**: 直观的命令语法（类似 Docker/Kubectl）
 - **开发友好**: 简单的命令添加流程，无需修改核心框架
@@ -2940,9 +613,9 @@ AxVisor Shell 命令框架采用**命令树(Command Tree)**架构，提供灵活
 
 ---
 
-#### 命令框架架构 
+### 命令框架架构 
 
-##### 整体架构
+#### 整体架构
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -2988,7 +661,7 @@ AxVisor Shell 命令框架采用**命令树(Command Tree)**架构，提供灵活
 └─────────────────────────────────────────────────────────────┘
 ```
 
-##### 命令解析流程
+#### 命令解析流程
 
 命令从用户输入到执行的完整流程：
 
@@ -3018,7 +691,7 @@ if let Some(handler) = node.handler {
     handler(&parsed);
 }
 ```
-###### 详细的解析阶段
+##### 详细的解析阶段
 
 **阶段 1: 词法分析 (Tokenization)** 
 
@@ -3278,11 +951,11 @@ fn validate_arguments(
 }
 ```
 
-##### 命令树设计
+#### 命令树设计
 
 命令树是框架的核心数据结构，使用 `BTreeMap` 组织子命令，提供有序遍历能力。
 
-###### 设计理念 
+##### 设计理念 
 
 ```
 理念 1: 层次化命名空间
@@ -3303,7 +976,7 @@ fn validate_arguments(
   - 可递归展示整个命令树结构
 ```
 
-###### 树的组织示例
+##### 树的组织示例
 
 ```
 Root CommandTree
@@ -3337,11 +1010,11 @@ Root CommandTree
 
 ```
 
-#### 参数解析机制
+### 参数解析机制
 
 参数分为三类：**位置参数**、**选项**和**标志**。
 
-##### 参数类型对比
+#### 参数类型对比
 
 | 参数类型 | 语法示例 | 解析结果 | 用途 |
 |---------|---------|---------|------|
@@ -3352,7 +1025,7 @@ Root CommandTree
 | **标志（长）** | `--force` | `flags: {"force": true}` | 布尔开关，无需值 |
 | **标志（短）** | `-f` | `flags: {"f": true}` | 标志的简写形式 |
 
-##### 解析优先级和规则
+#### 解析优先级和规则
 
 ```rust
 // 解析规则决策树
@@ -3387,7 +1060,7 @@ if token.starts_with("--") {
 }
 ```
 
-##### 特殊语法支持
+#### 特殊语法支持
 
 **1. 混合参数顺序**
 
@@ -3421,9 +1094,9 @@ vm exec 0 -- ls -la --color=auto
 
 ---
 
-#### 核心数据结构
+### 核心数据结构
 
-##### CommandNode - 命令节点
+#### CommandNode - 命令节点
 
 ```rust
 /// 命令树的节点
@@ -3507,7 +1180,7 @@ impl CommandNode {
 }
 ```
 
-##### OptionDef - 选项定义
+#### OptionDef - 选项定义
 
 ```rust
 /// 命令选项定义
@@ -3576,7 +1249,7 @@ impl OptionDef {
 }
 ```
 
-##### FlagDef - 标志定义
+#### FlagDef - 标志定义
 
 ```rust
 /// 命令标志定义
@@ -3614,7 +1287,7 @@ impl FlagDef {
 }
 ```
 
-##### ParsedCommand - 解析结果 
+#### ParsedCommand - 解析结果 
 
 ```rust
 /// 解析后的命令
@@ -3662,7 +1335,7 @@ impl ParsedCommand {
 }
 ```
 
-##### CommandTree - 命令树
+#### CommandTree - 命令树
 
 ```rust
 /// 命令树
@@ -3770,11 +1443,11 @@ impl CommandTree {
 
 --- 
 
-#### 命令注册机制
+### 命令注册机制
 
 命令注册采用**构建器模式**，代码简洁易读。
 
-##### 注册流程
+#### 注册流程
 
 ```rust
 /// VM 命令树构建函数
@@ -3835,7 +1508,7 @@ pub fn build_vm_command() -> CommandNode {
 }
 ```
 
-##### 条件编译支持
+#### 条件编译支持
 
 ```rust
 /// 支持条件编译的命令注册
@@ -3861,9 +1534,9 @@ pub fn build_vm_command() -> CommandNode {
 ```
 ---
 
-#### 命令执行流程
+### 命令执行流程
 
-##### 完整的执行路径
+#### 完整的执行路径
 
 ```rust
 // Shell 主循环
@@ -3897,7 +1570,7 @@ pub fn run_shell() {
 }
 ```
 
-##### 命令处理函数签名
+#### 命令处理函数签名
 
 所有命令处理函数遵循统一的签名：
 
@@ -3929,9 +1602,9 @@ fn vm_start(cmd: &ParsedCommand) {
 ```
 
 ---
-#### VM 管理命令实现
+### VM 管理命令实现
 
-##### 状态验证函数
+#### 状态验证函数
 
 **状态验证的必要性**
 
@@ -4069,7 +1742,7 @@ fn can_resume_vm(status: VMStatus) -> Result<(), &'static str> {
 }
 ```
 
-##### VM 创建
+#### VM 创建
 
 **vm create 命令设计**
 
@@ -4169,7 +1842,7 @@ vm create /guest/linux-rk3588.toml
 vm create /guest/vm1.toml /guest/vm2.toml /guest/vm3.toml
 ```
 
-##### VM 启动
+#### VM 启动
 
 **vm start 命令设计**
 
@@ -4333,7 +2006,7 @@ vm start 0 1 2
 
 ```
 
-##### VM 停止
+#### VM 停止
 
 **vm stop 命令设计**
 
@@ -4500,7 +2173,7 @@ vm stop 0 --force
 vm stop 0 1 2
 ```
 
-##### VM 暂停和恢复(实现未完善)
+#### VM 暂停和恢复(实现未完善)
 
 **suspend/resume 命令设计**
 
@@ -4705,7 +2378,7 @@ fn resume_vm_by_id(vm_id: usize) {
 }
 ```
 
-##### VM 重启
+#### VM 重启
 
 **vm restart 命令设计**
 
@@ -4891,7 +2564,7 @@ fn restart_vm_by_id(vm_id: usize, force: bool) {
 }
 ```
 
-##### VM 删除
+#### VM 删除
 
 **vm delete 命令设计**
 
@@ -5216,7 +2889,7 @@ vm delete 0 --force
 vm delete 0 --keep-data
 ```
 
-##### VM 列表
+#### VM 列表
 
 **vm list 命令设计**
 
@@ -5490,7 +3163,7 @@ vm list --format json
 }
 ```
 
-##### VM 详情
+#### VM 详情
 
 **vm show 命令设计**
 
