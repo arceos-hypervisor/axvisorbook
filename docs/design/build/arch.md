@@ -6,7 +6,7 @@ sidebar_position: 1
 
 Axvisor 是一个基于 Rust 的虚拟机监视器（Hypervisor）项目，采用了 `Cargo xtask` 构建系统来支持复杂的多平台、多架构的虚拟化解决方案。本文档将从源码角度详细分析 Axvisor 的构建系统，包括 xtask 的实现细节、构建配置管理、链接脚本生成、多平台支持等方面，帮助开发者深入理解项目的工作原理和构建流程。
 
-## 总体架构
+## 概述
 
 作为一个虚拟机监视器项目，Axvisor 需要支持多种硬件平台（如 ARM、x86、RISC-V）和不同的开发板（如 QEMU、Orange Pi、Phytium Pi 等），同时还要管理多个虚拟机配置以及处理在不同开发板上的开发调试。
 
@@ -143,9 +143,7 @@ xtask/
     └── vmconfig.rs     # 虚拟机配置
 ```
 
-### 核心组件
-
-#### 主入口点
+### 主入口点
 
 [`main.rs`](https://github.com/arceos-hypervisor/axvisor/tree/next/xtask/src/main.rs) 是 xtask 的入口点，使用 `clap` 库进行命令行参数解析。该文件定义了所有可用的命令和它们的参数结构。通过使用 Rust 的强类型系统和 `clap` 的派生宏，代码既简洁又类型安全。
 
@@ -176,7 +174,7 @@ enum Commands {
 
 这种设计模式使得添加新命令变得非常简单，只需要在 `Commands` 枚举中添加新的变体，并在 `main` 函数中添加相应的处理逻辑即可。每个命令都可以有自己的参数结构，实现了高度的可扩展性。
 
-#### 与 ostool 的集成
+### 与 ostool 的集成
 
 [`ctx.rs`](https://github.com/arceos-hypervisor/axvisor/tree/next/xtask/src/ctx.rs) 提供了构建上下文管理，这是整个 xtask 系统的核心数据结构。它封装了构建过程中需要的所有状态信息，包括工作目录、构建配置路径和虚拟机配置列表等。
 
@@ -195,7 +193,7 @@ pub struct Context {
 3. **扩展性**：可以轻松扩展 `ostool` 的功能，而不影响 xtask 的核心逻辑
 4. **维护性**：将通用功能集中在 `ostool` 中，降低维护成本
 
-#### 构建配置管理
+### 构建配置管理
 
 [`tbuld.rs`](https://github.com/arceos-hypervisor/axvisor/tree/next/xtask/src/tbuld.rs) 定义了构建配置结构和管理逻辑，这是 xtask 系统中最复杂的模块之一。它负责解析构建配置文件，验证参数，并将配置转换为 Cargo 可以理解的格式。
 
