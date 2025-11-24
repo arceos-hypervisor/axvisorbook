@@ -7,7 +7,7 @@ sidebar_label: "概述"
 
 AxVisor 是一个基于 [ArceOS](https://github.com/arceos-org/arceos) 框架实现的 Hypervisor。其目标是利用 ArceOS 提供的基础操作系统功能作为基础实现一个统一的组件化 Hypervisor。
 
-![AxVisor](./design/images/axvisor.png)
+![AxVisor](./design/arch/images/axvisor.png)
 
 **统一**是指使用同一套代码同时支持 x86_64、AArch64 、RISC-V LoongArch 这四种架构，以最大化复用架构无关代码，简化代码开发和维护成本。
 
