@@ -5,7 +5,7 @@ sidebar_label: "飞腾派"
 
 # 飞腾派
 
-本文档介绍如何在飞腾派（Phytium Pi）开发板上启动和验证 AxVisor 项目。飞腾派是基于飞腾 E2000 系列处理器的开发板，具有强大的国产化处理器和丰富的外设接口，是 AxVisor 虚拟化平台的重要硬件载体。
+本文档介绍如何在飞腾派（Phytium Pi）开发板上启动和验证 AxVisor 项目。在飞腾派开发板环境中，AxVisor 支持同时启动运行多个客户机操作系统，以下将启动 ArceOS 和 Linux 两个客户机操作系统。
 
 ## 环境要求
 
@@ -72,6 +72,7 @@ cp configs/board/phytiumpi.toml tmp/configs/
 
   ```bash
   cp configs/vms/arceos-aarch64-e2000-smp1.toml tmp/configs/
+
   cp configs/vms/linux-aarch64-e2000-smp1.toml tmp/configs/
   ```
 
@@ -91,7 +92,7 @@ cp configs/board/phytiumpi.toml tmp/configs/
 
 ### 生成配置
 
-使用 `cargo xtask defconfig phytiumpi` 命令设置 QEMU AArch64 为默认构建配置。这个命令会将 `configs/board/phytiumpi.toml` 复制为 `.build.toml`，作为默认的构建配置。
+使用 `cargo xtask defconfig phytiumpi` 命令设置 QEMU AArch64 为默认构建配置。实际上，这个命令会将 `configs/board/phytiumpi.toml` 复制为 `.build.toml`，作为默认的构建配置。
 
 ### 编译及启动
 

@@ -5,7 +5,7 @@ sidebar_label: "AArch64"
 
 # AArch64
 
-本文档介绍如何在 QEMU AArch64 环境中启动和验证 AxVisor 项目。在 QEMU AArch64 环境中，AxVisor 支持同时启动运行多个客户机操作系统。
+本文档介绍如何在 QEMU AArch64 环境中启动和验证 AxVisor 项目。在 QEMU AArch64 环境中，AxVisor 支持同时启动运行多个客户机操作系统，以下将启动 ArceOS 和 Linux 两个客户机操作系统。
 
 ## 环境要求
 
@@ -71,8 +71,8 @@ cp configs/board/qemu-aarch64.toml tmp/configs/
 1. 复制客户机配置文件：
 
     ```bash
-    # 复制客户机配置文件
     cp configs/vms/arceos-aarch64-qemu-smp1.toml tmp/configs/
+
     cp configs/vms/linux-aarch64-qemu-smp1.toml tmp/configs/
     ```
 
@@ -92,7 +92,7 @@ cp configs/board/qemu-aarch64.toml tmp/configs/
 
 ### 生成配置
 
-使用 `cargo xtask defconfig qemu-aarch64` 命令设置 QEMU AArch64 为默认构建配置。这个命令会将 `configs/board/qemu-aarch64.toml` 复制为 `.build.toml`，作为默认的构建配置。
+使用 `cargo xtask defconfig qemu-aarch64` 命令设置 QEMU AArch64 为默认构建配置。实际上，这个命令会将 `configs/board/qemu-aarch64.toml` 复制为 `.build.toml`，作为默认的构建配置。
 
 ### 编译及启动
 

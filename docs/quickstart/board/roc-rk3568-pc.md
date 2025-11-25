@@ -5,7 +5,7 @@ sidebar_label: "ROC-RK3568-PC"
 
 # ROC-RK3568-PC
 
-本文档介绍如何在 ROC-RK3568-PC 开发板上启动和验证 AxVisor 项目。ROC-RK3568-PC 是基于瑞芯微 RK3568 芯片的开发板，具有强大的计算能力和丰富的外设接口，是 AxVisor 虚拟化平台的理想硬件载体。
+本文档介绍如何在 ROC-RK3568-PC 开发板上启动和验证 AxVisor 项目。在 ROC-RK3568-PC 开发板环境中，AxVisor 支持同时启动运行多个客户机操作系统，以下将启动 ArceOS 和 Linux 两个客户机操作系统。
 
 ## 1. 环境要求
 
@@ -75,6 +75,7 @@ cp .github/workflows/uboot.toml tmp/configs/
 
   ```bash
   cp configs/vms/arceos-aarch64-rk3568-smp1.toml tmp/configs/
+
   cp configs/vms/linux-aarch64-rk3568-smp1.toml tmp/configs/
   ```
 
@@ -94,7 +95,7 @@ cp .github/workflows/uboot.toml tmp/configs/
 
 ### 生成配置
 
-使用 `cargo xtask defconfig roc-rk3568-pc` 命令设置 QEMU AArch64 为默认构建配置。这个命令会将 `configs/board/roc-rk3568-pc.toml` 复制为 `.build.toml`，作为默认的构建配置。
+使用 `cargo xtask defconfig roc-rk3568-pc` 命令设置 QEMU AArch64 为默认构建配置。实际上，这个命令会将 `configs/board/roc-rk3568-pc.toml` 复制为 `.build.toml`，作为默认的构建配置。
 
 ### 编译及启动
 
