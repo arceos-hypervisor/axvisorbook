@@ -1,1134 +1,629 @@
 ---
 sidebar_position: 2
 ---
+# 设备树（FDT）处理技术指南
 
-# FDT 设备树处理
+## 第一部分：使用说明
 
-## FDT 处理概述和架构
+### 1. 快速开始
 
-### FDT 在 AxVisor 中的角色
+AxVisor 的设备树（FDT）处理模块为 AArch64 架构的虚拟机提供定制化的设备树生成服务。根据需求，可以选择以下两种使用方式：
 
-**设备树（Device Tree）** 是 ARM 平台描述硬件拓扑的标准方式。AxVisor 使用 FDT 实现：
-
-1. **设备发现**：从宿主机 FDT 提取硬件信息
-2. **资源分配**：为客户机分配 CPU、内存、设备
-3. **DTB 生成**：为客户机生成定制的 DTB
-4. **设备直通**：配置设备直接访问
-
-**FDT 处理流程图**：
-
+**方式一：使用预定义设备树文件**
+```toml
+[kernel]
+dtb_path = "/path/to/your-custom.dtb"
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  宿主机 FDT (Host FDT)                                       │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  • Bootloader 传递的完整设备树                              │
-│  • 包含所有硬件信息（CPU、内存、设备、中断）                │
-│  • 格式：DTB (Device Tree Blob，二进制)                     │
-│  • 位置：通过 axhal::get_bootarg() 获取                     │
-└──────────────────┬──────────────────────────────────────────┘
-                   │
-                   │ get_host_fdt()
-                   │ fdt_parser::Fdt::from_bytes()
-                   ▼
-┌─────────────────────────────────────────────────────────────┐
-│  宿主机 FDT 解析                                             │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  1. set_phys_cpu_sets()                                      │
-│     └─ 提取 /cpus/cpu@* 节点                                │
-│        └─ 计算 VCpu 到物理 CPU 的亲和性掩码                 │
-│                                                              │
-│  2. setup_guest_fdt_from_vmm() 或 update_provided_fdt()     │
-│     ├─ 用户提供 DTB？                                       │
-│     │   ├─ 是：update_cpu_node() 更新 CPU 节点             │
-│     │   └─ 否：                                              │
-│     │       ├─ find_all_passthrough_devices()               │
-│     │       │   └─ 发现直通设备及其依赖                     │
-│     │       └─ crate_guest_fdt()                            │
-│     │           └─ 生成客户机 DTB                           │
-│     │                                                        │
-│     └─ crate_guest_fdt_with_cache()                         │
-│         └─ 缓存生成的 DTB                                   │
-└──────────────────┬──────────────────────────────────────────┘
-                   │
-                   │ get_vm_dtb_arc()
-                   ▼
-┌─────────────────────────────────────────────────────────────┐
-│  客户机 DTB 后处理                                           │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  1. parse_passthrough_devices_address()                      │
-│     └─ 提取设备物理地址和大小                               │
-│        └─ 填充 vm_config.pass_through_devices               │
-│                                                              │
-│  2. parse_vm_interrupt()                                     │
-│     └─ 提取 GIC SPI 中断                                    │
-│        └─ 填充 vm_config.spi_list                           │
-└──────────────────┬──────────────────────────────────────────┘
-                   │
-                   │ update_fdt() (镜像加载时)
-                   ▼
-┌─────────────────────────────────────────────────────────────┐
-│  客户机 DTB 最终处理                                         │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  1. 添加内存节点（根据 VM 实际分配的内存）                  │
-│  2. 计算 DTB 加载地址                                        │
-│  3. 加载到客户机内存                                         │
-└─────────────────────────────────────────────────────────────┘
+适用场景：已经有完整的、经过验证的设备树文件，后续将只会更新memory节点和CPU节点信息。
+
+**方式二：动态生成设备树**
+```toml
+[kernel]
+# dtb_path = ""  # 不使用此字段，触发动态生成
 ```
-
-### FDT 模块架构
-
-**模块组织**（`kernel/src/vmm/fdt/`）：
-
-```
-kernel/src/vmm/fdt/
-├── mod.rs          # FDT 模块入口和协调逻辑
-│   ├─ handle_fdt_operations()   ★ 主入口
-│   ├─ init_dtb_cache()
-│   ├─ get_developer_provided_dtb()
-│   └─ crate_guest_fdt_with_cache()
-│
-├── parser.rs       # 设备树解析和配置提取
-│   ├─ get_host_fdt()             ★ 获取宿主机 FDT
-│   ├─ set_phys_cpu_sets()        ★ CPU 亲和性计算
-│   ├─ setup_guest_fdt_from_vmm() ★ 生成客户机 FDT
-│   ├─ parse_passthrough_devices_address()  ★ 设备地址解析
-│   ├─ parse_vm_interrupt()       ★ 中断解析
-│   └─ update_provided_fdt()
-│
-├── device.rs       # 设备依赖分析和直通设备发现
-│   ├─ find_all_passthrough_devices()  ★ 三阶段设备发现
-│   ├─ build_node_path()           # 构建节点路径
-│   ├─ build_optimized_node_cache() # 节点缓存
-│   ├─ build_phandle_map()         # phandle 映射表
-│   ├─ parse_phandle_property()    # phandle 解析
-│   └─ get_descendant_nodes_by_path() # 获取后代节点
-│
-├── create.rs       # 客户机 FDT 生成
-│   ├─ crate_guest_fdt()           ★ 生成 DTB
-│   ├─ update_fdt()                # 更新内存节点
-│   ├─ update_cpu_node()           # 更新 CPU 节点
-│   ├─ add_memory_node()           # 添加内存节点
-│   ├─ calculate_dtb_load_addr()   # 计算 DTB 地址
-│   └─ 各种辅助函数
-│
-└── print.rs        # FDT 调试输出工具
-    ├─ print_fdt()                 # 打印宿主机 FDT
-    └─ print_guest_fdt()           # 打印客户机 FDT
-```
-
-**数据流**：
-
-```
-TOML 配置
-    │
-    ├─ passthrough_devices: [["/soc/uart@fe660000"]]
-    └─ phys_cpu_ids: [0x0, 0x100]
-    │
-    ▼
-handle_fdt_operations()
-    │
-    ├─→ get_host_fdt()
-    │   └─→ 宿主机 DTB 二进制数据
-    │
-    ├─→ set_phys_cpu_sets()
-    │   ├─ 输入：phys_cpu_ids, host_fdt
-    │   └─ 输出：phys_cpu_sets (亲和性掩码)
-    │
-    ├─→ setup_guest_fdt_from_vmm()
-    │   ├─ find_all_passthrough_devices()
-    │   │   ├─ 输入：初始设备列表
-    │   │   └─ 输出：完整设备列表（包含依赖）
-    │   │
-    │   └─ crate_guest_fdt()
-    │       ├─ 输入：host_fdt, 设备列表
-    │       └─ 输出：客户机 DTB 二进制
-    │
-    ├─→ parse_passthrough_devices_address()
-    │   ├─ 输入：客户机 DTB
-    │   └─ 输出：填充 pass_through_devices（地址、大小）
-    │
-    └─→ parse_vm_interrupt()
-        ├─ 输入：客户机 DTB
-        └─ 输出：填充 spi_list（中断号）
-```
-
-## 宿主机 FDT 解析
-
-### 获取宿主机 FDT
-
-**get_host_fdt() 实现**（`kernel/src/vmm/fdt/parser.rs`）：
-
-```rust
-/// 从 Bootloader 传递的地址获取宿主机 FDT
-///
-/// # ARM Boot Protocol
-/// - Bootloader 通过 x0 寄存器传递 DTB 地址
-/// - DTB 是 FDT 的二进制格式（Flattened Device Tree Blob）
-/// - Magic Number: 0xd00dfeed（大端序）
-///
-/// # 返回值
-/// 返回宿主机 FDT 的完整字节切片（生命周期 'static）
-pub fn get_host_fdt() -> &'static [u8] {
-    const FDT_VALID_MAGIC: u32 = 0xd00d_feed;
-
-    // ═══════════════════════════════════════
-    // 步骤 1: 获取 Bootloader 传递的 DTB 地址
-    // ═══════════════════════════════════════
-    // axhal::get_bootarg() 返回 x0 寄存器值
-    let bootarg: usize = std::os::arceos::modules::axhal::get_bootarg();
-    debug!("Bootloader DTB address: {:#x}", bootarg);
-
-    // ═══════════════════════════════════════
-    // 步骤 2: 读取 FDT 头部
-    // ═══════════════════════════════════════
-    let header_bytes = unsafe {
-        core::slice::from_raw_parts(
-            bootarg as *const u8,
-            core::mem::size_of::<FdtHeader>()
-        )
-    };
-
-    // 解析头部结构
-    let fdt_header = FdtHeader::from_bytes(header_bytes)
-        .map_err(|e| format!("Failed to parse FDT header: {:#?}", e))
-        .expect("Invalid FDT header");
-
-    // ═══════════════════════════════════════
-    // 步骤 3: 验证 Magic Number
-    // ═══════════════════════════════════════
-    if fdt_header.magic.get() != FDT_VALID_MAGIC {
-        error!(
-            "FDT magic check failed:\n\
-             - Expected: {:#x}\n\
-             - Got:      {:#x}",
-            FDT_VALID_MAGIC,
-            fdt_header.magic.get()
-        );
-        panic!("Invalid FDT magic number");
-    }
-
-    // ═══════════════════════════════════════
-    // 步骤 4: 读取完整 FDT
-    // ═══════════════════════════════════════
-    let total_size = fdt_header.total_size();
-    debug!(
-        "FDT header validated:\n\
-         - Magic: {:#x}\n\
-         - Total size: {} bytes\n\
-         - Version: {}",
-        fdt_header.magic.get(),
-        total_size,
-        fdt_header.version.get()
-    );
-
-    unsafe {
-        core::slice::from_raw_parts(bootarg as *const u8, total_size)
-    }
-}
-```
-
-**FDT 头部结构**（`fdt_parser` crate）：
-
-```rust
-/// FDT 头部结构（44 字节）
-#[repr(C)]
-pub struct FdtHeader {
-    pub magic: BigEndian<u32>,         // 0x00: Magic (0xd00dfeed)
-    pub totalsize: BigEndian<u32>,     // 0x04: 总大小
-    pub off_dt_struct: BigEndian<u32>, // 0x08: 结构块偏移
-    pub off_dt_strings: BigEndian<u32>,// 0x0C: 字符串块偏移
-    pub off_mem_rsvmap: BigEndian<u32>,// 0x10: 内存保留映射偏移
-    pub version: BigEndian<u32>,       // 0x14: FDT 版本
-    pub last_comp_version: BigEndian<u32>, // 0x18: 最后兼容版本
-    pub boot_cpuid_phys: BigEndian<u32>,   // 0x1C: 引导 CPU 物理 ID
-    pub size_dt_strings: BigEndian<u32>,   // 0x20: 字符串块大小
-    pub size_dt_struct: BigEndian<u32>,    // 0x24: 结构块大小
-}
-
-impl FdtHeader {
-    /// 解析头部
-    pub fn from_bytes(bytes: &[u8]) -> Result<&Self, FdtError> {
-        if bytes.len() < core::mem::size_of::<Self>() {
-            return Err(FdtError::BadSize);
-        }
-
-        unsafe {
-            Ok(&*(bytes.as_ptr() as *const Self))
-        }
-    }
-
-    /// 获取总大小
-    pub fn total_size(&self) -> usize {
-        self.totalsize.get() as usize
-    }
-}
-```
-
-**Big-Endian 处理**：
-
-```rust
-/// FDT 使用大端序（网络字节序）
-#[repr(transparent)]
-pub struct BigEndian<T>(T);
-
-impl BigEndian<u32> {
-    /// 转换为本地字节序
-    pub fn get(&self) -> u32 {
-        u32::from_be(self.0)
-    }
-}
-
-// 示例：
-// FDT 中存储：0x00 0x01 0x00 0x00（大端序）
-// 读取为 u32：0x00010000
-```
-
-**错误处理**：
-
-```rust
-// 场景 1: Bootloader 未传递 DTB
-// bootarg = 0
-// -> 读取地址 0 会导致段错误
-
-// 场景 2: DTB 地址错误
-// Magic 校验失败
-// -> 打印错误信息并 panic
-
-// 场景 3: DTB 损坏
-// total_size 过小或过大
-// -> 后续解析会失败
-```
-
-### FDT 数据结构
-
-**FDT 布局**：
-
-```
-┌─────────────────────────────────────┐  ← bootarg (DTB 基地址)
-│  FDT Header (44 bytes)              │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  magic:         0xd00dfeed          │
-│  totalsize:     <total size>        │
-│  off_dt_struct: <offset>            │
-│  off_dt_strings:<offset>            │
-│  ...                                │
-├─────────────────────────────────────┤  ← off_mem_rsvmap
-│  Memory Reservation Block           │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  (address, size) pairs              │
-│  terminated by (0, 0)               │
-├─────────────────────────────────────┤  ← off_dt_struct
-│  Structure Block                    │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  FDT_BEGIN_NODE                     │
-│    "/"                              │
-│    FDT_PROP                         │
-│      compatible = "..."             │
-│    FDT_BEGIN_NODE                   │
-│      "cpus"                         │
-│      FDT_BEGIN_NODE                 │
-│        "cpu@0"                      │
-│        FDT_PROP                     │
-│          reg = <0x0>                │
-│      FDT_END_NODE                   │
-│    FDT_END_NODE                     │
-│  FDT_END_NODE                       │
-│  FDT_END                            │
-├─────────────────────────────────────┤  ← off_dt_strings
-│  Strings Block                      │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│  "compatible\0"                     │
-│  "reg\0"                            │
-│  "device_type\0"                    │
-│  "rockchip,rk3588\0"                │
-│  ...                                │
-└─────────────────────────────────────┘  ← bootarg + totalsize
-```
-
-**Structure Block Token**：
-
-```rust
-const FDT_BEGIN_NODE: u32 = 0x1;  // 开始节点
-const FDT_END_NODE: u32 = 0x2;    // 结束节点
-const FDT_PROP: u32 = 0x3;        // 属性
-const FDT_NOP: u32 = 0x4;         // 空操作
-const FDT_END: u32 = 0x9;         // FDT 结束
-```
-
-**节点表示**（`fdt_parser` crate）：
-
-```rust
-/// FDT 节点
-pub struct Node<'a> {
-    /// 节点名称（如 "cpu@0"）
-    name: &'a str,
-
-    /// 节点层级（1 = 根节点）
-    pub level: usize,
-
-    /// 节点数据（原始字节）
-    data: &'a [u8],
-
-    /// 字符串块引用
-    strings: &'a [u8],
-}
-
-impl<'a> Node<'a> {
-    /// 获取节点名称
-    pub fn name(&self) -> &'a str {
-        self.name
-    }
-
-    /// 获取属性迭代器
-    pub fn propertys(&self) -> PropertyIter<'a> {
-        PropertyIter::new(self.data, self.strings)
-    }
-
-    /// 获取 'reg' 属性（地址和大小）
-    pub fn reg(&self) -> Option<RegIter<'a>> {
-        self.property("reg")
-            .map(|prop| RegIter::new(prop.raw_value()))
-    }
-
-    /// 获取 'compatible' 属性
-    pub fn compatible(&self) -> Option<Compatible<'a>> {
-        self.property("compatible")
-            .map(|prop| Compatible::new(prop.raw_value()))
-    }
-
-    /// 查找属性
-    pub fn property(&self, name: &str) -> Option<Property<'a>> {
-        self.propertys().find(|p| p.name == name)
-    }
-
-    /// 获取 phandle
-    pub fn phandle(&self) -> Option<Phandle> {
-        self.property("phandle")
-            .or_else(|| self.property("linux,phandle"))
-            .map(|prop| Phandle(prop.u32()))
-    }
-}
-```
-
-**属性表示**：
-
-```rust
-/// FDT 属性
-pub struct Property<'a> {
-    /// 属性名称（如 "reg", "compatible"）
-    pub name: &'a str,
-
-    /// 属性值（原始字节）
-    value: &'a [u8],
-}
-
-impl<'a> Property<'a> {
-    /// 获取原始值
-    pub fn raw_value(&self) -> &'a [u8] {
-        self.value
-    }
-
-    /// 作为 u32（大端序转本地序）
-    pub fn u32(&self) -> u32 {
-        u32::from_be_bytes([
-            self.value[0],
-            self.value[1],
-            self.value[2],
-            self.value[3],
-        ])
-    }
-
-    /// 作为字符串
-    pub fn as_str(&self) -> Option<&'a str> {
-        core::str::from_utf8(self.value).ok()
-    }
-
-    /// 作为 u32 数组
-    pub fn as_u32_array(&self) -> impl Iterator<Item = u32> + 'a {
-        self.value
-            .chunks_exact(4)
-            .map(|chunk| u32::from_be_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
-    }
-}
-```
-
-### FDT 解析示例
-
-**遍历所有节点**：
-
-```rust
-let fdt_bytes = get_host_fdt();
-let fdt = Fdt::from_bytes(fdt_bytes)
-    .expect("Failed to parse FDT");
-
-for node in fdt.all_nodes() {
-    println!("Node: {} (level: {})", node.name(), node.level);
-
-    for prop in node.propertys() {
-        println!("  Property: {}", prop.name);
-    }
-}
-```
-
-**查找 CPU 节点**：
-
-```rust
-let cpu_nodes: Vec<_> = fdt.find_nodes("/cpus/cpu").collect();
-println!("Found {} CPU nodes", cpu_nodes.len());
-
-for cpu_node in cpu_nodes {
-    if let Some(mut reg_iter) = cpu_node.reg() {
-        if let Some(reg) = reg_iter.next() {
-            println!(
-                "CPU {}: MPIDR = {:#x}",
-                cpu_node.name(),
-                reg.address
-            );
-        }
-    }
-}
-```
-
-**读取 compatible 属性**：
-
-```rust
-let root = fdt.find_node("/").expect("Root node not found");
-
-if let Some(compat) = root.compatible() {
-    for comp_str in compat {
-        println!("Compatible: {}", comp_str);
-    }
-}
-
-// 输出示例：
-// Compatible: rockchip,rk3588
-// Compatible: rockchip,rk3588evb
-```
-
-**读取 reg 属性**：
-
-```rust
-let uart_node = fdt.find_node("/soc/serial@fe660000")
-    .expect("UART not found");
-
-if let Some(mut reg_iter) = uart_node.reg() {
-    while let Some(reg) = reg_iter.next() {
-        println!(
-            "UART region: base={:#x}, size={:#x}",
-            reg.address,
-            reg.size.unwrap_or(0)
-        );
-    }
-}
-```
-
-## CPU 亲和性计算
-
-### ARM MPIDR 寄存器
-
-**MPIDR（Multiprocessor Affinity Register）**：
-
-ARM 处理器使用 MPIDR 寄存器标识每个 CPU 核心：
-
-```
-MPIDR_EL1 (64-bit)
-┌────────────┬─────────────┬─────────────┬─────────────┬─────────────┐
-│ [63:40]    │ [39:32]     │ [23:16]     │ [15:8]      │ [7:0]       │
-│ RES0       │ Aff3        │ Aff2        │ Aff1        │ Aff0        │
-└────────────┴─────────────┴─────────────┴─────────────┴─────────────┘
-
-Aff0: 核心 ID（同一个簇内）
-Aff1: 簇 ID
-Aff2: 集群 ID
-Aff3: 保留
-```
-
-**RK3588 示例**（8 核处理器）：
-
-```
-CPU 0 (Little Core 0): MPIDR = 0x0000_0000
-CPU 1 (Little Core 1): MPIDR = 0x0000_0100
-CPU 2 (Little Core 2): MPIDR = 0x0000_0200
-CPU 3 (Little Core 3): MPIDR = 0x0000_0300
-CPU 4 (Big Core 0):    MPIDR = 0x0000_0400
-CPU 5 (Big Core 1):    MPIDR = 0x0000_0500
-CPU 6 (Big Core 2):    MPIDR = 0x0000_0600
-CPU 7 (Big Core 3):    MPIDR = 0x0000_0700
-```
-
-### CPU 亲和性计算算法
-
-**set_phys_cpu_sets() 实现**（`kernel/src/vmm/fdt/parser.rs`）：
-
-```rust
-/// 从宿主机 FDT 计算 VCpu 到物理 CPU 的亲和性掩码
-///
-/// # 输入
-/// - vm_cfg: VM 配置（将被修改）
-/// - fdt: 宿主机 FDT
-/// - crate_config: VM 创建配置（包含 phys_cpu_ids）
-///
-/// # 输出
-/// - 填充 vm_cfg.phys_cpu_ls.phys_cpu_sets
-pub fn set_phys_cpu_sets(
-    vm_cfg: &mut AxVMConfig,
-    fdt: &Fdt,
-    crate_config: &AxVMCrateConfig,
-) {
-    // ═══════════════════════════════════════════════════
-    // 步骤 1: 获取配置中的物理 CPU ID 列表
-    // ═══════════════════════════════════════════════════
-    let phys_cpu_ids = crate_config
-        .base
-        .phys_cpu_ids
-        .as_ref()
-        .expect("ERROR: phys_cpu_ids not found in config.toml");
-
-    debug!("Requested physical CPU IDs: {:x?}", phys_cpu_ids);
-
-    // ═══════════════════════════════════════════════════
-    // 步骤 2: 从宿主机 FDT 提取所有 CPU 节点
-    // ═══════════════════════════════════════════════════
-    let host_cpus: Vec<_> = fdt.find_nodes("/cpus/cpu").collect();
-    info!("Found {} host CPU nodes", host_cpus.len());
-
-    // ═══════════════════════════════════════════════════
-    // 步骤 3: 提取每个 CPU 节点的 MPIDR 值
-    // ═══════════════════════════════════════════════════
-    let cpu_nodes_info: Vec<(String, usize)> = host_cpus
-        .iter()
-        .filter_map(|cpu_node| {
-            // 获取 'reg' 属性（包含 MPIDR 值）
-            if let Some(mut cpu_reg) = cpu_node.reg() {
-                if let Some(r) = cpu_reg.next() {
-                    let cpu_address = r.address as usize;
-                    info!(
-                        "CPU node: {}, MPIDR: {:#x}",
-                        cpu_node.name(),
-                        cpu_address
-                    );
-                    return Some((cpu_node.name().to_string(), cpu_address));
-                }
-            }
-            None
-        })
-        .collect();
-
-    // ═══════════════════════════════════════════════════
-    // 步骤 4: 构建唯一 CPU 地址列表（按 FDT 顺序）
-    // ═══════════════════════════════════════════════════
-    let mut unique_cpu_addresses = Vec::new();
-    for (_, cpu_address) in &cpu_nodes_info {
-        if !unique_cpu_addresses.contains(cpu_address) {
-            unique_cpu_addresses.push(*cpu_address);
-        } else {
-            panic!("Duplicate CPU address found: {:#x}", cpu_address);
-        }
-    }
-
-    // 打印 CPU 索引分配
-    for (index, &cpu_address) in unique_cpu_addresses.iter().enumerate() {
-        for (cpu_name, node_address) in &cpu_nodes_info {
-            if *node_address == cpu_address {
-                debug!(
-                    "CPU node: {}, MPIDR: {:#x}, assigned index: {}",
-                    cpu_name, cpu_address, index
-                );
-                break;
-            }
-        }
-    }
-
-    // ═══════════════════════════════════════════════════
-    // 步骤 5: 计算亲和性掩码
-    // ═══════════════════════════════════════════════════
-    let mut new_phys_cpu_sets = Vec::new();
-
-    for phys_cpu_id in phys_cpu_ids {
-        // 在 unique_cpu_addresses 中查找索引
-        if let Some(cpu_index) = unique_cpu_addresses
-            .iter()
-            .position(|&addr| addr == *phys_cpu_id)
-        {
-            // 计算位掩码：1 << cpu_index
-            let cpu_mask = 1usize << cpu_index;
-
-            new_phys_cpu_sets.push(cpu_mask);
-
-            debug!(
-                "VCpu with phys_cpu_id {:#x} -> CPU index {} (mask: {:#x})",
-                phys_cpu_id, cpu_index, cpu_mask
-            );
-        } else {
-            error!(
-                "phys_cpu_id {:#x} not found in device tree!",
-                phys_cpu_id
-            );
-            panic!("Invalid phys_cpu_id");
-        }
-    }
-
-    // ═══════════════════════════════════════════════════
-    // 步骤 6: 更新 VM 配置
-    // ═══════════════════════════════════════════════════
-    info!("Calculated phys_cpu_sets: {:?}", new_phys_cpu_sets);
-
-    vm_cfg
-        .phys_cpu_ls_mut()
-        .set_guest_cpu_sets(new_phys_cpu_sets);
-
-    // 打印最终映射
-    debug!(
-        "Final VCpu mappings: {:?}",
-        vm_cfg.phys_cpu_ls_mut().get_vcpu_affinities_pcpu_ids()
-    );
-}
-```
-
-**算法详解**：
-
-1. **输入**：
-   ```
-   phys_cpu_ids = [0x0, 0x100, 0x200, 0x300]
-   ```
-
-2. **从 FDT 提取**：
-   ```
-   /cpus/cpu@0:   reg = <0x0>    -> MPIDR = 0x0
-   /cpus/cpu@100: reg = <0x100>  -> MPIDR = 0x100
-   /cpus/cpu@200: reg = <0x200>  -> MPIDR = 0x200
-   /cpus/cpu@300: reg = <0x300>  -> MPIDR = 0x300
-   ...
-   ```
-
-3. **构建唯一列表**（去重并保持顺序）：
-   ```
-   unique_cpu_addresses = [0x0, 0x100, 0x200, 0x300, 0x400, ...]
-   索引:                   [0,    1,     2,     3,     4,   ...]
-   ```
-
-4. **计算掩码**：
-   ```
-   phys_cpu_id = 0x0   -> index = 0 -> mask = 1 << 0 = 0b0001 = 1
-   phys_cpu_id = 0x100 -> index = 1 -> mask = 1 << 1 = 0b0010 = 2
-   phys_cpu_id = 0x200 -> index = 2 -> mask = 1 << 2 = 0b0100 = 4
-   phys_cpu_id = 0x300 -> index = 3 -> mask = 1 << 3 = 0b1000 = 8
-   ```
-
-5. **输出**：
-   ```
-   phys_cpu_sets = [1, 2, 4, 8]
-   ```
-
-**CPU 掩码的含义**：
-
-```
-掩码 0b0001 (1)  : 绑定到物理 CPU 索引 0
-掩码 0b0010 (2)  : 绑定到物理 CPU 索引 1
-掩码 0b0100 (4)  : 绑定到物理 CPU 索引 2
-掩码 0b1000 (8)  : 绑定到物理 CPU 索引 3
-掩码 0b1111 (15) : 可以在 CPU 0-3 上运行（多个位）
-```
-
-**使用掩码**（`kernel/src/vmm/vcpus.rs`）：
-
-```rust
-fn alloc_vcpu_task(vm: VMRef, vcpu: VCpuRef) -> AxTaskRef {
-    let mut vcpu_task = TaskInner::new(...);
-
-    // 设置 CPU 亲和性
-    if let Some(phys_cpu_set) = vcpu.phys_cpu_set() {
-        // phys_cpu_set 就是上面计算的掩码
-        vcpu_task.set_cpumask(AxCpuMask::from_raw_bits(phys_cpu_set));
-
-        info!(
-            "VCpu[{}] pinned to CPU mask: {:#b}",
-            vcpu.id(),
-            phys_cpu_set
-        );
-    }
-
-    axtask::spawn_task(vcpu_task)
-}
-```
-
-### PhysCpuList 详解
-
-**数据结构**（`axvm/src/config.rs`）：
-
-```rust
-#[derive(Debug, Default, Clone)]
-pub struct PhysCpuList {
-    cpu_num: usize,                       // VCpu 总数
-    phys_cpu_ids: Option<Vec<usize>>,     // 物理 CPU MPIDR 值
-    phys_cpu_sets: Option<Vec<usize>>,    // CPU 亲和性掩码
-}
-```
-
-**核心方法**：
-
-```rust
-impl PhysCpuList {
-    /// 返回 (VCpu ID, 亲和性掩码, 物理 ID) 三元组列表
-    ///
-    /// # 返回值
-    /// Vec<(VCpu ID, Option<亲和性掩码>, 物理 CPU ID)>
-    ///
-    /// # 示例
-    /// ```
-    /// let mappings = phys_cpu_ls.get_vcpu_affinities_pcpu_ids();
-    /// // [
-    /// //   (0, Some(1), 0x0),    // VCpu 0 -> 掩码 1, MPIDR 0x0
-    /// //   (1, Some(2), 0x100),  // VCpu 1 -> 掩码 2, MPIDR 0x100
-    /// //   (2, Some(4), 0x200),  // VCpu 2 -> 掩码 4, MPIDR 0x200
-    /// //   (3, Some(8), 0x300),  // VCpu 3 -> 掩码 8, MPIDR 0x300
-    /// // ]
-    /// ```
-    pub fn get_vcpu_affinities_pcpu_ids(&self) -> Vec<(usize, Option<usize>, usize)> {
-        let mut vcpu_pcpu_tuples = Vec::new();
-
-        // ═══════════════════════════════════════
-        // 验证配置一致性
-        // ═══════════════════════════════════════
-        if let Some(phys_cpu_ids) = &self.phys_cpu_ids {
-            if self.cpu_num != phys_cpu_ids.len() {
-                error!(
-                    "CPU count mismatch: cpu_num={}, phys_cpu_ids.len()={}",
-                    self.cpu_num,
-                    phys_cpu_ids.len()
-                );
-            }
-        }
-
-        // ═══════════════════════════════════════
-        // 步骤 1: 初始化（vCPU ID, None, VCpu ID）
-        // ═══════════════════════════════════════
-        for vcpu_id in 0..self.cpu_num {
-            vcpu_pcpu_tuples.push((vcpu_id, None, vcpu_id));
-        }
-
-        // ═══════════════════════════════════════
-        // 步骤 2: 填充亲和性掩码
-        // ═══════════════════════════════════════
-        if let Some(phys_cpu_sets) = &self.phys_cpu_sets {
-            for (vcpu_id, pcpu_mask) in phys_cpu_sets.iter().enumerate() {
-                vcpu_pcpu_tuples[vcpu_id].1 = Some(*pcpu_mask);
-            }
-        }
-
-        // ═══════════════════════════════════════
-        // 步骤 3: 填充物理 CPU ID（MPIDR）
-        // ═══════════════════════════════════════
-        if let Some(phys_cpu_ids) = &self.phys_cpu_ids {
-            for (vcpu_id, phys_id) in phys_cpu_ids.iter().enumerate() {
-                vcpu_pcpu_tuples[vcpu_id].2 = *phys_id;
-            }
-        }
-
-        vcpu_pcpu_tuples
-    }
-
-    /// 设置亲和性掩码列表
-    pub fn set_guest_cpu_sets(&mut self, phys_cpu_sets: Vec<usize>) {
-        self.phys_cpu_sets = Some(phys_cpu_sets);
-    }
-
-    /// 获取 VCpu 数量
-    pub fn cpu_num(&self) -> usize {
-        self.cpu_num
-    }
-
-    /// 获取物理 CPU ID 列表
-    pub fn phys_cpu_ids(&self) -> &Option<Vec<usize>> {
-        &self.phys_cpu_ids
-    }
-
-    /// 获取亲和性掩码列表
-    pub fn phys_cpu_sets(&self) -> &Option<Vec<usize>> {
-        &self.phys_cpu_sets
-    }
-}
-```
-
-**使用场景**：
-
-1. **创建 VCpu 任务时设置亲和性**：
-   ```rust
-   let mappings = vm.get_vcpu_affinities_pcpu_ids();
-   for (vcpu_id, affinity, _) in mappings {
-       let vcpu_task = create_vcpu_task(...);
-       if let Some(mask) = affinity {
-           vcpu_task.set_cpumask(AxCpuMask::from_raw_bits(mask));
-       }
-   }
-   ```
-
-2. **CpuUp 时查找 VCpu ID**：
-   ```rust
-   // 客户机调用 PSCI CPU_ON，传递物理 CPU ID
-   let target_cpu = 0x100;  // MPIDR
-
-   let mappings = vm.get_vcpu_affinities_pcpu_ids();
-   let target_vcpu_id = mappings.iter()
-       .find_map(|(vid, _, pid)| {
-           if *pid == target_cpu {
-               Some(*vid)
-           } else {
-               None
-           }
-       })
-       .expect("CPU not found");
-
-   vcpu_on(vm, target_vcpu_id, entry_point, arg);
-   ```
-
-3. **调试输出**：
-   ```rust
-   vm show 0 --full
-   // VCpu Affinities:
-   //   VCpu[0] -> pCPU[0] (affinity: 0x1, MPIDR: 0x0)
-   //   VCpu[1] -> pCPU[1] (affinity: 0x2, MPIDR: 0x100)
-   //   VCpu[2] -> pCPU[2] (affinity: 0x4, MPIDR: 0x200)
-   //   VCpu[3] -> pCPU[3] (affinity: 0x8, MPIDR: 0x300)
-   ```
-
-## 设备发现与依赖分析
-
-### 设备发现概述
-
-**问题背景**：
-
-在设备直通场景中，用户配置文件仅指定根设备节点（如 `/soc/uart@fe660000`），但实际上该设备可能依赖其他设备才能正常工作：
-
-1. **子设备**：设备节点下的后代节点（如 DMA 通道、子控制器）
-2. **依赖设备**：通过 phandle 引用的其他设备（如时钟控制器、电源域、复位控制器）
-
-**三阶段**（`find_all_passthrough_devices`）：
-
-```
-阶段 1: 发现后代节点
-   └─ 输入：用户配置的设备列表
-   └─ 输出：所有子设备、孙设备等后代节点
-
-阶段 2: 发现依赖设备
-   └─ 输入：阶段 1 的所有设备
-   └─ 输出：所有依赖设备（递归解析 phandle 引用）
-
-阶段 3: 移除排除设备
-   └─ 输入：阶段 2 的所有设备 + excluded_devices 列表
-   └─ 输出：最终的直通设备列表
-```
-
-### 数据结构准备
-
-**节点缓存**（`build_optimized_node_cache`）：
-
-构建优化的节点缓存表用于避免多次遍历 FDT 树（O(n²) → O(n)），按完整路径索引节点，加速查找。
-
-**phandle 映射表**（`build_phandle_map`）：
-
-构建 phandle 到节点信息的映射表，数据结构为 `BTreeMap<phandle, (节点路径, #*-cells 属性)>`。
-
-cells 属性包括：
-- #clock-cells: 时钟指定器长度
-- #reset-cells: 复位指定器长度
-- #power-domain-cells: 电源域指定器长度
-- #phy-cells: PHY 指定器长度
-- 等等
-
-### 阶段 1：后代节点发现
-
-该阶段遍历初始设备列表，对每个设备调用 `get_descendant_nodes_by_path()` 获取所有后代节点。后代节点查找算法在 node_cache 中查找所有以 parent_path 为前缀的节点。
-
-示例：
-```
-parent_path = "/soc/usb@fc000000"
-
-返回：[
-    "/soc/usb@fc000000/phy",
-    "/soc/usb@fc000000/connector",
-    "/soc/usb@fc000000/port@0",
-    "/soc/usb@fc000000/port@0/endpoint",
+适用场景：无客户机设备树文件。
+
+### 2. 配置文件完整模板
+
+以下是一个完整的 VM 配置模板，包含了所有 FDT 相关的配置选项：
+
+```toml
+[base]
+id = 1                      # VM 唯一标识
+name = "my-vm"              # VM 名称，用于日志和调试
+vm_type = 1                 # 虚拟化类型（固定为1）
+cpu_num = 2                 # 虚拟CPU数量
+phys_cpu_ids = [0x200, 0x201]  # 物理CPU ID列表
+
+[kernel]
+# 镜像配置
+entry_point = 0x80200000    # 内核入口地址
+image_location = "memory"   # 镜像位置："memory" 或 "fs"
+kernel_path = "Image"       # 内核文件路径
+kernel_load_addr = 0x80200000  # 内核加载地址
+
+# 设备树配置
+#dtb_path = "/path/to/your-custom.dtb"   # 可选：预定义DTB
+#dtb_load_addr = 0x80000000               # 可选：DTB加载地址
+
+# 内存区域配置
+memory_regions = [
+    [0x80000000, 0x20000000, 0x7, 1],  # 基地址, 大小, 权限, 映射类型
+    [0xa0000000, 0x10000000, 0x7, 0]
+]
+
+[devices]
+# 直通设备配置（仅在动态生成时生效）
+passthrough_devices = [
+    ["/soc/uart@2800c000"],           # 完整路径格式（推荐）
+    # 或者传统格式，两种格式不可以混用
+    # ["uart0", 0x2800c000, 0x2800c000, 0x1000, 0x1] #[name, base_gpa, base_hpa, length, irq_id]
+]
+
+# 排除设备配置
+excluded_devices = [
+    ["/gic-v3"],                      # 排除中断控制器
+]
+
+# 直通地址配置
+passthrough_addresses = [
+    [0x28041000, 0x1000000],         # 基地址, 长度
 ]
 ```
 
-####阶段 2：依赖设备发现
+### 3. 字段说明
 
-使用工作队列算法递归查找所有依赖设备。对于每个设备，调用 `find_device_dependencies()` 查找其通过 phandle 引用的依赖设备，然后将这些依赖设备加入工作队列继续处理，直到队列为空。
+**3.1 `dtb_path`（设备树文件位置）**
 
-处理的属性包括：
-- clocks: 时钟依赖
-- power-domains: 电源域依赖
-- resets: 复位控制器依赖
-- phys: PHY 依赖
-- *-supply: 电源供应依赖
-- *-gpios: GPIO 依赖
-- dmas: DMA 依赖
-- 等等
+客户机设备树可以有两种来源，一种是基于axvisor的设备树和客户机配置文件生成的客户机设备树，另一种是基于开发者提供的客户机设备树。当客户机配置文件中使用`dtb_path`字段时，客户机设备树基于`dtb_path`字段指定的设备树文件生成，不使用该字段时基于axvisor设备树生成。
 
-**phandle 属性解析**支持三种格式：
-1. 单 phandle: `<phandle>`
-2. phandle + 指定符: `<phandle specifier1 specifier2 ...>`
-3. 多 phandle 引用: `<phandle1 spec1 spec2 phandle2 spec1 spec2 ...>`
+```toml
+[kernel]
+dtb_path = "/path/to/custom.dtb"  # 使用预定义设备树
+# dtb_path = ""                    # 动态生成设备树
+```
 
-**cells 数量计算**根据属性名称和目标节点的 cells 信息确定需要的 cells 数量，例如：
-- clocks → #clock-cells
-- resets → #reset-cells
-- power-domains → #power-domain-cells
-- phys → #phy-cells
+**3.2 `dtb_load_addr`(客户机设备树加载地址)**
 
-### 阶段 3：排除设备处理
+`dtb_load_addr`字段指定生成的客户机设备树放置的客户机物理地址（GPA），当使用该字段且当客户机内存使用直通方式（GPA=HVA）时，客户机设备树将会加载到该地址，当配置文件中未使用该字段或客户机内存使用非直通方式（GPA≠HVA）时，客户机设备树将放置到客户机内存的前512MB内存的最后一段的位置，该地址由axvisor计算获得。
 
-该阶段处理 excluded_devices 列表：
-1. 查找排除设备的所有后代
-2. 合并所有设备名称列表
-3. 从最终列表中移除排除设备及其后代
-4. 移除根节点 "/"
+**3.3 `phys_cpu_ids`(客户机CPU ID)**
 
-## 客户机 DTB 生成
+phys_cpu_ids字段用来选择客户机使用的CPU物理ID，例如飞腾派e2000平台的设备树cpus字段如下，其中reg属性中定义了CPU物理ID (0x200/0x201/0x00/0x100)。
+```
+cpus {
+    #address-cells = <0x02>;
+    #size-cells = <0x00>;
 
-### DTB 生成概述
+    cpu@0 {
+        compatible = "phytium,ftc310\0arm,armv8";
+        reg = <0x00 0x200>;
+        ...
+    };
 
-**目标**：从宿主机 FDT 提取必要节点，生成客户机专用的 DTB。
+    cpu@1 {
+        compatible = "phytium,ftc310\0arm,armv8";
+        reg = <0x00 0x201>;
+        ...
+    };
 
-**生成策略**：
+    cpu@100 {
+        compatible = "phytium,ftc664\0arm,armv8";
+        reg = <0x00 0x00>;
+        ...
+    };
 
-节点包含规则：
-1. 根节点 "/"：必须包含
-2. CPU 节点：仅包含 phys_cpu_ids 指定的 CPU
-3. 内存节点：跳过（稍后根据 VM 实际内存动态添加）
-4. 直通设备节点：包含（来自设备发现阶段）
-5. 设备后代节点：包含（子节点、孙节点等）
-6. 设备祖先节点：包含（父节点、祖父节点等，用于维护树结构）
-7. 其他节点：跳过
+    cpu@101 {
+        compatible = "phytium,ftc664\0arm,armv8";
+        reg = <0x00 0x100>;
+        ...
+    };
+};
+```
+**3.4 `memory_regions`(客户机内存地址)**
 
-### DTB 生成实现
-
-主函数 `crate_guest_fdt()` 遍历所有节点，根据 `determine_node_action()` 返回的动作选择性包含节点：
-
-**节点动作枚举**：
-- Skip：跳过节点
-- RootNode：根节点
-- CpuNode：CPU 节点
-- IncludeAsPassthroughDevice：直通设备节点
-- IncludeAsChildNode：直通设备的子节点
-- IncludeAsAncestorNode：直通设备的祖先节点
-
-**CPU 节点过滤**：
-1. /cpus 节点：总是包含
-2. /cpus/cpu@* 节点：仅包含 phys_cpu_ids 中指定的 CPU
-
-**节点层级处理**：当节点层级降低时（从子节点回到父节点），需要结束中间的所有节点以确保正确的 FDT 结构。
-
-### 内存节点更新
-
-客户机 DTB 生成后，内存节点需要根据 VM 实际分配的内存动态添加。这在镜像加载时通过 `update_fdt()` 完成。
-
-**添加内存节点** DTB 格式：
-```dts
+无论哪种客户机内存分配方式，客户机设备树都会根据申请到的客户机内存更新memory字段
+```
 memory {
     device_type = "memory";
-    reg = <address_high address_low size_high size_low>;
+    reg = <0x00 0x80000000 0x00 0x20000000>;
+};
+```
+**3.5 `passthrough_devices`（直通设备）**
+
+现支持两种格式的设备直通方式
+
+格式一：传统完整配置
+```
+passthrough_devices = [
+    ["intc@8000000", 0x800_0000, 0x800_0000, 0x50_000, 0x1], #[name, base_gpa, base_hpa, length, irq_id]
+    ["pl011@9000000", 0x900_0000, 0x900_0000, 0x1000, 0x1],
+    ["pl031@9010000", 0x901_0000, 0x901_0000, 0x1000, 0x1],
+]
+```
+
+格式二：全路径配置（推荐）
+```
+passthrough_devices = [
+    ["/syscon@fdc20000"],
+    ["/pinctrl/gpio3@fe760000"], #从根节点开始的完整路径
+    ["/"],        #根节点，表示所有设备都直通
+]
+```
+
+当直通设备使用全路径方式时，这里只需要填写需要直通的设备名称即可，设备名称是从跟节点开始的完整路径，此时axvisor会根据提供的设备树或主设备树自动查找相关节点并直通，该节点及相关节点的地址均等信息会根据设备树识别并补充完整，其中"/"表示根节点，当直通根节点时主机所有节点均会直通给客户机。
+
+**3.6 `excluded_devices` （不直通设备）**
+
+设备直通时axvisor会识别相关设备并一并直通给客户机，当某个设备不希望直通给客户机时可以加入该字段中，这样该设备及其地址将不会直通给客户机使用，生成的客户机设备树也不会包含该设备。
+
+**3.7 `passthrough_addresses`（直通地址）**
+
+该字段用于将指定地址直通给客户机使用，在启动如定制linux客户机需要使用某段地址或设备树非标准需要直接指定直通地址时将会使用到。
+
+---
+
+## 第二部分：原理说明
+
+### 1. 设备树在虚拟化中的作用机制
+
+#### 1.1 硬件抽象层的核心地位
+
+设备树（FDT，Flattened Device Tree）在现代 ARM 系统中扮演着硬件抽象层的核心角色。它是一种描述硬件配置的数据结构，由 Bootloader 加载并传递给操作系统。
+
+在 AxVisor 虚拟化环境中，设备树承担着三个关键角色：
+
+1. **硬件发现者**：宿主机启动时，AxVisor 首先解析主机的设备树，了解可用的物理硬件资源，包括：
+   - CPU 的数量和类型
+   - 内存布局和容量
+   - 中断控制器类型和配置
+   - 各种 I/O 设备的地址空间和属性
+
+2. **资源分配器**：基于对物理资源的了解，AxVisor 可以智能地为多个虚拟机分配资源：
+   - 为每个 VM 分配特定的 CPU 核心
+   - 划分内存区域，确保 VM 间的隔离
+   - 配置中断路由，避免冲突
+
+3. **虚拟化构建者**：AxVisor 不是简单地传递原始设备树，而是为每个 VM 构建定制的虚拟设备树，包含：
+   - 分配给该 VM 的 CPU 节点
+   - VM 的内存映射信息
+   - 配置为直通的物理设备
+   - 虚拟化的系统设备
+
+#### 1.2 设备树的数据结构原理
+
+设备树采用树形层次结构，每个节点代表一个硬件设备或组件，节点属性以键值对形式描述设备特性。
+
+```
+/ (根节点)
+├── cpus (CPU节点)
+│   ├── cpu@0 (CPU核心0)
+│   └── cpu@1 (CPU核心1)
+├── soc (系统级芯片)
+│   ├── uart@2800c000 (串口设备)
+│   └── gpio@fe760000 (GPIO设备)
+└── memory (内存区域)
+```
+
+每个节点的关键属性：
+- `compatible`: 设备兼容性字符串，用于驱动匹配
+- `reg`: 地址和大小信息，定义设备的物理地址空间
+- `interrupts`: 中断信息，指定中断号和触发方式
+- `phandle`: 节点标识符，用于其他节点的引用
+
+### 2. 两种生成模式的深层原理
+
+#### 2.1 预定义模式的适用场景和原理
+
+**适用场景**：
+- 设备树经过严格验证，确保稳定性
+- 需要特定的设备配置，不希望自动处理
+- 来自硬件供应商的标准设备树
+
+**工作原理**：
+当配置了 `dtb_path` 时，AxVisor 采用最小干预策略：
+
+1. **加载验证**：读取指定的设备树文件，验证格式正确性
+2. **CPU 节点更新**：从主机设备树提取 CPU 信息，根据 `phys_cpu_ids` 过滤和更新
+3. **内存节点更新**：根据 `memory_regions` 配置，重新生成内存节点
+4. **直通地址处理**：如果有完整的设备配置，直接应用地址映射
+
+**优势**：保持原有设备树的完整性，降低引入错误的风险
+
+#### 2.2 动态生成模式的智能处理机制
+
+**适用场景**：
+- 需要根据不同 VM 配置灵活调整设备
+- 希望系统自动处理设备依赖关系
+- 需要精确控制设备直通范围
+
+**工作原理**：
+动态生成采用分析驱动的构建方式：
+
+1. **设备发现阶段**：
+   - 解析配置中的 `passthrough_devices`
+   - 查找每个直通设备的所有后代节点
+   - 构建设备路径的完整树形结构
+
+2. **依赖分析阶段**：
+   - 分析每个设备的 phandle 引用
+   - 识别时钟、电源、中断等依赖设备
+   - 递归解析依赖关系，确保完整性
+
+3. **过滤处理阶段**：
+   - 应用 `excluded_devices` 配置
+   - 移除指定设备及其后代节点
+   - 确保最终设备列表的一致性
+
+4. **生成构建阶段**：
+   - 根据 NodeAction 分类处理每个节点
+   - 重新构建设备树的层次结构
+   - 生成二进制的 DTB 文件
+
+**优势**：高灵活性，智能依赖处理，精确控制
+
+### 3. 设备直通的依赖关系原理
+
+#### 3.1 Phandle 机制的核心作用
+
+Phandle（property handle）是设备树中的节点引用机制，类似于编程语言中的指针。每个节点可以有一个或多个 phandle 属性，其他节点通过引用这些 phandle 来建立依赖关系。
+
+**Phandle 声明方式**：
+
+```dts
+// 方式1：显式声明
+clock_controller: clock@fdd20000 {
+    compatible = "vendor,clock";
+    reg = <0xfdd20000 0x1000>;
+    phandle = <0x100>;        // 显式设置phandle值
+};
+
+// 方式2：标签声明（编译器自动生成）
+clock: clock@fdd20000 {       // 定义标签
+    compatible = "vendor,clock";
+    reg = <0xfdd20000 0x1000>;
+    // 编译器会自动分配phandle
 };
 ```
 
-**DTB 加载地址计算**策略：
-1. 如果配置中已指定 dtb_load_gpa 且不是恒等映射：使用配置值
-2. 否则：计算为内存末尾 - DTB 大小，2MB 对齐
+**Phandle 引用方式**：
 
-计算示例：
-```
-VM 内存配置：memory_regions = [[0x8000_0000, 0x1000_0000, 0x7, 0]]  # 256MB
-DTB 大小：0x5000  # 20KB
-计算结果：0x8fe00000
-```
-
-### 用户提供 DTB 的处理
-
-用户可能提供自己的 DTB 文件（通过 `dtb_path` 配置），此时需要更新其中的 CPU 节点。`update_cpu_node()` 的策略是：
-1. 从用户 DTB 复制所有非 CPU 节点
-2. 从宿主机 FDT 复制过滤后的 CPU 节点
-
-## 设备地址和中断解析
-
-### 解析概述
-
-生成的客户机 DTB 包含设备节点，但配置结构（`AxVMConfig`）需要提取设备的物理地址和中断信息，用于：
-1. **内存映射**：建立设备寄存器区域的 GPA → HPA 映射
-2. **中断注入**：配置 vGIC，转发设备中断到客户机
-
-### 设备地址解析
-
-`parse_passthrough_devices_address()` 遍历所有节点，提取 reg 属性。
-
-**reg 属性格式**：
 ```dts
-// 单个区域
-reg = <0x0 0xfe660000 0x0 0x100>;
-//     高32位 低32位   大小高 大小低
-
-// 多个区域
-reg = <0x0 0xfe660000 0x0 0x100>,   // 区域 0
-      <0x0 0xfe661000 0x0 0x1000>;  // 区域 1
+uart0: serial@2800c000 {
+    compatible = "vendor,uart";
+    clocks = <&clock 0x14a>;    // 引用时钟节点
+    interrupt-parent = <&gic>;   // 引用中断控制器
+};
 ```
 
-对于多区域设备，第一个区域使用设备名称，后续区域使用 `{name}-region{index}` 格式。
+编译后，`&clock` 会被替换为具体的 phandle 值，如 `clocks = <0x100 0x14a>`。
 
-### 中断解析
+#### 3.2 依赖类型解析
 
-`parse_vm_interrupt()` 遍历所有节点，提取 interrupts 属性。
+AxVisor 支持 15+ 种依赖类型的自动识别和解析：
 
-**interrupts 属性格式**：
-```dts
-interrupts = <GIC_SPI 103 IRQ_TYPE_LEVEL_HIGH>;
-//           类型     编号  触发方式
+**时钟依赖（Clock Dependencies）**：
+```
+clocks = <&clk_uart>, <&clk_apb>;
+clock-names = "baudclk", "apb_pclk";
+```
+解析时会自动找到对应的时钟控制器节点，确保 UART 设备有可用的时钟源。
 
-// 原始数据格式（大端序）：
-// [0x00000000, 0x00000067, 0x00000004]
-//  类型 (0 = SPI)  中断号 (103)  标志 (LEVEL_HIGH)
+**电源域依赖（Power Domain Dependencies）**：
+```
+power-domains = <&pmu 0x3>;
+```
+确保设备在使用前，对应的电源域已正确初始化。
+
+**中断依赖（Interrupt Dependencies）**：
+```
+interrupt-parent = <&gic>;
+interrupts = <0x0 0x73 0x4>;  // GIC_SPI, IRQ 115, 上升沿
+```
+建立设备与中断控制器的连接关系。
+
+**GPIO 依赖（GPIO Dependencies）**：
+```
+gpios = <&gpio0 0x5 0x0>;  // GPIO控制器, GPIO号, 配置标志
+```
+处理设备对 GPIO 引脚的控制需求。
+
+#### 3.3 依赖解析算法
+
+AxVisor 采用工作队列算法进行递归依赖分析：
+
+```
+工作队列算法：
+1. 初始队列：配置的直通设备
+2. 循环处理：
+   a. 取出队首设备
+   b. 分析其所有 phandle 属性
+   c. 将依赖设备加入队列（如果未处理过）
+   d. 标记当前设备为已处理
+3. 结束条件：队列为空
 ```
 
-每个中断占 3 个 u32：(type, number, flags)。仅提取 type = 0 (SPI) 的中断，结果去重并排序后存入 `vm_cfg.spi_list`。
+这种算法确保：
+- **完整性**：所有传递依赖都被发现
+- **无重复**：每个设备只处理一次
+- **无循环**：通过已处理集合避免死循环
 
-## 性能优化和缓存策略
+### 4. 设备树相关节点查找流程
 
-### DTB 缓存机制
+设备相关节点的查找主要用于识别直通设备及其相关的祖先节点和后代节点:
 
-DTB 生成是计算密集型操作，对于相同配置不应重复生成。使用全局 DTB 缓存 `GENERATED_DTB_CACHE` 存储生成的 DTB，以 VM ID 为键。
+1. **解析配置**：从配置文件读取直通设备列表
+2. **查找后代**：遍历设备树，找出所有直通设备的子节点、孙节点等后代节点
+3. **查找依赖**：分析设备属性中的 phandle 引用，找出依赖的其他设备
+4. **查找祖先**：确定需要包含的祖先节点，确保设备路径完整
+5. **排除节点**：移除配置中指定的排除设备及其后代
+6. **生成结果**：构建最终的设备节点列表用于生成 Guest FDT
 
-缓存流程：
+假设有以下设备树结构：
+
+```plain
+/
+├── soc
+│   ├── bus@10000000
+│   │   ├── device@10001000
+│   │   └── device@10002000
+│   └── bus@20000000
+│       ├── device@20001000
+│       └── device@20002000
+└── pci@30000000
+    ├── pci-bridge@0
+    │   └── eth@0
+    └── usb@1
 ```
-VM 初始化
-    ├─→ handle_fdt_operations()
-    │   ├─ setup_guest_fdt_from_vmm()
-    │   │   ├─ crate_guest_fdt()  ← 生成 DTB
-    │   │   └─ crate_guest_fdt_with_cache()  ← 存入缓存
-    │   └─ parse_passthrough_devices_address()
-    │       └─ get_vm_dtb_arc()  ← 从缓存读取
-    └─→ 镜像加载
-        └─ update_fdt()
-            └─ get_vm_dtb_arc()  ← 从缓存读取
-```
 
-## 调试工具
+如果配置指定了直通设备 `/soc/bus@10000000/device@10001000`，那么：
 
-### FDT 打印工具
+- **后代节点**：无（该设备没有子节点）
+- **祖先节点**：`/soc/bus@10000000` 和 `/soc`
+- **最终结果**：包含这三个节点以确保设备路径完整
 
-`print_fdt()` 和 `print_guest_fdt()` 提供调试输出，遍历所有节点并格式化打印。对于常见属性（reg、compatible、phandle）提供特殊处理，其他属性显示原始十六进制数据（前 16 字节）。
+如果配置指定了直通设备 `/pci@30000000`，那么：
 
-### 设备发现日志
+- **后代节点**：`/pci@30000000/pci-bridge@0`、`/pci@30000000/pci-bridge@0/eth@0`、`/pci@30000000/usb@1`
+- **祖先节点**：[/](file:///home/szy/work/hypervisor/buddy/axvisor/Cargo.lock)（根节点）
+- **最终结果**：包含所有这些节点
 
-关键日志点：
-- 阶段 1：`trace` 级别记录后代节点发现
-- 阶段 2：`trace` 级别记录依赖分析，`debug` 级别记录 phandle 解析
-- 阶段 3：`info` 级别记录排除设备
-- 最终结果：`info` 级别记录总设备数和新增数
+这种机制确保了直通设备在 客户机系统中能获得完整的设备树支持，包括必要的父节点和子节点。
 
-日志级别使用：
-- `trace`：详细的节点遍历信息
-- `debug`：phandle 解析、依赖查找
-- `info`：阶段完成、最终结果
-- `warn`：数据格式错误、预期外情况
-- `error`：严重错误（解析失败、重复路径）
 
 ---
+
+## 第三部分：客户机设备树生成流程
+
+### 1 GitHub流程图
+
+```mermaid
+graph TD
+    A[开始生成客户机设备树] --> B{是否有预定义设备树?}
+    
+    B -->|是| C[加载预定义设备树文件]
+    C --> D[更新CPU节点和memory节点]
+    D --> E[检查是否有直通地址配置]
+    E -->|有| G[直接按配置映射设备内存]
+    E -->|无| H[解析设备树获取地址]
+    
+    B -->|否| I[动态生成设备树]
+    I --> J[查找直通设备的后代节点和依赖节点]
+    J --> L[排除不需要直通的设备]
+    L --> M[生成客户机设备树]
+    M --> N[更新memory和chosen等节点]
+    N --> H
+    
+    G --> O[解析直通设备地址并映射]
+    H --> O
+    O --> P[处理中断配置]
+    P --> Q[结束]
+```
+
+### 2 详细步骤说明
+
+**步骤 1：开始生成客户机设备树文件**
+
+- 系统启动时，AxVisor会根据配置决定是使用预定义设备树还是动态生成设备树
+
+ **步骤 2：检查预定义客户机设备树**
+
+- **指定了dtb_path** → 进入步骤3（预定义处理流程）
+- **未指定dtb_path** → 进入步骤4（动态生成流程）
+
+ **步骤 3：预定义设备树处理**
+
+1. **加载预定义设备树**：解析用户提供的DTB文件
+2. **节点更新**：根据`phys_cpu_ids`配置更新CPU信息，更新memory节点
+3. **保留原有结构**：尽可能保持预定义设备树的完整性
+4. **地址映射处理**：如配置了完整直通设备地址，直接按配置映射
+
+ **步骤 4：动态生成设备树**
+
+ 1. 查找直通设备后代节点
+ 2. 查找设备依赖节点
+ 3. 排除不需要直通的设备
+ 4. 生成客户机设备树
+ 5. 更新memory和chosen等节点
+
+ **步骤 5：解析直通设备地址并映射给客户机**
+
+1. **PCIe设备特殊处理**：
+   - 解析`ranges`属性
+   - 支持Configuration/I/O/Memory32/Memory64四种空间
+   - 处理ECAM（Extended Configuration Access Mechanism）空间
+
+2. **普通设备处理**：
+   - 解析`reg`属性获取地址和大小
+   - 支持多地址段设备
+   - 自动处理地址对齐和大小计算
+
+ **步骤 6：处理中断配置**
+
+1. **遍历所有设备节点**：查找`interrupts`属性
+2. **验证中断父节点**：确保是GIC（Generic Interrupt Controller）
+3. **过滤中断类型**：只处理GIC_SPI类型的中断
+4. **提取中断信息**：获取中断号和触发方式
+5. **配置中断路由**：将中断信息添加到VM配置
+
+ **步骤 7：完成设备树生成**
+
+-  客户机设备树生成完成
+-  设备树已加载到客户机内存
+-  所有直通设备地址已映射
+
+---
+
+## 第四部分：代码说明
+
+### 1. 核心函数职责说明
+
+#### 1.1 handle_fdt_operations - 主入口函数
+
+```rust
+pub fn handle_fdt_operations(vm_config: &mut AxVMConfig, vm_create_config: &AxVMCrateConfig)
+```
+
+**职责**：
+- 作为整个 FDT 处理流程的总入口和控制器
+- 决定采用哪种生成模式（预定义 vs 动态生成）
+
+**关键决策逻辑**：
+```rust
+if let Some(provided_dtb) = get_developer_provided_dtb(vm_config, vm_create_config) {
+    // 预定义模式：使用现有设备树文件
+    update_provided_fdt(&provided_dtb, host_fdt_bytes, vm_create_config);
+} else {
+    // 动态生成模式：根据配置构建设备树
+    setup_guest_fdt_from_vmm(host_fdt_bytes, vm_config, vm_create_config);
+}
+```
+
+#### 1.2 find_all_passthrough_devices - 设备发现核心
+
+```rust
+pub fn find_all_passthrough_devices(vm_cfg: &mut AxVMConfig, fdt: &Fdt) -> Vec<String>
+```
+
+**职责**：
+- 实现四阶段设备发现算法
+- 处理复杂的依赖关系分析
+- 生成最终的设备路径列表
+
+**核心算法逻辑**：
+```rust
+// Phase 1: 后代节点发现
+for device_name in &initial_device_names {
+    let descendant_paths = get_descendant_nodes_by_path(&node_cache, device_name);
+    // 处理后代节点...
+}
+
+// Phase 2: 依赖关系分析
+while let Some(device_node_path) = devices_to_process.pop() {
+    let dependencies = find_device_dependencies(&device_node_path, &phandle_map, &node_cache);
+    // 处理依赖设备...
+}
+
+// Phase 3: 排除设备处理
+// Phase 4: 结果整理
+```
+
+#### 1.3 determine_node_action - 节点分类决策
+
+```rust
+fn determine_node_action(node: &Node, node_path: &str, passthrough_device_names: &[String]) -> NodeAction
+```
+
+**职责**：
+- 实现节点处理分类的决策逻辑
+- 确保设备树结构的完整性
+- 维护节点间的层次关系
+
+**决策顺序**：
+```rust
+match node.name() {
+    "/" => NodeAction::RootNode,                                    // 最高优先级
+    name if name.starts_with("memory") => NodeAction::Skip,          // 跳过内存
+    _ if node_path.starts_with("/cpus") => NodeAction::CpuNode,      // CPU节点
+    _ if passthrough_device_names.contains(&node_path.to_string()) => NodeAction::IncludeAsPassthroughDevice,
+    _ if is_descendant_of_passthrough_device(node_path, node.level, passthrough_device_names) => NodeAction::IncludeAsChildNode,
+    _ if is_ancestor_of_passthrough_device(node_path, passthrough_device_names) => NodeAction::IncludeAsAncestorNode,
+    _ => NodeAction::Skip,                                          // 默认跳过
+}
+```
+
+### 2. 关键数据结构说明
+
+#### 2.1 NodeAction 枚举
+
+```rust
+enum NodeAction {
+    Skip,                     // 跳过节点，不在客户机FDT中包含
+    RootNode,                 // 根节点，必须包含
+    CpuNode,                  // CPU节点，需要根据配置过滤
+    IncludeAsPassthroughDevice,  // 作为直通设备节点包含
+    IncludeAsChildNode,       // 作为直通设备的子节点包含
+    IncludeAsAncestorNode,    // 作为直通设备的祖先节点包含
+}
+```
+
+**设计理念**：
+- 明确每个节点的处理策略
+- 保证设备树结构的完整性
+
+#### 2.2 Phandle 映射表
+
+```rust
+BTreeMap<u32, (String, BTreeMap<String, u32>)>
+```
+
+**结构说明**：
+- 键：32位 phandle 值
+- 值元组第一个元素：节点的完整路径
+- 值元组第二个元素：节点的 cells 属性映射表
+
+**用途**：
+- 快速查找 phandle 对应的节点
+- 支持 phandle 属性的智能解析
+- 提高依赖分析的性能
+
+#### 2.3 设备缓存结构
+
+```rust
+BTreeMap<String, Vec<Node<'a>>>
+```
+
+**设计优势**：
+- O(log n) 的查找性能
+- 支持同路径多节点的情况
+- 便于路径前缀匹配操作
+
+### 3. 性能优化代码技术
+
+#### 3.1 节点缓存构建优化
+
+```rust
+pub fn build_optimized_node_cache<'a>(fdt: &'a Fdt) -> BTreeMap<String, Vec<Node<'a>>> {
+    let mut node_cache: BTreeMap<String, Vec<Node<'a>>> = BTreeMap::new();
+    let all_nodes: Vec<Node> = fdt.all_nodes().collect();
+
+    for (index, node) in all_nodes.iter().enumerate() {
+        let node_path = build_node_path(&all_nodes, index);
+        // 路径到节点的映射，支持快速查找
+        node_cache.entry(node_path).or_default().push(node.clone());
+    }
+    
+    node_cache
+}
+```
+
+**优化要点**：
+- 一次性遍历构建完整索引
+- 使用 BTreeMap 提供对数级查找性能
+- 预分配容器容量减少动态扩容
+
+---
+
+## 总结
+
+AxVisor 的 FDT 模块是虚拟机硬件配置的核心组件，负责生成定制化设备树。支持预定义文件和动态生成两种模式，智能解析主机 CPU 拓扑并根据配置映射虚拟 CPU，动态处理内存节点和设备直通。通过这一模块，AxVisor 为虚拟机提供精确的设备树，实现高效的资源管理和客户机启动。
