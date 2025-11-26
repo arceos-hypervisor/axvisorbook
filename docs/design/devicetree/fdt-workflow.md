@@ -30,7 +30,55 @@ graph TD
 
 ### 2 流程图与代码实现对照
 
-#### 2.1 流程起点：handle_fdt_operations 主入口函数
+#### 2.1 获取主机设备树：get_host_fdt 函数
+
+在流程开始之前，AxVisor 首先需要获取主机（宿主机）的设备树信息。这是整个客户机设备树生成的基础。
+
+**获取原理**：
+AxVisor 通过系统启动参数（bootarg）获取主机设备树的内存地址，然后解析设备树头部信息来获取完整的数据。
+
+```rust
+// kernel/src/vmm/fdt/parser.rs:12-33
+pub fn get_host_fdt() -> &'static [u8] {
+    const FDT_VALID_MAGIC: u32 = 0xd00d_feed;  // 设备树魔数
+    let bootarg: usize = std::os::arceos::modules::axhal::get_bootarg();
+    
+    // 解析设备树头部
+    let header = unsafe {
+        core::slice::from_raw_parts(bootarg as *const u8, core::mem::size_of::<FdtHeader>())
+    };
+    let fdt_header = FdtHeader::from_bytes(header)
+        .map_err(|e| format!("Failed to parse FDT header: {e:#?}"))
+        .unwrap();
+
+    // 验证设备树魔数
+    if fdt_header.magic.get() != FDT_VALID_MAGIC {
+        error!(
+            "FDT magic is invalid, expected {:#x}, got {:#x}",
+            FDT_VALID_MAGIC,
+            fdt_header.magic.get()
+        );
+    }
+
+    // 获取完整的设备树数据
+    unsafe { 
+        core::slice::from_raw_parts(bootarg as *const u8, fdt_header.total_size()) 
+    }
+}
+```
+
+**关键解析步骤**：
+1. **获取启动参数地址**：通过 `axhal::get_bootarg()` 获取 Bootloader 传递的设备树地址
+2. **解析设备树头部**：读取设备树的前 16 字节（FdtHeader），获取魔数和总大小
+3. **验证魔数**：确保这是一个有效的设备树文件（魔数应为 0xd00d_feed）
+4. **返回完整数据**：根据头部中的总大小，返回完整的设备树数据切片
+
+**数据流程**：
+```
+Bootloader → Bootarg (设备树地址) → FDT Header → 完整设备树数据
+```
+
+#### 2.2 流程起点：handle_fdt_operations 主入口函数
 
 流程图中的起点 **A[开始生成客户机设备树]** 对应 `handle_fdt_operations` 函数，该函数负责：
 - 解析主机设备树
@@ -48,7 +96,7 @@ if let Some(provided_dtb) = get_developer_provided_dtb(vm_config, vm_create_conf
 }
 ```
 
-#### 2.2 预定义设备树处理分支 (B → C → D → E → G/H)
+#### 2.3 预定义设备树处理分支 (B → C → D → E → G/H)
 
 **步骤 C**：`get_developer_provided_dtb` 函数从内存或文件系统加载预定义DTB
 
@@ -83,7 +131,7 @@ pub fn update_provided_fdt(provided_dtb: &[u8], host_dtb: &[u8], crate_config: &
 
 **步骤 E**：检查是否配置了完整的直通设备地址，决定地址映射方式
 
-#### 2.3 动态生成设备树处理分支 (B → I → J → L → M → N)
+#### 2.4 动态生成设备树处理分支 (B → I → J → L → M → N)
 
 **步骤 I**：`setup_guest_fdt_from_vmm` 函数启动动态生成流程
 
@@ -186,7 +234,7 @@ fn determine_node_action(node: &Node, node_path: &str, passthrough_device_names:
 }
 ```
 
-#### 2.4 地址解析与中断处理 (E → G/H → O → P)
+#### 2.5 地址解析与中断处理 (E → G/H → O → P)
 
 **步骤 E**：`parse_passthrough_devices_address` 函数检查是否有预配置的直通地址
 
