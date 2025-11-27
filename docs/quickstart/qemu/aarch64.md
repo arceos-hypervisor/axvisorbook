@@ -57,7 +57,7 @@ AxVisor 所支持的客户机镜像的构建脚本和构建产物可以在 [axvi
 
 ### 准备开发板配置文件
 
-开发板配置文件定义了 AxVisor 在特定硬件平台上的基本运行参数。对于 QEMU AArch64 环境，配置文件位于 [`configs/board/qemu-aarch64.toml`](configs/board/qemu-aarch64.toml)，我们直接使用这个配置文件，不需要改动。直接将开发板配置文件复制到 `tmp/configs` 目录即可。
+开发板配置文件定义了 AxVisor 在特定硬件平台上的基本运行参数。对于 QEMU AArch64 环境，配置文件位于 `configs/board/qemu-aarch64.toml`，我们直接使用这个配置文件，不需要改动。直接将开发板配置文件复制到 `tmp/configs` 目录即可。
 
 ```bash
 # 复制开发板配置文件
