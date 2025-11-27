@@ -84,6 +84,7 @@ cp configs/board/qemu-aarch64.toml tmp/configs/
 
     # 修改 Linux 客户机配置
     sed -i "s|kernel_path = \"tmp/Image\"|kernel_path = \"../images/qemu_aarch64_linux/qemu-aarch64\"|g" tmp/configs/linux-aarch64-qemu-smp1.toml
+    sed -i 's/^id = 1$/id = 2/' tmp/configs/linux-aarch64-qemu-smp1.toml
     ```
 
 ### 准备 QEMU 配置文件
@@ -102,7 +103,9 @@ QEMU 配置文件定义了 QEMU 的启动参数，包括 CPU 类型、内存大�
     
     # 更新配置文件中的路径
     sed -i 's|file=${workspaceFolder}/tmp/rootfs.img|file='"$ROOTFS_PATH"'|g' tmp/configs/qemu-aarch64-info.toml
-    
+    # 将 success_regex 改为空数组
+    sed -i 's/^success_regex = \[.*\]/success_regex = []/' tmp/configs/qemu-aarch64-info.toml
+
     # 验证修改
     grep "rootfs.img" tmp/configs/qemu-aarch64-info.toml
     ```
@@ -149,7 +152,7 @@ AxVisor 构建系统集成了 QEMU 启动脚本，使用 `cargo xtask qemu` 命�
     cargo xtask qemu \
     --build-config tmp/configs/qemu-aarch64.toml \
     --qemu-config tmp/configs/qemu-aarch64-info.toml \
-    --vmconfigs tmp/configs/arceos-aarch64-qemu-smp1.toml
+    --vmconfigs tmp/configs/arceos-aarch64-qemu-smp1.toml \
     --vmconfigs tmp/configs/linux-aarch64-qemu-smp1.toml
     ```
 
