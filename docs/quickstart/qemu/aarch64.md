@@ -47,17 +47,17 @@ mkdir -p tmp/{configs,images}
 cargo xtask image ls
 
 # 下载 ArceOS 镜像
-cargo xtask image download qemu_arceos_aarch64 --output-dir tmp/images
+cargo xtask image download qemu_aarch64_arceos --output-dir tmp/images
 
 # 下载 Linux 镜像
-cargo xtask image download qemu_linux_aarch64 --output-dir tmp/images
+cargo xtask image download qemu_aarch64_linux --output-dir tmp/images
 ```
 
 AxVisor 所支持的客户机镜像的构建脚本和构建产物可以在 [axvisor-guest](https://github.com/arceos-hypervisor/axvisor-guest) 仓库中找到。
 
 ### 准备开发板配置文件
 
-开发板配置文件定义了 AxVisor 在特定硬件平台上的基本运行参数。对于 QEMU AArch64 环境，配置文件位于 `configs/board/qemu-aarch64.toml`，我们直接使用这个配置文件，不需要改动。直接将开发板配置文件复制到 `tmp/configs` 目录即可。
+开发板配置文件定义了 AxVisor 在特定硬件平台上的基本运行参数。对于 QEMU AArch64 环境，配置文件位于 [`configs/board/qemu-aarch64.toml`](configs/board/qemu-aarch64.toml)，我们直接使用这个配置文件，不需要改动。直接将开发板配置文件复制到 `tmp/configs` 目录即可。
 
 ```bash
 # 复制开发板配置文件
@@ -80,19 +80,46 @@ cp configs/board/qemu-aarch64.toml tmp/configs/
 
     ```bash
     # 修改 ArceOS 客户机配置
-    sed -i "s|kernel_path = \"path/arceos-aarch64-dyn-smp1.bin\"|kernel_path = \"../images/qemu_arceos_aarch64/qemu-aarch64\"|g" tmp/configs/arceos-aarch64-qemu-smp1.toml
+    sed -i "s|kernel_path = \"path/arceos-aarch64-dyn-smp1.bin\"|kernel_path = \"../images/qemu_aarch64_arceos/qemu-aarch64\"|g" tmp/configs/arceos-aarch64-qemu-smp1.toml
 
     # 修改 Linux 客户机配置
-    sed -i "s|kernel_path = \"tmp/Image\"|kernel_path = \"../images/qemu_linux_aarch64/qemu-aarch64\"|g" tmp/configs/linux-aarch64-qemu-smp1.toml
+    sed -i "s|kernel_path = \"tmp/Image\"|kernel_path = \"../images/qemu_aarch64_linux/qemu-aarch64\"|g" tmp/configs/linux-aarch64-qemu-smp1.toml
+    ```
+
+### 准备 QEMU 配置文件
+
+QEMU 配置文件定义了 QEMU 的启动参数，包括 CPU 类型、内存大小、设备配置等。我们需要将 QEMU 配置文件复制到工作目录，并根据实际情况修改 rootfs 路径。
+
+1. 复制 QEMU 配置文件：
+    ```bash
+    cp .github/workflows/qemu-aarch64.toml tmp/configs/qemu-aarch64-info.toml
+    ```
+
+2. 修改 QEMU 配置文件中的 rootfs 路径：
+    ```bash
+    # 获取 rootfs.img 的绝对路径
+    ROOTFS_PATH="$(pwd)/tmp/images/qemu_aarch64_linux/rootfs.img"
+    
+    # 更新配置文件中的路径
+    sed -i 's|file=${workspaceFolder}/tmp/rootfs.img|file='"$ROOTFS_PATH"'|g' tmp/configs/qemu-aarch64-info.toml
+    
+    # 验证修改
+    grep "rootfs.img" tmp/configs/qemu-aarch64-info.toml
+    ```
+
+    **注意**：
+    - 如果使用的客户机系统不需要 rootfs（如纯内存系统），可以从 QEMU 配置文件中删除相关的 `-drive` 和 `-device virtio-blk` 等配置项：
+
+    ```bash
+    # 移除 virtio-blk 设备配置
+    sed -i '/"virtio-blk-device,drive=disk0"/d' tmp/configs/qemu-aarch64-info.toml
+    sed -i '/id=disk0,if=none,format=raw/d' tmp/configs/qemu-aarch64-info.toml
+    sed -i 's/"root=\/dev\/vda rw init=\/init",//g' tmp/configs/qemu-aarch64-info.toml
     ```
 
 ## 构建及启动
 
 完成前期准备后，我们可以开始构建和启动 AxVisor。
-
-### 生成配置
-
-使用 `cargo xtask defconfig qemu-aarch64` 命令设置 QEMU AArch64 为默认构建配置。实际上，这个命令会将 `configs/board/qemu-aarch64.toml` 复制为 `.build.toml`，作为默认的构建配置。
 
 ### 编译及启动
 
@@ -103,7 +130,7 @@ AxVisor 构建系统集成了 QEMU 启动脚本，使用 `cargo xtask qemu` 命�
     ```bash
     cargo xtask qemu \
     --build-config tmp/configs/qemu-aarch64.toml \
-    --qemu-config .github/workflows/qemu-aarch64.toml \
+    --qemu-config tmp/configs/qemu-aarch64-info.toml \
     --vmconfigs tmp/configs/arceos-aarch64-qemu-smp1.toml
     ```
 
@@ -112,7 +139,7 @@ AxVisor 构建系统集成了 QEMU 启动脚本，使用 `cargo xtask qemu` 命�
     ```bash
     cargo xtask qemu \
     --build-config tmp/configs/qemu-aarch64.toml \
-    --qemu-config .github/workflows/qemu-aarch64.toml \
+    --qemu-config tmp/configs/qemu-aarch64-info.toml \
     --vmconfigs tmp/configs/linux-aarch64-qemu-smp1.toml
     ```
 
@@ -121,8 +148,9 @@ AxVisor 构建系统集成了 QEMU 启动脚本，使用 `cargo xtask qemu` 命�
     ```bash
     cargo xtask qemu \
     --build-config tmp/configs/qemu-aarch64.toml \
-    --qemu-config .github/workflows/qemu-aarch64.toml \
-    --vmconfigs tmp/configs/arceos-aarch64-qemu-smp1.toml,tmp/configs/linux-aarch64-qemu-smp1.toml
+    --qemu-config tmp/configs/qemu-aarch64-info.toml \
+    --vmconfigs tmp/configs/arceos-aarch64-qemu-smp1.toml
+    --vmconfigs tmp/configs/linux-aarch64-qemu-smp1.toml
     ```
 
 ## 常见问题
@@ -131,26 +159,26 @@ AxVisor 构建系统集成了 QEMU 启动脚本，使用 `cargo xtask qemu` 命�
 
 ### KVM 不可用
 
-**问题现象**：
-```
-warning: KVM not available, using TCG
-```
+- **问题现象**：
+    ```
+    warning: KVM not available, using TCG
+    ```
 
-**原因分析**：KVM（Kernel-based Virtual Machine）是 Linux 内核的虚拟化模块，可以显著提高虚拟化性能。如果 KVM 不可用，QEMU 会回退到 TCG（Tiny Code Generator），这是一个纯软件模拟器，性能较差。
+- **原因分析**：KVM（Kernel-based Virtual Machine）是 Linux 内核的虚拟化模块，可以显著提高虚拟化性能。如果 KVM 不可用，QEMU 会回退到 TCG（Tiny Code Generator），这是一个纯软件模拟器，性能较差。
 
-**解决方案**：
-```bash
-# 检查 KVM 模块是否已加载
-lsmod | grep kvm
+- **解决方案**：
+    ```bash
+    # 检查 KVM 模块是否已加载
+    lsmod | grep kvm
 
-# 加载 KVM 模块
-sudo modprobe kvm-arm
+    # 加载 KVM 模块
+    sudo modprobe kvm-arm
 
-# 检查 CPU 是否支持硬件虚拟化
-egrep -c '(vmx|svm)' /proc/cpuinfo
+    # 检查 CPU 是否支持硬件虚拟化
+    egrep -c '(vmx|svm)' /proc/cpuinfo
 
-# 如果输出大于 0，表示 CPU 支持硬件虚拟化
-```
+    # 如果输出大于 0，表示 CPU 支持硬件虚拟化
+    ```
 
 ### 内存不足
 
@@ -219,3 +247,19 @@ egrep -c '(vmx|svm)' /proc/cpuinfo
     cargo xtask build
     cargo xtask qemu --build-config tmp/configs/qemu-aarch64.toml --qemu-config .github/workflows/qemu-aarch64.toml --vmconfigs tmp/configs/客户机配置文件.toml
     ```
+
+### QEMU 找不到 rootfs.img 文件
+
+- **问题现象**:
+    ```
+    qemu-system-aarch64: -drive id=disk0,if=none,format=raw,file=.../tmp/rootfs.img: Could not open '...tmp/rootfs.img': No such file or directory
+    ```
+
+- **原因分析**:rootfs.img 文件不存在是由于配置路径错误。
+
+- **解决方案**:
+    ```bash
+
+    ```
+
+    **注意**: 如果使用的客户机系统不需要 rootfs（如纯内存系统），可以从 QEMU 配置文件中删除相关的 `-drive` 和 `-device virtio-blk` 配置项。
