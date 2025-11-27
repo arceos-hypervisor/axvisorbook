@@ -27,6 +27,11 @@ sidebar_label: "飞腾派"
 
 在开始构建和启动 AxVisor 之前，需要完成以下准备工作：
 
+### 开发板环境准备
+
+- 在使用下面步骤启动 axvisor 前，开发板中应已有可正常运行的 linux 系统
+- uboot 应具有 loady 功能，
+
 ### 准备 AxVisor 源码
 
 首先，需要使用 `git clone https://github.com/arceos-hypervisor/axvisor.git` 命令获取 AxVisor 的源代码并创建工作目录。然后，在 AxVisor 源码目录中创建一个 `tmp` 目录，用于存放配置文件和客户机镜像。
@@ -36,6 +41,27 @@ cd axvisor
 
 # 创建工作目录
 mkdir -p tmp/{configs,images}
+```
+### 准备开发工具
+
+ostool 是一个专为操作系统开发而设计的 Rust 工具集，旨在为 OS 开发者提供便捷的构建、配置和启动环境。使用 ostool 启动 axvisor 后镜像不会保留，重启开发板将启动开发板固件中系统
+
+```bash
+# 下载ostool工具
+cargo install ostool
+```
+
+### 准备设备树文件
+
+使用 ostool 工具启动 axvisor 需要开发板设备树，设备树文件可通过在开发板上运行linux系统导出，也可下载项目提供的设备树文件使用。
+在提供的 Linux 镜像文件夹中包含设备树文件，可直接使用，这里下载到我们创建的 `tmp/images` 目录。
+
+```bash
+# 下载 Linux 镜像
+cargo xtask image download phytiumpi_linux --output-dir tmp/images
+
+# 列出所有可用镜像
+cargo xtask image ls
 ```
 
 ### 准备客户机镜像
@@ -90,39 +116,63 @@ cp configs/board/phytiumpi.toml tmp/configs/
 
 完成前期准备后，我们可以开始构建和启动 AxVisor。
 
-### 生成配置
+### 生成配置和修改配置
 
 使用 `cargo xtask defconfig phytiumpi` 命令设置 QEMU AArch64 为默认构建配置。实际上，这个命令会将 `configs/board/phytiumpi.toml` 复制为 `.build.toml`，作为默认的构建配置。
 
-### 编译及启动
+AxVisor 构建系统集成了 Uboot 通信脚本，使用 `cargo xtask uboot` 命令生成 `.uboot.toml` 文件。该文件包含使用 ostool 工具启动时必要的配置。
+需要修改 `.uboot.toml` 文件中 `serial` 为开发板串口设备在PC上的设备号，默认为 `/dev/ttyUSB0` 。需修改 `baud_rate` 为串口波特率,默认为 `115200` ，对于飞腾派开发板使用默认波特率即可。还需要在 `.uboot.toml` 文件中添加一行用于指定设备树文件，该文件用于axvisor启动。
 
-AxVisor 构建系统集成了 Uboot 通信脚本，使用 `cargo xtask uboot` 命令即可启动 QEMU 虚拟机。该命令会自动先编译 AxVisor 及其所有依赖项，然后生成适合在 PhytiumPi 环境中运行的二进制文件，最后与 UBoot 通信下载镜像并启动。
+```bash
+# 在.uboot.toml添加一行指向dtb
+echo 'dtb_file = "tmp/images/phytiumpi_linux/phytiumpi.dtb"' >> .uboot.toml
+```
+
+### 编译及启动
 
 #### 启动单个 ArceOS 客户机
 
+指定使用的客户机配置文件，修改 `.build.toml` 文件中 `vm_configs` 字段，使其指向要使用的客户机配置文件，这样将会基于此客户机配置文件启动客户机，若不指定使用的客户机配置文件，axvisor启动后将会进入 shell 界面等待下一步指令。
+
 ```bash
-cargo xtask uboot \
-  --build-config tmp/configs/phytiumpi.toml \
-  --uboot-config tmp/configs/uboot.toml \
-  --vmconfigs tmp/configs/arceos-aarch64-e2000-smp1.toml
+sed -i 's|vm_configs\s*=.*|vm_configs = \["tmp/configs/arceos-aarch64-e2000-smp1.toml"\]|g' .build.toml
+```
+
+所有配置完成后，即可启动测试
+
+```bash
+# 启动axvisor
+cargo xtask uboot 
 ```
 
 #### 启动单个 Linux 客户机
 
+指定使用的客户机配置文件，修改 `.build.toml` 文件中 `vm_configs` 字段，使其指向要使用的客户机配置文件，这样将会基于此客户机配置文件启动客户机，若不指定使用的客户机配置文件，axvisor启动后将会进入 shell 界面等待下一步指令。
+
 ```bash
-cargo xtask uboot \
-  --build-config tmp/configs/phytiumpi.toml \
-  --uboot-config tmp/configs/uboot.toml \
-  --vmconfigs tmp/configs/linux-aarch64-e2000-smp1.toml
+sed -i 's|vm_configs\s*=.*|vm_configs = \["tmp/configs/linux-aarch64-e2000-smp1.toml"\]|g' .build.toml
+```
+
+所有配置完成后，即可启动测试
+
+```bash
+# 启动axvisor
+cargo xtask uboot 
 ```
 
 #### 启动多个客户机
 
+指定使用的客户机配置文件，修改 `.build.toml` 文件中 `vm_configs` 字段，使其指向要使用的客户机配置文件，这样将会基于此客户机配置文件启动客户机，若不指定使用的客户机配置文件，axvisor启动后将会进入 shell 界面等待下一步指令。
+
 ```bash
-cargo xtask uboot \
-  --build-config tmp/configs/phytiumpi.toml \
-  --uboot-config tmp/configs/uboot.toml \
-  --vmconfigs tmp/configs/arceos-aarch64-e2000-smp1.toml,tmp/configs/linux-aarch64-e2000-smp1.toml
+sed -i 's|vm_configs\s*=.*|vm_configs = [tmp/configs/arceos-aarch64-e2000-smp1.toml,tmp/configs/linux-aarch64-e2000-smp1.toml]|g' .build.toml
+```
+
+所有配置完成后，即可启动测试
+
+```bash
+# 启动axvisor
+cargo xtask uboot 
 ```
 
 ## 常见问题
