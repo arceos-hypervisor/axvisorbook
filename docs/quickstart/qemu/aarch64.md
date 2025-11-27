@@ -104,7 +104,7 @@ QEMU 配置文件定义了 QEMU 的启动参数，包括 CPU 类型、内存大�
     # 更新配置文件中的路径
     sed -i 's|file=${workspaceFolder}/tmp/rootfs.img|file='"$ROOTFS_PATH"'|g' tmp/configs/qemu-aarch64-info.toml
     # 将 success_regex 改为空数组
-    sed -i 's/^success_regex = \[.*\]/success_regex = []/' tmp/configs/qemu-aarch64-info.toml
+    sed -i '/success_regex = \[/,/\]/c\success_regex = []' tmp/configs/qemu-aarch64-info.toml
 
     # 验证修改
     grep "rootfs.img" tmp/configs/qemu-aarch64-info.toml
