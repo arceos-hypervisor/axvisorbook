@@ -84,6 +84,7 @@ cp configs/board/qemu-aarch64.toml tmp/configs/
 
     # 修改 Linux 客户机配置
     sed -i "s|kernel_path = \"tmp/Image\"|kernel_path = \"../images/qemu_aarch64_linux/qemu-aarch64\"|g" tmp/configs/linux-aarch64-qemu-smp1.toml
+    # 若需要同时启动两个客户机，需要修改 Linux 客户机配置文件中的 id 值，避免冲突
     sed -i 's/^id = 1$/id = 2/' tmp/configs/linux-aarch64-qemu-smp1.toml
     ```
 
@@ -91,16 +92,24 @@ cp configs/board/qemu-aarch64.toml tmp/configs/
 
 QEMU 配置文件定义了 QEMU 的启动参数，包括 CPU 类型、内存大小、设备配置等。我们需要将 QEMU 配置文件复制到工作目录，并根据实际情况修改 rootfs 路径。
 
-1. 复制 QEMU 配置文件：
+1. 准备文件系统，如果没有在准备客户机镜像步骤中尚未下载 Linux 镜像库，需要先下载
+
+    ```bash
+    # 下载 rootfs.img 镜像
+    cargo xtask image download qemu_aarch64_linux --output-dir tmp/images
+    ```
+
+2. 复制 QEMU 配置文件：
     ```bash
     cp .github/workflows/qemu-aarch64.toml tmp/configs/qemu-aarch64-info.toml
     ```
 
-2. 修改 QEMU 配置文件中的 rootfs 路径：
+3. 修改 QEMU 配置文件中的 rootfs 路径：
+
     ```bash
     # 获取 rootfs.img 的绝对路径
     ROOTFS_PATH="$(pwd)/tmp/images/qemu_aarch64_linux/rootfs.img"
-    
+
     # 更新配置文件中的路径
     sed -i 's|file=${workspaceFolder}/tmp/rootfs.img|file='"$ROOTFS_PATH"'|g' tmp/configs/qemu-aarch64-info.toml
     # 将 success_regex 改为空数组
