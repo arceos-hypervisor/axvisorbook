@@ -45,7 +45,7 @@ flowchart TB
 **交互关系解析**：
 - **config → vm_list**：VM 创建完成后，config 模块将其注册到 vm_list，建立全局可见性
 - **shell → vm_list**：Shell 命令通过查询接口访问 VM 信息，实现用户交互
-- **vcpus ⇄ vm_list**：vCPU 模块通过弱引用访问 VM，避免循环引用导致内存泄漏
+- **vcpus ⇄ vm_list**：Vcpu 模块通过弱引用访问 VM，避免循环引用导致内存泄漏
 - **辅助函数 → vm_list**：mod.rs 提供的封装函数简化了 VM 访问模式
 - **vm_list → VM 实例**：vm_list 持有所有 VM 的强引用，管理它们的生命周期
 
@@ -65,7 +65,7 @@ flowchart TB
 
 **config 模块**的职责是根据配置文件初始化虚拟机实例。当一个 VM 对象创建完成后，config 模块会调用 `push_vm` 将其注册到全局列表中。这个设计遵循了"创建者负责注册"的原则，确保每个成功创建的 VM 都能被系统追踪。
 
-**vcpus 模块**与 VM 之间存在特殊的引用关系。每个 vCPU 任务需要访问其所属的 VM，但如果直接持有 `Arc<VM>` 强引用，会形成循环引用（VM 拥有 vCPU，vCPU 又引用 VM），导致内存永远无法释放。因此 vcpus 模块使用 `Weak<VM>` 弱引用，在需要访问 VM 时通过 `upgrade()` 方法临时提升为 `Arc<VM>`，使用完毕后自动释放。这是 Rust 中处理循环引用的标准模式。
+**vcpus 模块**与 VM 之间存在特殊的引用关系。每个 Vcpu 任务需要访问其所属的 VM，但如果直接持有 `Arc<VM>` 强引用，会形成循环引用（VM 拥有 Vcpu，Vcpu 又引用 VM），导致内存永远无法释放。因此 vcpus 模块使用 `Weak<VM>` 弱引用，在需要访问 VM 时通过 `upgrade()` 方法临时提升为 `Arc<VM>`，使用完毕后自动释放。这是 Rust 中处理循环引用的标准模式。
 
 **shell 命令**层通过查询接口与 vm_list 交互。`vm list` 命令调用 `get_vm_list()` 获取所有 VM 的列表，`vm show` 和 `vm delete` 命令则通过 `get_vm_by_id()` 获取特定 VM。这些接口返回的都是 `Arc<VM>` 的克隆，增加引用计数但不复制 VM 对象本身，既保证了数据安全，又避免了不必要的开销。
 
@@ -132,7 +132,7 @@ classDiagram
 
 **类型别名的设计意图**：
 
-- **VM**：是 `AxVM<AxVMHalImpl, AxVCpuHalImpl>` 的别名，隐藏了泛型参数的复杂性。AxVM 是虚拟机的核心实现，两个泛型参数分别是 VM 层和 vCPU 层的硬件抽象层（HAL）实现。
+- **VM**：是 `AxVM<AxVMHalImpl, AxVCpuHalImpl>` 的别名，隐藏了泛型参数的复杂性。AxVM 是虚拟机的核心实现，两个泛型参数分别是 VM 层和 Vcpu 层的硬件抽象层（HAL）实现。
 
 - **VMRef**：等价于 `Arc<VM>`，表示一个虚拟机的共享引用。使用 Arc（原子引用计数）允许多个所有者同时持有同一个 VM 的引用，当最后一个引用被释放时，VM 会自动清理。
 
@@ -140,9 +140,9 @@ classDiagram
 
 **所有权关系**：
 - VMList 持有 `VMRef`（强引用），是 VM 的主要所有者
-- vCPU 任务持有 `Weak<VM>`（弱引用），避免循环引用
+- Vcpu 任务持有 `Weak<VM>`（弱引用），避免循环引用
 - Shell 命令和辅助函数获取 `VMRef` 的临时克隆，使用完毕后自动释放
-- VM 持有 `Vec<VCpuRef>`（强引用），拥有其所有 vCPU
+- VM 持有 `Vec<VCpuRef>`（强引用），拥有其所有 Vcpu
 
 ## 全局 API
 
@@ -215,7 +215,7 @@ flowchart TB
 - **vm list 命令**：向用户展示所有虚拟机的状态概览
 - **批量操作**：需要遍历所有 VM 执行操作（如启动所有 VM、状态检查等）
 - **系统监控**：收集全局的虚拟机统计信息
-- **启动流程**：VMM 初始化时需要获取所有 VM 进行 vCPU 设置
+- **启动流程**：VMM 初始化时需要获取所有 VM 进行 Vcpu 设置
 
 下图展示了 `get_vm_list()` 的内部执行流程，从获取全局锁到返回 VM 列表的完整过程：
 
@@ -351,16 +351,16 @@ with_vm(vm_id, |vm| {
 
 ### with_vm_and_vcpu
 
-`with_vm_and_vcpu` 扩展了 `with_vm`，同时提供 VM 和指定的 vCPU 访问。这个函数解决了需要同时操作虚拟机和其特定虚拟 CPU 的场景，是许多管理命令的基础支撑。
+`with_vm_and_vcpu` 扩展了 `with_vm`，同时提供 VM 和指定的 Vcpu 访问。这个函数解决了需要同时操作虚拟机和其特定虚拟 CPU 的场景，是许多管理命令的基础支撑。
 
-如果使用 `with_vm`，调用者需要自己从 VM 中获取 vCPU：
+如果使用 `with_vm`，调用者需要自己从 VM 中获取 Vcpu：
 ```rust
 // 使用 with_vm 的方式（繁琐）
 with_vm(vm_id, |vm| {
     if let Some(vcpu) = vm.vcpu(vcpu_id) {
         // 使用 vcpu
     } else {
-        // 处理 vCPU 不存在
+        // 处理 Vcpu 不存在
     }
 });
 ```
@@ -373,7 +373,7 @@ with_vm_and_vcpu(vm_id, vcpu_id, |vm, vcpu| {
 });
 ```
 
-下图展示了 `with_vm_and_vcpu` 的双重查找流程，包括 VM 查找和 vCPU 查找两个阶段：
+下图展示了 `with_vm_and_vcpu` 的双重查找流程，包括 VM 查找和 Vcpu 查找两个阶段：
 
 ```mermaid
 sequenceDiagram
@@ -390,11 +390,11 @@ sequenceDiagram
         List-->>Helper: Some(vm)
         Helper->>VM: vm.vcpu(vcpu_id)
 
-        alt vCPU 存在
+        alt Vcpu 存在
             VM-->>Helper: Some(vcpu)
             Helper->>Helper: 执行闭包 f(vm, vcpu)
             Helper-->>Caller: Some(T)
-        else vCPU 不存在
+        else Vcpu 不存在
             VM-->>Helper: None
             Helper-->>Caller: None
         end
@@ -416,20 +416,20 @@ where
 // 在 vm show 命令中
 with_vm_and_vcpu(vm_id, vcpu_id, |vm, vcpu| {
     println!("VM {}: {}", vm.id(), vm.name());
-    println!("  vCPU {}: state={:?}, pcpu={}",
+    println!("  Vcpu {}: state={:?}, pcpu={}",
              vcpu.id(), vcpu.state(), vcpu.pcpu_id());
 });
 ```
 
 ### with_vm_and_vcpu_on_pcpu
 
-`with_vm_and_vcpu_on_pcpu` 是最高级的辅助函数，确保闭包在目标 vCPU 所在的物理 CPU 上执行：
+`with_vm_and_vcpu_on_pcpu` 是最高级的辅助函数，确保闭包在目标 Vcpu 所在的物理 CPU 上执行：
 
 ```mermaid
 flowchart TB
     START["with_vm_and_vcpu_on_pcpu(vm_id, vcpu_id, f)"]
     START --> GUARD["禁用抢占和中断"]
-    GUARD --> CHECK{"当前任务就是目标 vCPU?"}
+    GUARD --> CHECK{"当前任务就是目标 Vcpu?"}
 
     CHECK -->|是| DIRECT["直接执行闭包"]
     CHECK -->|否| IPI["发送 IPI 到目标物理 CPU"]
@@ -441,7 +441,7 @@ flowchart TB
 
 **使用示例**：
 ```rust
-// 向 vCPU 注入中断
+// 向 Vcpu 注入中断
 with_vm_and_vcpu_on_pcpu(vm_id, vcpu_id, |vm, vcpu| {
     vcpu.inject_interrupt(IRQ_TIMER);
 });
@@ -449,7 +449,7 @@ with_vm_and_vcpu_on_pcpu(vm_id, vcpu_id, |vm, vcpu| {
 
 ## 与 VMM 启动流程的关系
 
-vm_list 在 VMM 的初始化和启动流程中扮演关键角色，作为连接配置加载、vCPU 设置和 VM 启动的桥梁。
+vm_list 在 VMM 的初始化和启动流程中扮演关键角色，作为连接配置加载、Vcpu 设置和 VM 启动的桥梁。
 
 ```mermaid
 sequenceDiagram
@@ -501,11 +501,11 @@ sequenceDiagram
 
 3. **注册到列表**：通过 `push_vm(vm)` 将创建的 VM 注册到全局列表。此时 VM 处于 `Loaded` 状态，尚未启动。
 
-4. **设置 vCPU**：调用 `get_vm_list()` 获取所有 VM，然后为每个 VM 设置主 vCPU（Primary vCPU）：
-   - 创建 vCPU 任务
+4. **设置 Vcpu**：调用 `get_vm_list()` 获取所有 VM，然后为每个 VM 设置主 Vcpu（Primary Vcpu）：
+   - 创建 Vcpu 任务
    - 分配物理 CPU
-   - 初始化 vCPU 寄存器
-   - 将 vCPU 任务加入调度器（但不立即运行）
+   - 初始化 Vcpu 寄存器
+   - 将 Vcpu 任务加入调度器（但不立即运行）
 
 ### 阶段 2：启动（vmm::start）
 
@@ -513,14 +513,14 @@ sequenceDiagram
 
 2. **引导 VM**：对于每个 VM：
    - 调用 `vm.boot()` 设置 VM 状态为 `Running`
-   - 调用 `notify_primary_vcpu(vm_id)` 唤醒主 vCPU 任务
+   - 调用 `notify_primary_vcpu(vm_id)` 唤醒主 Vcpu 任务
    - 增加 `RUNNING_VM_COUNT` 计数器
 
 3. **等待完成**：主线程进入等待状态，直到所有 VM 停止或被删除。
 
 **为什么需要两次 get_vm_list()**：
 
-- 第一次在 `init` 阶段，用于设置 vCPU，此时 VM 还不应该运行
+- 第一次在 `init` 阶段，用于设置 Vcpu，此时 VM 还不应该运行
 - 第二次在 `start` 阶段，用于实际启动 VM，确保所有准备工作已完成
 - 分离初始化和启动逻辑，提高系统的可维护性和可测试性
 
@@ -628,14 +628,14 @@ pub fn push_vm(vm: VMRef) -> Result<(), VMError> {
    - 强制删除会导致数据损坏或丢失
 
 2. **资源泄漏风险**：
-   - vCPU 任务仍在运行，持有 VM 的引用
+   - Vcpu 任务仍在运行，持有 VM 的引用
    - 等待队列中可能有阻塞的任务
    - 设备资源（如直通设备）尚未释放
    - 内存映射和 DMA 缓冲区仍在使用中
 
 3. **系统稳定性风险**：
-   - vCPU 任务可能访问已释放的 VM 内存（use-after-free）
-   - 中断注入机制可能尝试访问不存在的 vCPU
+   - Vcpu 任务可能访问已释放的 VM 内存（use-after-free）
+   - 中断注入机制可能尝试访问不存在的 Vcpu
    - 其他模块可能仍持有对 VM 的引用
 
 **删除流程的完整步骤**：
@@ -643,9 +643,9 @@ pub fn push_vm(vm: VMRef) -> Result<(), VMError> {
 成功的删除操作需要经过以下步骤，每一步都有明确的验证：
 
 1. **状态验证**：检查 VM 当前状态，决定是否允许删除
-2. **停止 VM**（如需要）：调用 shutdown，等待 vCPU 任务响应
-3. **等待停止完成**：轮询检查所有 vCPU 状态，确保全部退出
-4. **清理 vCPU 资源**：调用 cleanup_vm_vcpus，等待任务 join
+2. **停止 VM**（如需要）：调用 shutdown，等待 Vcpu 任务响应
+3. **等待停止完成**：轮询检查所有 Vcpu 状态，确保全部退出
+4. **清理 Vcpu 资源**：调用 cleanup_vm_vcpus，等待任务 join
 5. **从列表移除**：调用 remove_vm，获取最后的强引用
 6. **验证引用计数**：检查 strong_count，确保没有泄漏
 7. **自动释放**：VM 引用离开作用域，触发析构器

@@ -13,9 +13,9 @@ sidebar_position: 7
 状态说明：
 - **Loading**：VM 正在创建和初始化，配置加载中
 - **Loaded**：VM 已完成配置，但尚未启动，处于待命状态
-- **Running**：VM 正在运行，所有 vCPU 正常执行
-- **Suspended**：VM 已暂停，vCPU 被阻塞但状态保留
-- **Stopping**：VM 正在关闭，等待所有 vCPU 退出
+- **Running**：VM 正在运行，所有 Vcpu 正常执行
+- **Suspended**：VM 已暂停，Vcpu 被阻塞但状态保留
+- **Stopping**：VM 正在关闭，等待所有 Vcpu 退出
 - **Stopped**：VM 已停止，可以重启或删除
 
 下图展示了 VM 状态之间的转换关系及触发命令：
@@ -32,7 +32,7 @@ stateDiagram-v2
 
     Running --> Stopping: shutdown
     Suspended --> Stopping: shutdown
-    Stopping --> Stopped: 所有 vCPU 退出
+    Stopping --> Stopped: 所有 Vcpu 退出
 
     Stopped --> Running: restart
 
@@ -68,7 +68,7 @@ stateDiagram-v2
 
 ## vm list
 
-列出所有虚拟机的状态。这是最常用的命令之一，用于快速查看系统中所有 VM 的概况，包括它们的运行状态、资源配置和 vCPU 状态统计。
+列出所有虚拟机的状态。这是最常用的命令之一，用于快速查看系统中所有 VM 的概况，包括它们的运行状态、资源配置和 Vcpu 状态统计。
 
 ### 用法
 
@@ -131,21 +131,21 @@ vm list --format json
    - **json 格式**：适合程序处理，可以被脚本解析和处理
 
 4. **数据聚合**（仅 table 格式）：
-   - 遍历每个 VM 的所有 vCPU
-   - 统计各个状态（Running、Blocked、Free）的 vCPU 数量
+   - 遍历每个 VM 的所有 Vcpu
+   - 统计各个状态（Running、Blocked、Free）的 Vcpu 数量
    - 汇总显示在 "VCPU STATE" 列，如 "Run:2, Blk:1"
 
 **为什么需要状态统计**：
 
-vCPU 状态统计提供了 VM 运行状态的快速概览：
-- **Run: N**：有 N 个 vCPU 正在执行 Guest 代码
-- **Blk: N**：有 N 个 vCPU 处于阻塞状态（等待中断、暂停等）
-- **Free: N**：有 N 个 vCPU 尚未启动
+Vcpu 状态统计提供了 VM 运行状态的快速概览：
+- **Run: N**：有 N 个 Vcpu 正在执行 Guest 代码
+- **Blk: N**：有 N 个 Vcpu 处于阻塞状态（等待中断、暂停等）
+- **Free: N**：有 N 个 Vcpu 尚未启动
 
 这些信息帮助用户快速判断：
 - VM 是否真正在运行（Run > 0）
-- VM 是否处于暂停状态（所有 vCPU 都是 Blk）
-- VM 是否刚创建未启动（所有 vCPU 都是 Free）
+- VM 是否处于暂停状态（所有 Vcpu 都是 Blk）
+- VM 是否刚创建未启动（所有 Vcpu 都是 Free）
 
 下图展示了 `vm list` 命令的内部处理逻辑，包括如何获取数据、处理空列表情况以及根据格式选项生成不同的输出：
 
@@ -163,7 +163,7 @@ flowchart TB
     subgraph 表格处理
         TABLE --> HEADER[打印表头]
         HEADER --> LOOP[遍历 VM]
-        LOOP --> STATE[统计 vCPU 状态]
+        LOOP --> STATE[统计 Vcpu 状态]
         STATE --> ROW[打印行]
     end
 ```
@@ -196,9 +196,9 @@ vm show <VM_ID> [OPTIONS]
 flowchart LR
     subgraph 基本模式
         B1[VM ID/名称/状态]
-        B2[vCPU 数量]
+        B2[Vcpu 数量]
         B3[内存总量]
-        B4[vCPU 状态摘要]
+        B4[Vcpu 状态摘要]
     end
 
     subgraph "+配置模式"
@@ -213,7 +213,7 @@ flowchart LR
     end
 
     subgraph "完整模式"
-        F1[每个 vCPU 详情]
+        F1[每个 Vcpu 详情]
         F2[内存区域详情]
         F3[设备映射详情]
         F4[CPU 亲和性]
@@ -362,7 +362,7 @@ flowchart LR
 
 ## vm stop
 
-停止虚拟机。该命令会向 VM 发送停止信号，让 vCPU 退出执行循环。支持两种模式：优雅停止（等待 VM 完成清理）和强制停止（立即终止）。可以同时停止多个 VM。
+停止虚拟机。该命令会向 VM 发送停止信号，让 Vcpu 退出执行循环。支持两种模式：优雅停止（等待 VM 完成清理）和强制停止（立即终止）。可以同时停止多个 VM。
 
 ### 用法
 
@@ -384,12 +384,12 @@ vm stop <VM_ID...> [--force]
 flowchart TB
     subgraph 优雅停止
         G1[发送停止信号]
-        G2[等待 vCPU 退出]
+        G2[等待 Vcpu 退出]
         G3[状态转为 Stopped]
     end
 
     subgraph 强制停止
-        F1[立即终止 vCPU]
+        F1[立即终止 Vcpu]
         F2[不等待客户机]
         F3[可能丢失数据]
     end
@@ -400,7 +400,7 @@ flowchart TB
 
 ### 停止信号传播
 
-下图展示了停止信号如何从 Shell 命令传播到各个 vCPU。所有 vCPU 会并行检测停止信号并退出，最后一个退出的 vCPU 负责将 VM 状态设置为 Stopped：
+下图展示了停止信号如何从 Shell 命令传播到各个 Vcpu。所有 Vcpu 会并行检测停止信号并退出，最后一个退出的 Vcpu 负责将 VM 状态设置为 Stopped：
 
 ```mermaid
 sequenceDiagram
@@ -412,7 +412,7 @@ sequenceDiagram
     Shell->>VM: shutdown()
     VM->>VM: set_status(Stopping)
 
-    par vCPU 检测
+    par Vcpu 检测
         VCpu0->>VCpu0: 检测 vm.stopping()
         VCpu0->>VCpu0: 退出主循环
     and
@@ -420,14 +420,14 @@ sequenceDiagram
         VCpu1->>VCpu1: 退出主循环
     end
 
-    Note over VCpu1: 最后一个 vCPU
+    Note over VCpu1: 最后一个 Vcpu
     VCpu1->>VM: set_status(Stopped)
     VCpu1->>VM: 减少运行计数
 ```
 
 ## vm suspend / resume (暂时不完善)
 
-暂停和恢复虚拟机。暂停会让所有 vCPU 进入阻塞状态但保留执行状态，恢复则会唤醒所有 vCPU 继续执行。这对于临时释放 CPU 资源或进行系统维护非常有用。
+暂停和恢复虚拟机。暂停会让所有 Vcpu 进入阻塞状态但保留执行状态，恢复则会唤醒所有 Vcpu 继续执行。这对于临时释放 CPU 资源或进行系统维护非常有用。
 
 **注意**：该功能目前并未真正实现，仍在完善中。
 
@@ -440,15 +440,15 @@ vm resume <VM_ID>
 
 ### 暂停/恢复流程
 
-暂停和恢复是一对互补的操作。暂停通过状态标志让 vCPU 主动进入等待，恢复则通过通知机制唤醒它们：
+暂停和恢复是一对互补的操作。暂停通过状态标志让 Vcpu 主动进入等待，恢复则通过通知机制唤醒它们：
 
 ```mermaid
 flowchart TB
     subgraph suspend
         S1[设置状态 Suspended]
-        S2[vCPU 检测 suspending]
-        S3[vCPU 进入 wait_for]
-        S4[vCPU 阻塞]
+        S2[Vcpu 检测 suspending]
+        S3[Vcpu 进入 wait_for]
+        S4[Vcpu 阻塞]
 
         S1 --> S2 --> S3 --> S4
     end
@@ -456,8 +456,8 @@ flowchart TB
     subgraph resume
         R1[设置状态 Running]
         R2[notify_all_vcpus]
-        R3[vCPU 唤醒]
-        R4[vCPU 继续执行]
+        R3[Vcpu 唤醒]
+        R4[Vcpu 继续执行]
 
         R1 --> R2 --> R3 --> R4
     end
@@ -467,12 +467,12 @@ flowchart TB
 
 ### 暂停等待机制
 
-暂停操作是异步的——`vm suspend` 命令只是设置了 VM 的暂停状态标志，但 vCPU 任务需要一些时间才能检测到这个标志并进入阻塞状态。为了确保暂停真正完成，命令需要等待并验证所有 vCPU 都已停止执行。
+暂停操作是异步的——`vm suspend` 命令只是设置了 VM 的暂停状态标志，但 Vcpu 任务需要一些时间才能检测到这个标志并进入阻塞状态。为了确保暂停真正完成，命令需要等待并验证所有 Vcpu 都已停止执行。
 
 **为什么需要等待机制**：
 
 如果不等待验证，可能出现以下问题：
-- 用户以为 VM 已暂停，但实际上 vCPU 还在运行
+- 用户以为 VM 已暂停，但实际上 Vcpu 还在运行
 - 在 VM 未完全暂停时执行其他操作（如快照），导致状态不一致
 - 无法给用户明确的反馈（操作成功还是失败？）
 
@@ -480,31 +480,31 @@ flowchart TB
 
 采用轮询方式而非阻塞等待的原因：
 1. **超时保护**：避免无限等待，如果 10 秒内未完成则报告超时
-2. **状态检查**：每次循环都检查所有 vCPU 状态，提供进度反馈
+2. **状态检查**：每次循环都检查所有 Vcpu 状态，提供进度反馈
 3. **非阻塞**：允许在等待期间响应其他事件（虽然当前实现是同步的）
 
 **轮询参数的选择**：
 
 - **最多 10 次**：每次 100ms，总计 1 秒超时
   - 1 秒对于暂停操作来说是合理的等待时间
-  - 正常情况下，vCPU 应该在几十毫秒内响应
+  - 正常情况下，Vcpu 应该在几十毫秒内响应
   - 如果超过 1 秒未完成，很可能出现了异常
 
 - **间隔 100ms**：
   - 足够短，用户不会感觉到明显的延迟
   - 足够长，避免过于频繁的轮询消耗 CPU
-  - 给 vCPU 任务足够的时间完成状态转换
+  - 给 Vcpu 任务足够的时间完成状态转换
 
 **状态检查的逻辑**：
 
-每次轮询检查所有 vCPU 的状态：
+每次轮询检查所有 Vcpu 的状态：
 - 如果**全部**都是 Blocked：暂停成功完成
 - 如果**仍有** Running 或其他状态：继续等待
 - 如果达到最大次数：报告超时错误
 
 这种"全部完成才算成功"的语义确保了 VM 处于完全一致的暂停状态。
 
-下图展示了暂停命令如何通过轮询机制等待所有 vCPU 进入阻塞状态：
+下图展示了暂停命令如何通过轮询机制等待所有 Vcpu 进入阻塞状态：
 
 ```mermaid
 sequenceDiagram
@@ -594,7 +594,7 @@ flowchart TB
     subgraph 删除步骤
         PROCEED --> SIGNAL[发送关闭信号]
         SIGNAL --> REMOVE[从列表移除]
-        REMOVE --> JOIN[等待 vCPU 退出]
+        REMOVE --> JOIN[等待 Vcpu 退出]
         JOIN --> CLEANUP{保留数据?}
         CLEANUP -->|否| DELETE_DATA[删除数据文件]
         CLEANUP -->|是| KEEP[保留数据]
@@ -610,7 +610,7 @@ VM 删除的最后阶段是资源清理，这是确保系统不发生内存泄�
 **资源清理的复杂性**：
 
 VM 是一个复杂的对象，包含多种资源：
-- **任务资源**：vCPU 任务及其栈空间
+- **任务资源**：Vcpu 任务及其栈空间
 - **内存资源**：Guest 物理内存映射
 - **设备资源**：模拟设备和直通设备的状态
 - **数据结构**：全局列表、等待队列中的条目
@@ -625,7 +625,7 @@ VM 是一个复杂的对象，包含多种资源：
    - 此时其他线程无法再通过 `get_vm_by_id` 获取这个 VM
 
 2. **等待任务退出**：
-   - `cleanup_vm_vcpus(id)` 等待所有 vCPU 任务完全退出
+   - `cleanup_vm_vcpus(id)` 等待所有 Vcpu 任务完全退出
    - 使用 `task.join()` 阻塞等待每个任务
    - 确保任务不再访问 VM 的内存
 
@@ -643,7 +643,7 @@ VM 是一个复杂的对象，包含多种资源：
 
 如果颠倒顺序（先 cleanup 再 remove），可能导致：
 - **并发访问**：cleanup 期间，其他线程可能通过 `get_vm_by_id` 获取 VM，增加引用计数
-- **竞态条件**：vCPU 任务退出前可能检测到 VM 仍在列表中，尝试再次访问
+- **竞态条件**：Vcpu 任务退出前可能检测到 VM 仍在列表中，尝试再次访问
 - **不确定性**：无法可靠地验证引用计数，因为存在其他合法的引用路径
 
 **引用计数验证的意义**：
@@ -663,14 +663,14 @@ strong_count 检查是一个重要的健康检查：
 sequenceDiagram
     participant Shell
     participant VMList as VM 列表
-    participant VCpus as vCPU 任务
+    participant VCpus as Vcpu 任务
     participant Arc as 引用计数
 
     Shell->>VMList: remove_vm(id)
     VMList-->>Shell: Arc<VM>
 
     Shell->>VCpus: cleanup_vm_vcpus(id)
-    loop 每个 vCPU 任务
+    loop 每个 Vcpu 任务
         VCpus->>VCpus: task.join()
     end
 

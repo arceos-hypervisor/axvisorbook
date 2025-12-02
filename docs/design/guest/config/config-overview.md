@@ -119,7 +119,7 @@ classDiagram
   - `id`：虚拟机的唯一标识符
   - `name`：虚拟机的名称，用于标识和日志输出
   - `cpu_num`：虚拟 CPU 的数量
-  - `phys_cpu_ids`：可选字段，指定 vCPU 绑定到哪些物理 CPU，使用 `Option<Vec<usize>>` 类型
+  - `phys_cpu_ids`：可选字段，指定 Vcpu 绑定到哪些物理 CPU，使用 `Option<Vec<usize>>` 类型
 
 - **KernelConfig**：内核镜像相关配置
   - `entry_point`：内核入口地址，虚拟机启动时 PC 寄存器的初始值
@@ -185,7 +185,7 @@ classDiagram
   - `interrupt_mode`：中断模式枚举
 
 - **公有字段**（用 `+` 表示）：
-  - `cpu_config`：vCPU 配置，包含 BSP 和 AP 的入口地址
+  - `cpu_config`：Vcpu 配置，包含 BSP 和 AP 的入口地址
   - `image_config`：镜像配置，包含内核和 DTB 的加载地址
 
 **AxVCpuConfig 子结构**：
@@ -336,7 +336,7 @@ sequenceDiagram
 
 **阶段 8：提供给 VMM 核心（VM → VMM）**
 - 将最终的 `AxVMConfig` 传递给虚拟机创建函数
-- VMM 使用此配置初始化 vCPU、内存、设备等资源
+- VMM 使用此配置初始化 Vcpu、内存、设备等资源
 - 配置在虚拟机生命周期内保持不变（除非通过特定 API 修改）
 
 **错误处理**：

@@ -443,7 +443,7 @@ flowchart TB
 **Layer 3：语义验证**（在 `From` trait 转换中手动实现）
 - **CPU 数量一致性**：
   - `cpu_num` 必须等于 `phys_cpu_ids` 列表的长度
-  - 确保每个 vCPU 都有对应的物理 CPU 绑定
+  - 确保每个 Vcpu 都有对应的物理 CPU 绑定
 
 - **内存区域非空**：
   - 至少要有一个内存区域

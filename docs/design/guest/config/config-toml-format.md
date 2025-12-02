@@ -41,7 +41,7 @@ graph TB
 | `id` | usize | VM 唯一标识符（0-255） | `1` |
 | `name` | String | VM 名称，用于日志显示 | `"linux-qemu"` |
 | `vm_type` | u8 | 虚拟化类型，1 = 完全虚拟化 | `1` |
-| `cpu_num` | usize | vCPU 数量 | `4` |
+| `cpu_num` | usize | Vcpu 数量 | `4` |
 
 ### 可选字段
 
@@ -62,15 +62,15 @@ phys_cpu_ids = [0x0, 0x100, 0x200, 0x300]
 
 ### CPU 亲和性说明
 
-`phys_cpu_ids` 字段指定每个 vCPU 绑定的物理 CPU：
+`phys_cpu_ids` 字段指定每个 Vcpu 绑定的物理 CPU：
 
 ```mermaid
 graph LR
     subgraph 虚拟机
-        V0[vCPU 0]
-        V1[vCPU 1]
-        V2[vCPU 2]
-        V3[vCPU 3]
+        V0[Vcpu 0]
+        V1[Vcpu 1]
+        V2[Vcpu 2]
+        V3[Vcpu 3]
     end
 
     subgraph 物理机
@@ -396,11 +396,11 @@ if let Some(ref phys_cpu_ids) = config.base.phys_cpu_ids {
 }
 ```
 
-**为什么需要**：每个 vCPU 需要绑定到一个物理 CPU
+**为什么需要**：每个 Vcpu 需要绑定到一个物理 CPU
 
 **错误示例**：
 ```toml
-cpu_num = 4  # 声明 4 个 vCPU
+cpu_num = 4  # 声明 4 个 Vcpu
 phys_cpu_ids = [0x0, 0x100]  # ❌ 只提供了 2 个物理 CPU
 ```
 
