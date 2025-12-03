@@ -373,7 +373,7 @@ serde 自动生成所有解析代码，无需手写 `if let Some(id) = toml["id"
 不同类型在解析过程中的转换：
 
 | TOML 值 | 中间类型 | 最终类型 |
-|---------|---------|---------|
+|-------|-------|-------|
 | `1` | `usize` | `usize` |
 | `"linux-qemu"` | `String` | `String` |
 | `0x8020_0000` | `usize` | `GuestPhysAddr` |
@@ -414,7 +414,7 @@ flowchart TB
 
 这个层次图展示了验证过程的递进关系，每层依赖于前一层的成功：
 
-**Layer 1：TOML 语法验证**（由 toml crate 自动完成）
+**Layer 1：TOML 语法验证**（由 `toml` crate 自动完成）
 - **词法分析**：
   - 识别 token：标识符、等号、方括号、数字、字符串等
   - 检测非法字符和不完整的 token

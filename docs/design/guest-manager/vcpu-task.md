@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 2
 ---
 
 # VCpu 任务管理
@@ -67,7 +67,7 @@ flowchart TB
 
 ### VMVCpus 结构
 
-每个 VM 有一个 VMVCpus 管理其所有 vCPU：
+每个 VM 有一个 VMVCpus 管理其所有 Vcpu：
 
 ```mermaid
 classDiagram
@@ -123,7 +123,7 @@ flowchart TB
 
 **TaskExt 的设计目的**：
 
-ArceOS 的任务系统是通用的，它不知道什么是虚拟机或 vCPU。但 Vcpu 任务在执行过程中需要频繁访问它所属的 VM 和 Vcpu 对象。如果没有 TaskExt，每次需要这些信息时都要通过全局查找，既低效又容易出错。
+ArceOS 的任务系统是通用的，它不知道什么是虚拟机或 Vcpu。但 Vcpu 任务在执行过程中需要频繁访问它所属的 VM 和 Vcpu 对象。如果没有 TaskExt，每次需要这些信息时都要通过全局查找，既低效又容易出错。
 
 TaskExt 解决了以下问题：
 - **快速访问**：任务可以通过 `current_task().task_ext()` 直接获取所属的 VM 和 Vcpu 引用
@@ -161,7 +161,7 @@ if let Some(vm) = task_ext.vm() {  // vm() 内部调用 weak.upgrade()
     return;
 }
 
-// 访问 vCPU（直接获取）
+// 访问 VCcpu（直接获取）
 let vcpu = &task_ext.vcpu;  // 直接访问，无需检查
 vcpu.get_regs();
 ```
@@ -207,17 +207,17 @@ stateDiagram-v2
 ```
 
 关键状态说明：
-- **Created**：vCPU 任务已分配但未加入调度器
+- **Created**：Vcpu 任务已分配但未加入调度器
 - **Blocked**：任务已加入调度器但处于阻塞状态，等待 VM 启动
 - **Waiting**：等待 VM 进入 Running 状态
-- **Running**：vCPU 正常运行，执行 Guest 代码
-- **Halting**：vCPU 执行了 WFI（Wait For Interrupt）指令，暂时休眠等待中断
-- **Suspended**：VM 被暂停，vCPU 阻塞但保持状态
-- **Exiting**：VM 正在关闭，vCPU 准备退出
+- **Running**：Vcpu 正常运行，执行 Guest 代码
+- **Halting**：Vcpu 执行了 WFI（Wait For Interrupt）指令，暂时休眠等待中断
+- **Suspended**：VM 被暂停，Vcpu 阻塞但保持状态
+- **Exiting**：VM 正在关闭，Vcpu 准备退出
 
 ### 主 Vcpu 初始化流程
 
-主 vCPU（Primary vCPU，通常是 Vcpu 0）是VM启动时第一个创建和运行的虚拟处理器，负责引导 Guest 操作系统。下图展示了主 Vcpu 从创建到启动的完整时序，包括任务分配、调度器注册、等待队列设置等关键步骤：
+主 Vcpu（Primary Vcpu，通常是 Vcpu 0）是VM启动时第一个创建和运行的虚拟处理器，负责引导 Guest 操作系统。下图展示了主 Vcpu 从创建到启动的完整时序，包括任务分配、调度器注册、等待队列设置等关键步骤：
 
 ```mermaid
 sequenceDiagram
@@ -253,13 +253,13 @@ sequenceDiagram
 2. **初始阻塞**：任务加入调度器时处于阻塞状态，不会立即运行
 3. **注册等待队列**：将 VMVCpus 注册到全局等待队列，使其可以被唤醒
 4. **启动 VM**：调用 `vm.boot()` 设置 VM 状态为 Running
-5. **唤醒 Vcpu**：通过 `notify_primary_vcpu` 唤醒主 vCPU，开始执行 Guest 代码
+5. **唤醒 Vcpu**：通过 `notify_primary_vcpu` 唤醒主 Vcpu，开始执行 Guest 代码
 
 ### 辅助 Vcpu 启动流程
 
-辅助 vCPU（Secondary vCPU）不在 VM 启动时创建，而是由 Guest 操作系统通过 PSCI（Power State Coordination Interface）标准接口动态启动。这种按需启动的方式可以节省资源，也更符合真实硬件的行为。
+辅助 Vcpu（Secondary Vcpu）不在 VM 启动时创建，而是由 Guest 操作系统通过 PSCI（Power State Coordination Interface）标准接口动态启动。这种按需启动的方式可以节省资源，也更符合真实硬件的行为。
 
-下图展示了 Guest 内核启动额外 CPU 核心时的完整交互流程，包括 PSCI 调用、MPIDR 映射查找、vCPU 状态检查和任务创建：
+下图展示了 Guest 内核启动额外 CPU 核心时的完整交互流程，包括 PSCI 调用、MPIDR 映射查找、Vcpu 状态检查和任务创建：
 
 ```mermaid
 sequenceDiagram
@@ -394,7 +394,7 @@ Vcpu 运行中的错误处理策略需要在系统稳定性和问题诊断之间
 
 3. **完善的日志记录**：所有错误都会被记录
    - 使用不同的日志级别（error、warn、info）
-   - 记录足够的上下文信息（VM ID、vCPU ID、错误码）
+   - 记录足够的上下文信息（VM ID、Vcpu ID、错误码）
    - 便于问题复现和调试
 
 下图展示了三种主要错误类型的处理流程和影响范围：
@@ -449,7 +449,7 @@ VMExit 是虚拟化技术的核心概念，表示 Guest 代码的执行因某种
 
 **VMExit 处理的基本流程**：
 
-每个 VMExit 都携带退出原因和相关参数。vCPU 任务的职责是：
+每个 VMExit 都携带退出原因和相关参数。Vcpu 任务的职责是：
 1. 识别退出类型
 2. 调用相应的处理函数
 3. 更新 Guest 状态（如设置返回值）
@@ -531,7 +531,7 @@ sequenceDiagram
 ```
 
 处理流程解析：
-1. **接收 Hypercall**：vCPU 从 Guest 模式退出，携带 Hypercall 号和参数
+1. **接收 Hypercall**：Vcpu 从 Guest 模式退出，携带 Hypercall 号和参数
 2. **创建对象**：根据 Hypercall 号创建相应的处理对象
 3. **执行操作**：调用 `execute()` 方法执行具体的 Hypercall 逻辑
 4. **返回结果**：将返回值写入 Guest 寄存器，失败时返回 -1
@@ -572,13 +572,13 @@ IPI 处理场景：
 
 **为什么需要等待队列**：
 
-在虚拟化环境中，vCPU 经常需要等待某些条件满足才能继续执行：
+在虚拟化环境中，Vcpu 经常需要等待某些条件满足才能继续执行：
 - **Guest 执行 WFI**：Guest CPU 主动进入休眠，等待中断唤醒
-- **VM 启动同步**：vCPU 任务创建后要等待 VM 状态变为 Running 才开始执行
+- **VM 启动同步**：Vcpu 任务创建后要等待 VM 状态变为 Running 才开始执行
 - **VM 暂停**：执行 `vm suspend` 时，所有 Vcpu 需要阻塞等待 `vm resume`
-- **CPU 电源管理**：Guest 通过 PSCI 关闭 CPU 时，vCPU 需要进入等待状态
+- **CPU 电源管理**：Guest 通过 PSCI 关闭 CPU 时，Vcpu 需要进入等待状态
 
-如果不使用等待队列，vCPU 任务只能通过忙等待（busy-waiting）来等待条件满足，这会浪费大量 CPU 资源。等待队列允许 Vcpu 任务让出 CPU，由调度器在条件满足时唤醒它。
+如果不使用等待队列，Vcpu 任务只能通过忙等待（busy-waiting）来等待条件满足，这会浪费大量 CPU 资源。等待队列允许 Vcpu 任务让出 CPU，由调度器在条件满足时唤醒它。
 
 **等待队列的工作原理**：
 

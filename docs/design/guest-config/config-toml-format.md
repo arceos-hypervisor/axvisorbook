@@ -38,16 +38,16 @@ graph TB
 
 | 字段 | 类型 | 说明 | 示例 |
 |------|------|------|------|
-| `id` | usize | VM 唯一标识符（0-255） | `1` |
-| `name` | String | VM 名称，用于日志显示 | `"linux-qemu"` |
-| `vm_type` | u8 | 虚拟化类型，1 = 完全虚拟化 | `1` |
-| `cpu_num` | usize | Vcpu 数量 | `4` |
+| `id` | `usize` | VM 唯一标识符（0-255） | `1` |
+| `name` | `String` | VM 名称，用于日志显示 | `"linux-qemu"` |
+| `vm_type` | `u8` | 虚拟化类型，1 = 完全虚拟化 | `1` |
+| `cpu_num` | `usize` | Vcpu 数量 | `4` |
 
 ### 可选字段
 
 | 字段 | 类型 | 说明 | 示例 |
 |------|------|------|------|
-| `phys_cpu_ids` | Vec\<usize\> | 物理 CPU MPIDR 值（ARM） | `[0x0, 0x100]` |
+| `phys_cpu_ids` | `Vec<usize>` | 物理 CPU MPIDR 值（ARM） | `[0x0, 0x100]` |
 
 ### 配置示例
 
@@ -97,22 +97,22 @@ graph LR
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `entry_point` | usize | 内核入口地址（GPA） |
-| `kernel_path` | String | 内核镜像路径 |
-| `kernel_load_addr` | usize | 内核加载地址（GPA） |
-| `memory_regions` | Array | 内存区域配置 |
+| `entry_point` | `usize` | 内核入口地址（GPA） |
+| `kernel_path` | `String` | 内核镜像路径 |
+| `kernel_load_addr` | `usize` | 内核加载地址（GPA） |
+| `memory_regions` | `Array` | 内存区域配置 |
 
 ### 可选字段
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `image_location` | String | 镜像位置："memory" 或 "fs" |
-| `dtb_path` | String | DTB 文件路径 |
-| `dtb_load_addr` | usize | DTB 加载地址 |
-| `bios_path` | String | BIOS/UEFI 文件路径 |
-| `bios_load_addr` | usize | BIOS 加载地址 |
-| `ramdisk_path` | String | Ramdisk 文件路径 |
-| `ramdisk_load_addr` | usize | Ramdisk 加载地址 |
+| `image_location` | `String` | 镜像位置："memory" 或 "fs" |
+| `dtb_path` | `String` | DTB 文件路径 |
+| `dtb_load_addr` | `usize` | DTB 加载地址 |
+| `bios_path` | `String` | BIOS/UEFI 文件路径 |
+| `bios_load_addr` | `usize` | BIOS 加载地址 |
+| `ramdisk_path` | `String` | Ramdisk 文件路径 |
+| `ramdisk_load_addr` | `usize` | Ramdisk 加载地址 |
 
 ### 配置示例
 
@@ -176,11 +176,11 @@ graph TB
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `emu_devices` | Array | 模拟设备列表 |
-| `passthrough_devices` | Array | 直通设备列表 |
-| `excluded_devices` | Array | 排除设备列表 |
-| `passthrough_addresses` | Array | 直通地址列表 |
-| `interrupt_mode` | String | 中断模式 |
+| `emu_devices` | `Array` | 模拟设备列表 |
+| `passthrough_devices` | `Array` | 直通设备列表 |
+| `excluded_devices` | `Array` | 排除设备列表 |
+| `passthrough_addresses` | `Array` | 直通地址列表 |
+| `interrupt_mode` | `String` | 中断模式 |
 
 ### 中断模式
 
