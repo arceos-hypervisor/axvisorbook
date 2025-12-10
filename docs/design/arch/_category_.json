@@ -1,8 +1,7 @@
 {
-  "label": "架构设计",
+  "label": "总体架构",
   "position": 1,
   "link": {
-    "type": "generated-index",
-    "slug": "/category/design/arch"
+    "type": "generated-index"
   }
 }
