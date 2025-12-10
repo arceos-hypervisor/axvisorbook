@@ -307,7 +307,7 @@ flowchart TB
     end
 
     subgraph alloc_vcpu_task
-        CHECK{vcpu.phys_cpu_set()?}
+        CHECK{"vcpu.phys_cpu_set()?"}
         CHECK -->|Some| SET["set_cpumask(AxCpuMask::from_raw_bits)"]
         CHECK -->|None| SKIP[不设置亲和性]
     end
@@ -348,7 +348,7 @@ flowchart TB
     RUN_RESULT -->|Ok| HANDLE_EXIT[处理 VMExit]
     RUN_RESULT -->|Err| ERROR[错误处理]
 
-    HANDLE_EXIT --> CHECK_SUSPEND{vm.suspending()?}
+    HANDLE_EXIT --> CHECK_SUSPEND{"vm.suspending()?"}
     ERROR --> SHUTDOWN[vm.shutdown]
     SHUTDOWN --> CHECK_SUSPEND
 
@@ -357,7 +357,7 @@ flowchart TB
 
     WAIT_RESUME --> LOOP_START
 
-    CHECK_STOP{vm.stopping()?}
+    CHECK_STOP{"vm.stopping()?"}
     CHECK_STOP -->|否| LOOP_START
     CHECK_STOP -->|是| MARK_EXIT[mark_vcpu_exiting]
 
