@@ -181,9 +181,9 @@ export default {
       // },
       announcementBar: {
         id: 'tips',
-        content:'💪💪💪Currently, the project is in its early stages, and the related source code and documentation are being gradually organized.💪💪💪',
-        backgroundColor: '#fafbfc',
-        textColor: '#091E42',
+        content:'🚀 欢迎使用 AxVisor！项目正处于快速发展阶段，相关源代码和文档正在逐步完善中。🚀',
+        backgroundColor: '#e3f2fd',
+        textColor: '#0d47a1',
         isCloseable: true,
       },
       docs: {
@@ -253,30 +253,50 @@ export default {
         style: 'light',
         links: [
           {
-            title: 'Document',
+            title: '文档',
             items: [
               {
-                label: 'Tutorial',
-                to: '/docs/overview',
+                label: '快速入门',
+                to: '/docs/introduction/overview',
+              },
+              {
+                label: '架构设计',
+                to: '/docs/design/architecture/arch',
+              },
+              {
+                label: '部署指南',
+                to: '/docs/manual/deploy',
               },
             ],
           },
           {
-            title: 'Community',
+            title: '社区',
             items: [
               {
-                label: 'arceos-hypervisor',
-                href: 'https://github.com/arceos-hypervisor',
+                label: 'GitHub',
+                href: 'https://github.com/arceos-hypervisor/axvisor',
               },
               {
                 label: 'ArceOS',
-                href: 'https://github.com/arceos-org',
+                href: 'https://github.com/arceos-org/arceos',
+              },
+              {
+                label: '贡献指南',
+                to: '/community/contributing/contributing',
               },
             ],
           },
           {
-            title: 'More',
+            title: '资源',
             items: [
+              {
+                label: '路线图',
+                to: '/docs/roadmap',
+              },
+              {
+                label: '博客',
+                to: '/blog',
+              },
               {
                 label: 'openEuler',
                 href: 'https://www.openeuler.org/',
@@ -288,7 +308,7 @@ export default {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} AxVisor team`,
+        copyright: `Copyright © ${new Date().getFullYear()} AxVisor 团队`,
       },
       prism: {
         aditionalLanguages: [
