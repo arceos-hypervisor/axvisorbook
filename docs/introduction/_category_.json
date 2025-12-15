@@ -1,9 +1,9 @@
 {
-  "label": "概述",
+  "label": "简介",
   "position": 1,
   "collapsed": false,
   "link": {
     "type": "generated-index",
-    "slug": "/category/overview"
+    "slug": "/introduction"
   }
 }
