@@ -1,9 +1,9 @@
 {
-  "label": "开发板",
+  "label": "部署",
   "position": 2,
   "collapsed": false,
   "link": {
     "type": "generated-index",
-    "slug": "/quickstart/board"
+    "slug": "/manual/deploy"
   }
 }

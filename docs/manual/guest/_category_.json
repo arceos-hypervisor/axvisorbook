@@ -1,9 +1,9 @@
 {
-  "label": "QEMU",
+  "label": "客户机管理",
   "position": 1,
   "collapsed": false,
   "link": {
     "type": "generated-index",
-    "slug": "/quickstart/qemu"
+    "slug": "/manual/guest"
   }
 }
