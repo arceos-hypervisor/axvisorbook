@@ -1,3 +1,60 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+:root {
+
+  /* Fonts var */
+  /* --ifm-font-family-base: "comfortaa", cursive;
+   --ifm-font-family: "montserrat", sans-serif;
+   --ifm-font-family-monospace: "jetbrainsmono", monospace;
+   --ifm-code-font-size: 100%;  */
+
+  /* Primary */
+  --ifm-color-primary: #2e8555;
+  --ifm-color-primary-dark: #29784c;
+  --ifm-color-primary-darker: #277148;
+  --ifm-color-primary-darkest: #205d3b;
+  --ifm-color-primary-light: #33925d;
+  --ifm-color-primary-lighter: #359962;
+  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-color-primary-contrast-background: var(--ifm-color-primary);
+  --ifm-color-primary-contrast-foreground: var(--ifm-color-secondary);
+
+  /* White - black - gray */
+  --ifm-color-white: #fff;
+  --ifm-color-black: #000;
+  --ifm-color-gray-0: var(--ifm-color-white);
+  --ifm-color-gray-100: #f5f6f7;
+  --ifm-color-gray-200: #ebedf0;
+  --ifm-color-gray-300: #dadde1;
+  --ifm-color-gray-400: #ccd0d5;
+  --ifm-color-gray-500: #bec3c9;
+  --ifm-color-gray-600: #8d949e;
+  --ifm-color-gray-700: #606770;
+  --ifm-color-gray-800: #444950;
+  --ifm-color-gray-900: #1c1e21;
+  --ifm-color-gray-1000: var(--ifm-color-black);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+/* variables dark theme */
+html[data-theme='dark'] {
+  --ifm-color-primary: #25c2a0;
+  --ifm-color-primary-dark: #21af90;
+  --ifm-color-primary-darker: #1fa588;
+  --ifm-color-primary-darkest: #1a8870;
+  --ifm-color-primary-light: #29d5b0;
+  --ifm-color-primary-lighter: #32d8b4;
+  --ifm-color-primary-lightest: #4fddbf;
+}
+
+html,
+body {
+  font-size: 18px;
+}
+
 /* Sidebar menu tweaks */
 
 /* Bold only the top-level entries in the docs sidebar */
