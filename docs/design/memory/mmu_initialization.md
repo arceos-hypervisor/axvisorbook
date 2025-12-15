@@ -2,7 +2,7 @@
 sidebar_position: 2
 ---
 
-# Axvisor MMU 初始化流程详解
+# MMU 初始化流程详解
 
 ## 1 概述
 
