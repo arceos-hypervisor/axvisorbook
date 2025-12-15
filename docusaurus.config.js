@@ -282,7 +282,7 @@ export default {
               },
               {
                 label: '贡献指南',
-                to: '/community/contributing/contributing',
+                to: '/community/contributing',
               },
             ],
           },
