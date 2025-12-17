@@ -72,16 +72,14 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		available mechanisms for setting the properties which formatter objects
 		manage and inserting data into the output.
 		"""
-		 
+
 		import sys
 		import warnings
 		warnings.warn('the formatter module is deprecated', DeprecationWarning,
 		              stacklevel=2)
-		 
-		 
+
 		AS_IS = None
-		 
-		 
+
 		class NullFormatter:
 		    """A formatter which does nothing.
 		    If the writer parameter is omitted, a NullWriter instance is created.
@@ -89,7 +87,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		    Implementations should inherit from this class if implementing a writer
 		    interface but don't need to inherit any implementation.
 		    """
-		 
+
 		    def __init__(self, writer=None):
 		        if writer is None:
 		            writer = NullWriter()
@@ -111,20 +109,19 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		    def push_style(self, *styles): pass
 		    def pop_style(self, n=1): pass
 		    def assert_line_data(self, flag=1): pass
-		 
-		 
+
 		class AbstractFormatter:
 		    """The standard formatter.
 		    This implementation has demonstrated wide applicability to many writers,
 		    and may be used directly in most circumstances.  It has been used to
 		    implement a full-featured World Wide Web browser.
 		    """
-		 
+
 		    #  Space handling policy:  blank spaces at the boundary between elements
 		    #  are handled by the outermost context.  "Literal" data is not checked
 		    #  to determine context, so spaces in literal data are handled directly
 		    #  in all circumstances.
-		 
+
 		    def __init__(self, writer):
 		        self.writer = writer            # Output device
 		        self.align = None               # Current alignment
@@ -139,7 +136,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		        self.parskip = 0                # Skipped space between paragraphs?
 		        self.hard_break = 1             # Have a hard break
 		        self.have_label = 0
-		 
+
 		    def end_paragraph(self, blankline):
 		        if not self.hard_break:
 		            self.writer.send_line_break()
@@ -150,21 +147,21 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		            self.have_label = 0
 		        self.hard_break = self.nospace = self.para_end = 1
 		        self.softspace = 0
-		 
+
 		    def add_line_break(self):
 		        if not (self.hard_break or self.para_end):
 		            self.writer.send_line_break()
 		            self.have_label = self.parskip = 0
 		        self.hard_break = self.nospace = 1
 		        self.softspace = 0
-		 
+
 		    def add_hor_rule(self, *args, **kw):
 		        if not self.hard_break:
 		            self.writer.send_line_break()
 		        self.writer.send_hor_rule(*args, **kw)
 		        self.hard_break = self.nospace = 1
 		        self.have_label = self.para_end = self.softspace = self.parskip = 0
-		 
+
 		    def add_label_data(self, format, counter, blankline = None):
 		        if self.have_label or not self.hard_break:
 		            self.writer.send_line_break()
@@ -176,7 +173,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		            self.writer.send_label_data(format)
 		        self.nospace = self.have_label = self.hard_break = self.para_end = 1
 		        self.softspace = self.parskip = 0
-		 
+
 		    def format_counter(self, format, counter):
 		        label = ''
 		        for c in format:
@@ -191,7 +188,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		            else:
 		                label = label + c
 		        return label
-		 
+
 		    def format_letter(self, case, counter):
 		        label = ''
 		        while counter > 0:
@@ -202,7 +199,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		            s = chr(ord(case) + x)
 		            label = s + label
 		        return label
-		 
+
 		    def format_roman(self, case, counter):
 		        ones = ['i', 'x', 'c', 'm']
 		        fives = ['v', 'l', 'd']
@@ -226,7 +223,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		        if case == 'I':
 		            return label.upper()
 		        return label
-		 
+
 		    def add_flowing_data(self, data):
 		        if not data: return
 		        prespace = data[:1].isspace()
@@ -246,7 +243,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		                          self.parskip = self.have_label = 0
 		        self.softspace = postspace
 		        self.writer.send_flowing_data(data)
-		 
+
 		    def add_literal_data(self, data):
 		        if not data: return
 		        if self.softspace:
@@ -255,14 +252,14 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		        self.nospace = self.para_end = self.softspace = \
 		                       self.parskip = self.have_label = 0
 		        self.writer.send_literal_data(data)
-		 
+
 		    def flush_softspace(self):
 		        if self.softspace:
 		            self.hard_break = self.para_end = self.parskip = \
 		                              self.have_label = self.softspace = 0
 		            self.nospace = 1
 		            self.writer.send_flowing_data(' ')
-		 
+
 		    def push_alignment(self, align):
 		        if align and align != self.align:
 		            self.writer.new_alignment(align)
@@ -270,7 +267,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		            self.align_stack.append(align)
 		        else:
 		            self.align_stack.append(self.align)
-		 
+
 		    def pop_alignment(self):
 		        if self.align_stack:
 		            del self.align_stack[-1]
@@ -280,7 +277,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		        else:
 		            self.align = None
 		            self.writer.new_alignment(None)
-		 
+
 		    def push_font(self, font):
 		        size, i, b, tt = font
 		        if self.softspace:
@@ -296,7 +293,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		        font = (size, i, b, tt)
 		        self.font_stack.append(font)
 		        self.writer.new_font(font)
-		 
+
 		    def pop_font(self):
 		        if self.font_stack:
 		            del self.font_stack[-1]
@@ -305,14 +302,14 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		        else:
 		            font = None
 		        self.writer.new_font(font)
-		 
+
 		    def push_margin(self, margin):
 		        self.margin_stack.append(margin)
 		        fstack = [m for m in self.margin_stack if m]
 		        if not margin and fstack:
 		            margin = fstack[-1]
 		        self.writer.new_margin(margin, len(fstack))
-		 
+
 		    def pop_margin(self):
 		        if self.margin_stack:
 		            del self.margin_stack[-1]
@@ -322,11 +319,11 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		        else:
 		            margin = None
 		        self.writer.new_margin(margin, len(fstack))
-		 
+
 		    def set_spacing(self, spacing):
 		        self.spacing = spacing
 		        self.writer.new_spacing(spacing)
-		 
+
 		    def push_style(self, *styles):
 		        if self.softspace:
 		            self.hard_break = self.para_end = self.softspace = 0
@@ -335,16 +332,15 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		        for style in styles:
 		            self.style_stack.append(style)
 		        self.writer.new_styles(tuple(self.style_stack))
-		 
+
 		    def pop_style(self, n=1):
 		        del self.style_stack[-n:]
 		        self.writer.new_styles(tuple(self.style_stack))
-		 
+
 		    def assert_line_data(self, flag=1):
 		        self.nospace = self.hard_break = not flag
 		        self.para_end = self.parskip = self.have_label = 0
-		 
-		 
+
 		class NullWriter:
 		    """Minimal writer interface to use in testing & inheritance.
 		    A writer which only provides the interface definition; no actions are
@@ -364,48 +360,46 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		    def send_label_data(self, data): pass
 		    def send_flowing_data(self, data): pass
 		    def send_literal_data(self, data): pass
-		 
-		 
+
 		class AbstractWriter(NullWriter):
 		    """A writer which can be used in debugging formatters, but not much else.
 		    Each method simply announces itself by printing its name and
 		    arguments on standard output.
 		    """
-		 
+
 		    def new_alignment(self, align):
 		        print("new_alignment(%r)" % (align,))
-		 
+
 		    def new_font(self, font):
 		        print("new_font(%r)" % (font,))
-		 
+
 		    def new_margin(self, margin, level):
 		        print("new_margin(%r, %d)" % (margin, level))
-		 
+
 		    def new_spacing(self, spacing):
 		        print("new_spacing(%r)" % (spacing,))
-		 
+
 		    def new_styles(self, styles):
 		        print("new_styles(%r)" % (styles,))
-		 
+
 		    def send_paragraph(self, blankline):
 		        print("send_paragraph(%r)" % (blankline,))
-		 
+
 		    def send_line_break(self):
 		        print("send_line_break()")
-		 
+
 		    def send_hor_rule(self, *args, **kw):
 		        print("send_hor_rule()")
-		 
+
 		    def send_label_data(self, data):
 		        print("send_label_data(%r)" % (data,))
-		 
+
 		    def send_flowing_data(self, data):
 		        print("send_flowing_data(%r)" % (data,))
-		 
+
 		    def send_literal_data(self, data):
 		        print("send_literal_data(%r)" % (data,))
-		 
-		 
+
 		class DumbWriter(NullWriter):
 		    """Simple writer class which writes output on the file object passed in
 		    as the file parameter or, if file is omitted, on standard output.  The
@@ -413,34 +407,34 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		    the maxcol parameter.  This class is suitable for reflowing a sequence
 		    of paragraphs.
 		    """
-		 
+
 		    def __init__(self, file=None, maxcol=72):
 		        self.file = file or sys.stdout
 		        self.maxcol = maxcol
 		        NullWriter.__init__(self)
 		        self.reset()
-		 
+
 		    def reset(self):
 		        self.col = 0
 		        self.atbreak = 0
-		 
+
 		    def send_paragraph(self, blankline):
 		        self.file.write('\n'*blankline)
 		        self.col = 0
 		        self.atbreak = 0
-		 
+
 		    def send_line_break(self):
 		        self.file.write('\n')
 		        self.col = 0
 		        self.atbreak = 0
-		 
+
 		    def send_hor_rule(self, *args, **kw):
 		        self.file.write('\n')
 		        self.file.write('-'*self.maxcol)
 		        self.file.write('\n')
 		        self.col = 0
 		        self.atbreak = 0
-		 
+
 		    def send_literal_data(self, data):
 		        self.file.write(data)
 		        i = data.rfind('\n')
@@ -450,7 +444,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		        data = data.expandtabs()
 		        self.col = self.col + len(data)
 		        self.atbreak = 0
-		 
+
 		    def send_flowing_data(self, data):
 		        if not data: return
 		        atbreak = self.atbreak or data[0].isspace()
@@ -470,8 +464,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		            atbreak = 1
 		        self.col = col
 		        self.atbreak = data[-1].isspace()
-		 
-		 
+
 		def test(file = None):
 		    w = DumbWriter()
 		    f = AbstractFormatter(w)
@@ -491,8 +484,7 @@ AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统进中进行开发。
 		        if fp is not sys.stdin:
 		            fp.close()
 		    f.end_paragraph(0)
-		 
-		 
+
 		if __name__ == '__main__':
 		    test()
 		```
@@ -638,3 +630,6 @@ ROC-RK3568-PC 的 SDK 不支持使用 Python3 来构建，如果当前构建环�
 替换完成相关文件之后，分别将修改之后的 `rootfs.img` 和用 SDK 生成原始的 `boot.img`（Linux 客户机启动之后会使用） 烧写的对应的位置即可。最后上电启动开发板即可
 
 ![deploy_download](./imgs_roc-rk3568-pc/deploy_download.png)
+
+## 运行
+
