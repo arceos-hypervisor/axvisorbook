@@ -841,7 +841,7 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
   position: relative;
   background: var(--home-panel);
   border-radius: 28px;
-  padding: 1.5rem;
+  padding: 0.6rem 1.5rem 1.5rem 1.5rem;
   border: 1px solid var(--home-panel-border);
   min-width: 380px;
   max-width: 420px;
@@ -889,6 +889,7 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
   position: relative;
   z-index: 2;
   transition: all 0.3s ease;
+  margin: 0;
 }
 
 .hardware-card:hover .hardware-icon {
@@ -904,12 +905,15 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
   position: relative;
   z-index: 2;
   text-align: center;
+  margin: 0;
+  padding: 0;
 }
 
 .hardware-header h3 {
   font-size: 1.4rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+  margin-top: 0;
+  margin-bottom: 0.25rem;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -919,6 +923,7 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
 .hardware-header p {
   color: var(--home-text-soft);
   font-size: 0.95rem;
+  margin: 0;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
