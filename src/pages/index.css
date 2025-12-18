@@ -1658,6 +1658,7 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
   .hero-banner,
   .home-section {
     padding: clamp(2rem, 8vw, 3rem) 1.5rem;
+    min-height: fit-content;
   }
 
   .hero-copy h1 {
