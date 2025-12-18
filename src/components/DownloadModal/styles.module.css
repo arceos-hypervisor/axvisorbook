@@ -73,23 +73,38 @@
   font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 16px;
-  color: var(--ifm-color-content);
+  color: var(--ifm-color-primary);
   border-bottom: 2px solid var(--ifm-color-primary);
   padding-bottom: 8px;
 }
 
 .downloadCard {
-  background-color: var(--ifm-color-emphasis-100);
+  background-color: rgba(245, 246, 247, 0.85);
+  backdrop-filter: blur(8px);
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 16px;
-  border: 1px solid var(--ifm-color-emphasis-200);
+  border: 1px solid rgba(235, 237, 240, 0.7);
   transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .downloadCard:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: rgba(245, 246, 247, 0.95);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
   transform: translateY(-2px);
+  border-color: rgba(235, 237, 240, 0.9);
+}
+
+/* 暗色主题下的透明效果 */
+html[data-theme='dark'] .downloadCard {
+  background-color: rgba(60, 67, 70, 0.85);
+  border-color: rgba(68, 73, 80, 0.7);
+}
+
+html[data-theme='dark'] .downloadCard:hover {
+  background-color: rgba(60, 67, 70, 0.95);
+  border-color: rgba(68, 73, 80, 0.9);
 }
 
 .downloadInfo {

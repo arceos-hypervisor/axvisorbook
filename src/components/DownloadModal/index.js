@@ -163,12 +163,6 @@ export default function DownloadModal({ isOpen, onClose, platformId }) {
               </button>
             </div>
           </div>
-          
-          <div className={styles.noteSection}>
-            <p className={styles.noteText}>
-              注意：下载前请确保您的硬件平台与所选镜像兼容。详细的安装指南请参考文档页面。
-            </p>
-          </div>
         </div>
       </div>
     </div>
