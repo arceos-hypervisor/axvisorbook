@@ -1,68 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 96 96" role="img" aria-label="AxVisor">
-  <title>AxVisor</title>
-  <defs>
-    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#3498db" />
-      <stop offset="100%" stop-color="#2980b9" />
-    </linearGradient>
-
-    <clipPath id="circleClip">
-      <circle cx="48" cy="48" r="40" />
-    </clipPath>
-
-    <!-- Decorative ribbon arc (purely graphical) -->
-    <path id="ribbonArc" d="M18 56 Q48 40 78 56" />
-  </defs>
-  
-  <!-- Single integrated mark (icon + embedded wordmark) -->
-  <g>
-    <!-- Outer container -->
-    <circle cx="48" cy="48" r="42"
-            fill="rgba(41,128,185,0.06)"
-            stroke="url(#logoGradient)"
-            stroke-width="3" />
-
-      <!-- Outer highlight ring to add depth -->
-      <circle cx="48" cy="48" r="40"
-        fill="none"
-        stroke="url(#ringHighlight)"
-        stroke-width="2"
-        opacity="0.85" />
-
-    <!-- Subtle glow -->
-    <circle cx="48" cy="48" r="36" fill="url(#coreGlow)" />
-
-    <!-- VM layers -->
-    <ellipse cx="48" cy="48" rx="26" ry="15"
-             fill="none"
-             stroke="url(#logoGradient)"
-             stroke-width="2"
-             opacity="0.55" />
-    <ellipse cx="48" cy="48" rx="15" ry="8"
-             fill="none"
-             stroke="url(#logoGradient)"
-             stroke-width="1.6"
-             opacity="0.42" />
-
-    <!-- Core processor -->
-    <rect x="44" y="44" width="8" height="8"
-          rx="1.6"
-          fill="url(#logoGradient)" />
-
-    <!-- Core shine -->
-    <path d="M45.2 46.2 L50.4 46.2" stroke="rgba(255,255,255,0.65)" stroke-width="1.1" stroke-linecap="round" opacity="0.8" />
-
-    <!-- Connection points -->
-    <circle cx="34" cy="34" r="2" fill="url(#logoGradient)" />
-    <circle cx="62" cy="34" r="2" fill="url(#logoGradient)" />
-    <circle cx="48" cy="62" r="2" fill="url(#logoGradient)" />
-    <circle cx="48" cy="34" r="2" fill="url(#logoGradient)" />
-
-    <!-- Data flow lines -->
-    <path d="M34 34 L44 44 M62 34 L52 44 M48 62 L48 34"
-          stroke="url(#logoGradient)"
-          stroke-width="1.5"
-          opacity="0.55" />
-
-  </g>
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_36149_91705)">
+<path d="M25.0428 56.5831L8.76953 67.9365L26.1781 30.0875C26.1781 30.0875 28.8273 25.1722 33.7471 25.1719C38.6669 25.1713 41.6945 30.0881 41.6945 30.0881L58.7247 66.0443L46.2359 64.5305L33.3686 36.1469L25.0428 56.5831Z" fill="#030806"/>
+<path d="M18.6103 73.9849C18.2319 74.3633 6.5 73.9849 6.5 73.9849C15.9612 63.014 34.5051 51.6635 40.9388 51.281C48.8862 49.3877 53.4275 53.5503 55.3198 58.0901C59.4827 70.1979 69.7008 74.3674 69.7008 74.3674C69.7008 74.3674 63.6456 74.3674 55.3198 74.7418C48.3248 72.5601 42.831 60.7392 42.831 60.7392C42.831 60.7392 33.7483 56.9547 18.6103 73.9849Z" fill="url(#paint0_linear_36149_91705)"/>
+<path d="M54.9428 26.3014H43.2109L63.6471 66.7953C63.6471 66.7953 66.2963 72.472 69.3238 72.472C72.3514 72.472 73.4868 69.066 73.4868 69.066L93.5445 25.166H81.0557L68.5669 51.6574L54.9428 26.3014Z" fill="url(#paint1_linear_36149_91705)"/>
+</g>
+<defs>
+<linearGradient id="paint0_linear_36149_91705" x1="9.52758" y1="72.4727" x2="43.2094" y2="66.0391" gradientUnits="userSpaceOnUse">
+<stop stop-color="#062F30"/>
+<stop offset="1" stop-color="#1EBB9D"/>
+</linearGradient>
+<linearGradient id="paint1_linear_36149_91705" x1="45.6221" y1="67.9863" x2="73.2616" y2="65.8594" gradientUnits="userSpaceOnUse">
+<stop stop-color="#062F30"/>
+<stop offset="1" stop-color="#1EBB9D"/>
+</linearGradient>
+<clipPath id="clip0_36149_91705">
+<rect width="100" height="100" fill="white"/>
+</clipPath>
+</defs>
 </svg>
