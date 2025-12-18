@@ -1306,7 +1306,6 @@ export default function Home() {
         <ComponentDesignSection />
         <HardwareSection onDownloadClick={handleDownloadClick} />
         <ScenarioSection />
-        <PartnerSection />
         <DownloadModal
           isOpen={downloadModalOpen}
           onClose={closeDownloadModal}
