@@ -5,6 +5,7 @@ import Translate, { translate } from "@docusaurus/Translate";
 import { useColorMode } from "@docusaurus/theme-common";
 import { useEffect, useRef, useState } from "react";
 import DownloadModal from "@site/src/components/DownloadModal";
+import PageNavigator from "@site/src/components/PageNavigator";
 import "./index.css";
 
 // 图标库
@@ -93,7 +94,7 @@ function HeroBanner() {
   ];
 
   return (
-    <section className="hero-banner home-section" aria-label={translate({ id: "home.hero.title", message: "AxVisor overview banner" })}>
+    <section className="hero-banner home-section" id="hero" aria-label={translate({ id: "home.hero.title", message: "AxVisor overview banner" })}>
       {/* SVG 动画背景 */}
       <svg className="hero-background-svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
         <defs>
@@ -1225,6 +1226,16 @@ export default function Home() {
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState(null);
 
+  // 定义页面导航的sections
+  const navSections = [
+    { id: 'hero', label: '首页' },
+    { id: 'features', label: '核心优势' },
+    { id: 'architecture', label: '系统架构' },
+    { id: 'component-design', label: '组件设计' },
+    { id: 'hardware', label: '硬件平台' },
+    { id: 'scenarios', label: '应用场景' },
+  ];
+
   // 处理下载按钮点击
   const handleDownloadClick = (platformId) => {
     setSelectedPlatform(platformId);
@@ -1300,6 +1311,7 @@ export default function Home() {
       description={translate({ message: "AxVisor - 基于 ArceOS 的统一组件化超级监管程序" })}
     >
       <main className="home">
+        <PageNavigator sections={navSections} />
         <HeroBanner />
         <FeatureSection />
         <ArchitectureSection />

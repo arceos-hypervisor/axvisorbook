@@ -1,0 +1,152 @@
+.page-navigator {
+  position: fixed;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1000;
+  display: none; /* 默认隐藏，在桌面端显示 */
+}
+
+/* 在桌面端显示导航器 */
+@media (min-width: 997px) {
+  .page-navigator {
+    display: block;
+  }
+}
+
+.navigator-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    var(--ifm-color-primary-lighter) 0%,
+    var(--ifm-color-primary) 50%,
+    var(--ifm-color-primary-lighter) 100%
+  );
+  transform: translateX(-50%);
+  opacity: 0.3;
+}
+
+.navigator-dots {
+  position: relative;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.navigator-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.navigator-dot {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dot-inner {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ifm-color-emphasis-400);
+  border: 2px solid var(--ifm-color-emphasis-400);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: block;
+}
+
+.navigator-dot:hover .dot-inner {
+  background: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  transform: scale(1.2);
+  box-shadow: 0 0 12px var(--ifm-color-primary-lighter);
+}
+
+.navigator-dot.active .dot-inner {
+  width: 16px;
+  height: 16px;
+  background: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary);
+  box-shadow: 0 0 16px var(--ifm-color-primary-lighter),
+              0 0 4px var(--ifm-color-primary);
+}
+
+.navigator-label {
+  position: absolute;
+  right: 30px;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--ifm-color-emphasis-700);
+  background: var(--ifm-background-surface-color);
+  padding: 4px 12px;
+  border-radius: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(10px);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.navigator-item:hover .navigator-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.navigator-dot.active + .navigator-label {
+  color: var(--ifm-color-primary);
+  border-color: var(--ifm-color-primary-lighter);
+  font-weight: 500;
+}
+
+/* 暗色主题适配 */
+[data-theme='dark'] .navigator-line {
+  background: linear-gradient(
+    to bottom,
+    var(--ifm-color-primary-darker) 0%,
+    var(--ifm-color-primary) 50%,
+    var(--ifm-color-primary-darker) 100%
+  );
+}
+
+[data-theme='dark'] .dot-inner {
+  background: var(--ifm-color-emphasis-500);
+  border-color: var(--ifm-color-emphasis-500);
+}
+
+[data-theme='dark'] .navigator-label {
+  background: var(--ifm-background-color);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 动画效果 */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.8;
+  }
+}
+
+.navigator-dot.active .dot-inner {
+  animation: pulse 2s ease-in-out infinite;
+}
