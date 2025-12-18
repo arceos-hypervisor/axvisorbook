@@ -603,18 +603,6 @@ function ComponentDesignSection() {
 
   return (
     <section className="home-section component-design-section" id="component-design" style={{ "--section-index": 7 }}>
-      {/* 顶部圆弧分割 */}
-      <svg className="section-divider-top arc-divider" viewBox="0 0 1200 100" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="compDivider1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="var(--hw-divider-1)" />
-            <stop offset="100%" stopColor="var(--hw-divider-2)" />
-          </linearGradient>
-        </defs>
-        <path d="M0,60 Q300,10 600,60 T1200,60 L1200,0 L0,0 Z" fill="url(#compDivider1)" opacity="0.5" />
-        <path d="M0,40 Q300,0 600,40 T1200,40" stroke="url(#compDivider1)" strokeWidth="2" fill="none" opacity="0.4" />
-      </svg>
-
       <div className="section-inner">
         <div className="section-header">
           <p className="eyebrow">
@@ -646,18 +634,6 @@ function ComponentDesignSection() {
           ))}
         </div>
       </div>
-
-      {/* 底部波浪分割 */}
-      <svg className="section-divider-bottom wave-divider" viewBox="0 0 1200 100" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="compDividerBg" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="var(--hw-divider-2)" />
-            <stop offset="100%" stopColor="var(--hw-divider-1)" />
-          </linearGradient>
-        </defs>
-        <path d="M0,40 Q300,60 600,40 T1200,40 L1200,100 L0,100 Z" fill="url(#compDividerBg)" opacity="0.5" />
-        <path d="M0,60 Q300,80 600,60 T1200,60" stroke="url(#compDividerBg)" strokeWidth="1" fill="none" opacity="0.3" />
-      </svg>
     </section>
   );
 }
