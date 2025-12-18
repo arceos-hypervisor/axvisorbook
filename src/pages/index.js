@@ -666,7 +666,7 @@ function HardwareSection({ onDownloadClick }) {
   const hardwarePlatforms = [
     {
       id: "qemu",
-      name: "QEMU 模拟环境",
+      name: "QEMU",
       arch: "多架构虚拟化支持",
       doc: "docs/quickstart/qemu/aarch64",
       icon: "chip",
@@ -755,10 +755,12 @@ function HardwareSection({ onDownloadClick }) {
         <div className="hardware-marquee" role="list">
           {hardwarePlatforms.map((platform, index) => (
             <article className="hardware-card" key={platform.id} role="listitem" style={{ "--hw-index": index }}>
-              <div className="hardware-icon">{iconLibrary[platform.icon]}</div>
-              <div className="hardware-header">
-                <h3>{platform.name}</h3>
-                <p>{platform.arch}</p>
+              <div className="hardware-header-container">
+                <div className="hardware-header">
+                  <h3>{platform.name}</h3>
+                  <p>{platform.arch}</p>
+                </div>
+                <div className="hardware-icon">{iconLibrary[platform.icon]}</div>
               </div>
               
               {/* 详细参数部分 */}

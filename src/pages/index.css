@@ -841,7 +841,7 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
   position: relative;
   background: var(--home-panel);
   border-radius: 28px;
-  padding: 0.6rem 1.5rem 1.5rem 1.5rem;
+  padding: 1.5rem;
   border: 1px solid var(--home-panel-border);
   min-width: 380px;
   max-width: 420px;
@@ -883,6 +883,14 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
   z-index: -1;
 }
 
+.hardware-header-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+}
+
 .hardware-icon {
   width: 64px;
   height: 64px;
@@ -890,6 +898,7 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
   z-index: 2;
   transition: all 0.3s ease;
   margin: 0;
+  flex-shrink: 0;
 }
 
 .hardware-card:hover .hardware-icon {
@@ -904,9 +913,10 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
 .hardware-header {
   position: relative;
   z-index: 2;
-  text-align: center;
+  text-align: left;
   margin: 0;
   padding: 0;
+  flex: 1;
 }
 
 .hardware-header h3 {
@@ -1771,6 +1781,16 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
     min-height: auto;
     min-width: 100%;
     max-width: 100%;
+  }
+
+  .hardware-header-container {
+    flex-direction: column;
+    gap: 0.8rem;
+    text-align: center;
+  }
+
+  .hardware-header {
+    text-align: center;
   }
 
   .specs-grid,
