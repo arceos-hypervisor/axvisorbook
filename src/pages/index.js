@@ -919,10 +919,12 @@ function ScenarioSection() {
   ];
 
   const renderScenarioImage = (index, gradId) => {
-    // 使用 CSS 变量获取颜色
-    const rootStyles = getComputedStyle(document.documentElement);
-    const color1 = rootStyles.getPropertyValue('--scenario-accent-1').trim();
-    const color2 = rootStyles.getPropertyValue('--scenario-accent-2').trim();
+    // 使用硬编码颜色值，避免在SSR环境中使用getComputedStyle
+    const isDarkMode = typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'dark';
+    
+    // 根据主题设置颜色
+    const color1 = isDarkMode ? '#38bdf8' : '#38bdf8';
+    const color2 = isDarkMode ? '#3b82f6' : '#3b82f6';
     
     const images = [
       // Edge + Robot
