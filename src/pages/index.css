@@ -1955,9 +1955,9 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
 }
 
 .architecture-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 20px;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
   background: radial-gradient(circle, var(--arch-accent-1), transparent) 30%;
   display: grid;
   place-items: center;
@@ -1972,8 +1972,8 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
 }
 
 .architecture-icon svg {
-  width: 60px;
-  height: 60px;
+  width: 54px;
+  height: 54px;
 }
 
 .architecture-card h3 {
@@ -2073,9 +2073,9 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
 }
 
 .component-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 20px;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
   background: radial-gradient(circle, var(--comp-accent-1), transparent) 30%;
   display: grid;
   place-items: center;
@@ -2090,8 +2090,8 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
 }
 
 .component-icon svg {
-  width: 60px;
-  height: 60px;
+  width: 54px;
+  height: 54px;
 }
 
 .component-card h3 {
