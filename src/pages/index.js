@@ -472,15 +472,6 @@ function ArchitectureSection() {
       icon: "chip",
     },
     {
-      id: "arch-device",
-      title: translate({ id: "home.arch.device", message: "设备虚拟化" }),
-      description: translate({
-        id: "home.arch.device.desc",
-        message: "支持设备直通和虚拟设备模拟，包括 VirtIO 框架。",
-      }),
-      icon: "server",
-    },
-    {
       id: "arch-filesystem",
       title: translate({ id: "home.arch.filesystem", message: "文件系统" }),
       description: translate({
@@ -679,12 +670,12 @@ function HardwareSection({ onDownloadClick }) {
       arch: "多架构虚拟化支持",
       doc: "docs/quickstart/qemu/aarch64",
       icon: "chip",
-      guestSupport: {
-        arceos: "ArceOS - 组件化操作系统",
-        linux: "Linux - 通用操作系统",
-        nimbos: "NimbOS - 轻量级操作系统",
-        starry: "Starry-OS - 实时操作系统"
-      },
+      guestSupport: [
+        { name: "ArceOS", description: "ArceOS - 组件化操作系统" },
+        { name: "Linux", description: "Linux - 通用操作系统" },
+        { name: "NimbOS", description: "NimbOS - 轻量级操作系统" },
+        { name: "Starry-OS", description: "Starry-OS - 宏内核操作系统" }
+      ],
       performance: {
         bootTime: "< 10秒",
         latency: "< 200μs",
@@ -698,12 +689,12 @@ function HardwareSection({ onDownloadClick }) {
       arch: "ARM 商用芯片",
       doc: "docs/quickstart/board/phytiumpi",
       icon: "chip",
-      guestSupport: {
-        arceos: "ArceOS - 组件化操作系统",
-        linux: "Linux - 通用操作系统",
-        nimbos: "RT-Thread - 实时操作系统",
-        starry: "Starry-OS - 实时操作系统"
-      },
+      guestSupport: [
+        { name: "ArceOS", description: "ArceOS - 组件化操作系统" },
+        { name: "Linux", description: "Linux - 通用操作系统" },
+        { name: "RT-Thread", description: "RT-Thread - 实时操作系统" },
+        { name: "Starry-OS", description: "Starry-OS - 宏内核操作系统" }
+      ],
       performance: {
         bootTime: "< 3秒",
         latency: "< 100μs",
@@ -717,11 +708,11 @@ function HardwareSection({ onDownloadClick }) {
       arch: "ARM big.LITTLE 异构",
       doc: "docs/quickstart/board/roc-rk3568-pc",
       icon: "chip",
-      guestSupport: {
-        arceos: "ArceOS - 组件化操作系统",
-        linux: "Linux - 通用操作系统",
-        starry: "Starry-OS - 实时操作系统"
-      },
+      guestSupport: [
+        { name: "ArceOS", description: "ArceOS - 组件化操作系统" },
+        { name: "Linux", description: "Linux - 通用操作系统" },
+        { name: "Starry-OS", description: "Starry-OS - 宏内核操作系统" }
+      ],
       performance: {
         bootTime: "< 5秒",
         latency: "< 150μs",
@@ -775,22 +766,12 @@ function HardwareSection({ onDownloadClick }) {
                 <div className="specs-section">
                   <h4>客户机支持</h4>
                   <div className="specs-grid">
-                    <div className="spec-item">
-                      <span className="spec-label">ArceOS</span>
-                      <span className="spec-value">{platform.guestSupport.arceos}</span>
-                    </div>
-                    <div className="spec-item">
-                      <span className="spec-label">Linux</span>
-                      <span className="spec-value">{platform.guestSupport.linux}</span>
-                    </div>
-                    <div className="spec-item">
-                      <span className="spec-label">NimbOS</span>
-                      <span className="spec-value">{platform.guestSupport.nimbos}</span>
-                    </div>
-                    <div className="spec-item">
-                      <span className="spec-label">Starry-OS</span>
-                      <span className="spec-value">{platform.guestSupport.starry}</span>
-                    </div>
+                    {platform.guestSupport.map((guest, idx) => (
+                      <div className="spec-item" key={idx}>
+                        <span className="spec-label">{guest.name}</span>
+                        <span className="spec-value">{guest.description}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 
