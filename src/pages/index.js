@@ -1215,199 +1215,63 @@ function PartnerSection() {
 }
 
 export default function Home() {
-  const scrollTimeoutRef = useRef(null);
-  const isScrollingRef = useRef(false);
-  const currentSectionRef = useRef(0);
-  const touchStartYRef = useRef(0);
+  const scrollingRef = useRef(false);
 
   useEffect(() => {
-    // 获取当前视口中的章节索引
-    const getCurrentSection = () => {
-      const sections = document.querySelectorAll(".home-section");
-      const scrollTop = window.scrollY;
-      const viewportHeight = window.innerHeight;
-      
-      let currentIndex = 0;
-      let minDistance = Infinity;
-      
-      sections.forEach((section, index) => {
-        const sectionTop = section.offsetTop;
-        const distance = Math.abs(sectionTop - scrollTop);
-        if (distance < minDistance) {
-          minDistance = distance;
-          currentIndex = index;
-        }
-      });
-      
-      return currentIndex;
-    };
-
-    // 滚动到指定章节
-    const scrollToSection = (index) => {
-      const sections = document.querySelectorAll(".home-section");
-      if (index < 0 || index >= sections.length) return;
-      
-      isScrollingRef.current = true;
-      currentSectionRef.current = index;
-      
-      const targetSection = sections[index];
-      const targetScrollTop = targetSection.offsetTop;
-      
-      window.scrollTo({
-        top: targetScrollTop,
-        behavior: "smooth",
-      });
-      
-      // 清除旧的超时并设置新的
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-      
-      scrollTimeoutRef.current = setTimeout(() => {
-        isScrollingRef.current = false;
-      }, 800);
-    };
-
-    // 鼠标滚轮事件处理
     const handleWheel = (e) => {
-      // 正在滚动时阻止新的滚动事件
-      if (isScrollingRef.current) {
+      // 正在滚动时阻止新事件
+      if (scrollingRef.current) {
         e.preventDefault();
         return;
       }
 
       const sections = document.querySelectorAll(".home-section");
-      if (sections.length === 0) return;
+      if (!sections.length) return;
 
-      // 更新当前章节
-      currentSectionRef.current = getCurrentSection();
+      // 查找当前最接近的 section
+      const scrollTop = window.scrollY;
+      let currentIndex = 0;
+      let minDistance = Infinity;
       
+      sections.forEach((section, index) => {
+        const distance = Math.abs(section.offsetTop - scrollTop);
+        if (distance < minDistance) {
+          minDistance = distance;
+          currentIndex = index;
+        }
+      });
+
       const isScrollingDown = e.deltaY > 0;
-      const scrollStrength = Math.abs(e.deltaY);
       
-      // 滚动强度阈值（减少误触发）
-      const scrollThreshold = 30;
-      
-      if (scrollStrength < scrollThreshold) {
-        return; // 忽略小幅度滚动
+      // 在边界允许自由滚动：最后一个 section 向下滚或第一个 section 向上滚
+      if ((isScrollingDown && currentIndex === sections.length - 1) || 
+          (!isScrollingDown && currentIndex === 0)) {
+        return;
       }
-      
-      // 如果已经在最后一个 section 并且向下滚动，允许继续滚动到 footer
-      if (isScrollingDown && currentSectionRef.current === sections.length - 1) {
-        return; // 不阻止默认行为，允许继续滚动
-      }
-      
-      // 如果已经在第一个 section 并且向上滚动，允许继续滚动
-      if (!isScrollingDown && currentSectionRef.current === 0) {
-        return; // 不阻止默认行为，允许继续滚动
-      }
-      
+
+      // 滚动强度阈值，减少误触发
+      if (Math.abs(e.deltaY) < 30) return;
+
       e.preventDefault();
+
+      // 计算目标 section
+      const targetIndex = isScrollingDown 
+        ? Math.min(currentIndex + 1, sections.length - 1)
+        : Math.max(currentIndex - 1, 0);
+
+      if (targetIndex === currentIndex) return;
+
+      // 滚动到目标 section
+      scrollingRef.current = true;
+      sections[targetIndex].scrollIntoView({ behavior: "smooth" });
       
-      let targetIndex = currentSectionRef.current;
-      
-      if (isScrollingDown && currentSectionRef.current < sections.length - 1) {
-        targetIndex = currentSectionRef.current + 1;
-      } else if (!isScrollingDown && currentSectionRef.current > 0) {
-        targetIndex = currentSectionRef.current - 1;
-      }
-      
-      if (targetIndex !== currentSectionRef.current) {
-        scrollToSection(targetIndex);
-      }
+      setTimeout(() => {
+        scrollingRef.current = false;
+      }, 800);
     };
 
-    // 键盘导航
-    const handleKeyDown = (e) => {
-      if (isScrollingRef.current) return;
-
-      const sections = document.querySelectorAll(".home-section");
-      if (sections.length === 0) return;
-
-      currentSectionRef.current = getCurrentSection();
-      let targetIndex = null;
-
-      if (e.key === "ArrowDown" || e.key === "PageDown") {
-        e.preventDefault();
-        if (currentSectionRef.current < sections.length - 1) {
-          targetIndex = currentSectionRef.current + 1;
-        }
-      } else if (e.key === "ArrowUp" || e.key === "PageUp") {
-        e.preventDefault();
-        if (currentSectionRef.current > 0) {
-          targetIndex = currentSectionRef.current - 1;
-        }
-      } else if (e.key === "Home") {
-        e.preventDefault();
-        targetIndex = 0;
-      } else if (e.key === "End") {
-        e.preventDefault();
-        targetIndex = sections.length - 1;
-      }
-
-      if (targetIndex !== null) {
-        scrollToSection(targetIndex);
-      }
-    };
-
-    // 触摸支持
-    const handleTouchStart = (e) => {
-      touchStartYRef.current = e.touches[0].clientY;
-    };
-
-    const handleTouchEnd = (e) => {
-      if (isScrollingRef.current) return;
-
-      const touchEndY = e.changedTouches[0].clientY;
-      const touchDiff = touchStartYRef.current - touchEndY;
-      const minSwipeDistance = 80; // 增加最小滑动距离以减少误触发
-
-      if (Math.abs(touchDiff) < minSwipeDistance) return;
-
-      const sections = document.querySelectorAll(".home-section");
-      if (sections.length === 0) return;
-
-      currentSectionRef.current = getCurrentSection();
-      let targetIndex = null;
-
-      if (touchDiff > 0 && currentSectionRef.current < sections.length - 1) {
-        // 向上滑动（向下滚动）
-        targetIndex = currentSectionRef.current + 1;
-      } else if (touchDiff < 0 && currentSectionRef.current > 0) {
-        // 向下滑动（向上滚动）
-        targetIndex = currentSectionRef.current - 1;
-      }
-
-      if (targetIndex !== null) {
-        scrollToSection(targetIndex);
-      }
-    };
-
-    // 监听滚动结束，更新当前章节
-    const handleScrollEnd = () => {
-      if (!isScrollingRef.current) {
-        currentSectionRef.current = getCurrentSection();
-      }
-    };
-
-    // 添加事件监听
     window.addEventListener("wheel", handleWheel, { passive: false });
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    window.addEventListener("touchend", handleTouchEnd, { passive: true });
-    window.addEventListener("scrollend", handleScrollEnd);
-
-    // 清理函数
-    return () => {
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchend", handleTouchEnd);
-      window.removeEventListener("scrollend", handleScrollEnd);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
+    return () => window.removeEventListener("wheel", handleWheel);
   }, []);
 
   return (
