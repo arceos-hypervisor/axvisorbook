@@ -398,11 +398,11 @@ export default function Home() {
       description={translate({message: 'AxVisor 是一个基于 ArceOS 框架实现的 Hypervisor，支持多架构、多客户机，为嵌入式系统和企业应用提供高效、安全的虚拟化环境'})}>
       
       <HeroBanner />
+      <SupportedPlatforms />
       <FeaturesSection />
       <ArchitectureSection />
       <ComponentDesignSection />
       <UseCasesSection />
-      <SupportedPlatforms />
       <CTASection />
       
     </Layout>
