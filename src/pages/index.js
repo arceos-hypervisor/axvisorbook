@@ -4,6 +4,7 @@ import useBaseUrl from "@docusaurus/useBaseUrl";
 import Translate, { translate } from "@docusaurus/Translate";
 import { useColorMode } from "@docusaurus/theme-common";
 import { useEffect, useRef, useState } from "react";
+import DownloadModal from "@site/src/components/DownloadModal";
 import "./index.css";
 
 // 图标库
@@ -669,7 +670,7 @@ function ComponentDesignSection() {
   );
 }
 
-function HardwareSection() {
+function HardwareSection({ onDownloadClick }) {
   const hardwarePlatforms = [
     {
       id: "qemu",
@@ -817,9 +818,12 @@ function HardwareSection() {
               
               {/* 底部按钮 */}
               <div className="hardware-actions">
-                <Link className="hardware-button primary-button" to={useBaseUrl("docs/quickstart")}>
+                <button
+                  className="hardware-button primary-button"
+                  onClick={() => onDownloadClick(platform.id)}
+                >
                   <Translate>下载体验</Translate>
-                </Link>
+                </button>
                 <Link className="hardware-button secondary-button" to={useBaseUrl(platform.doc)}>
                   <Translate>查看指南</Translate>
                 </Link>
@@ -1216,6 +1220,20 @@ function PartnerSection() {
 
 export default function Home() {
   const scrollingRef = useRef(false);
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState(null);
+
+  // 处理下载按钮点击
+  const handleDownloadClick = (platformId) => {
+    setSelectedPlatform(platformId);
+    setDownloadModalOpen(true);
+  };
+
+  // 关闭下载模态框
+  const closeDownloadModal = () => {
+    setDownloadModalOpen(false);
+    setSelectedPlatform(null);
+  };
 
   useEffect(() => {
     const handleWheel = (e) => {
@@ -1284,9 +1302,14 @@ export default function Home() {
         <FeatureSection />
         <ArchitectureSection />
         <ComponentDesignSection />
-        <HardwareSection />
+        <HardwareSection onDownloadClick={handleDownloadClick} />
         <ScenarioSection />
         <PartnerSection />
+        <DownloadModal
+          isOpen={downloadModalOpen}
+          onClose={closeDownloadModal}
+          platformId={selectedPlatform}
+        />
       </main>
     </Layout>
   );

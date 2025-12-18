@@ -1016,6 +1016,9 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
 }
 
 .primary-button {
