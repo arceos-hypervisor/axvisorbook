@@ -517,14 +517,24 @@ function ArchitectureSection() {
           <img src={useBaseUrl("images/homepage/axvisor.arch.png")} alt="AxVisor Architecture" />
         </div>
         
-        <div className="architecture-grid">
-          {architectureItems.map((item, index) => (
-            <article className="architecture-card" key={item.id} style={{ "--arch-index": index }}>
-              <div className="architecture-icon">{iconLibrary[item.icon]}</div>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-            </article>
-          ))}
+        <div className="architecture-marquee">
+          <div className="architecture-scroll-container">
+            {architectureItems.map((item, index) => (
+              <article className="architecture-card" key={item.id} style={{ "--arch-index": index }}>
+                <div className="architecture-icon">{iconLibrary[item.icon]}</div>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </article>
+            ))}
+            {/* 复制卡片用于无缝滚动 */}
+            {architectureItems.map((item, index) => (
+              <article className="architecture-card" key={`${item.id}-clone`} style={{ "--arch-index": index }}>
+                <div className="architecture-icon">{iconLibrary[item.icon]}</div>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -636,14 +646,24 @@ function ComponentDesignSection() {
           <img src={useBaseUrl("images/homepage/axvisor.module.png")} alt="AxVisor Components" />
         </div>
         
-        <div className="component-grid">
-          {components.map((component, index) => (
-            <article className="component-card" key={component.id} style={{ "--comp-index": index }}>
-              <div className="component-icon">{iconLibrary[component.icon]}</div>
-              <h3>{component.title}</h3>
-              <p>{component.description}</p>
-            </article>
-          ))}
+        <div className="component-marquee">
+          <div className="component-scroll-container">
+            {components.map((component, index) => (
+              <article className="component-card" key={component.id} style={{ "--comp-index": index }}>
+                <div className="component-icon">{iconLibrary[component.icon]}</div>
+                <h3>{component.title}</h3>
+                <p>{component.description}</p>
+              </article>
+            ))}
+            {/* 复制卡片用于无缝滚动 */}
+            {components.map((component, index) => (
+              <article className="component-card" key={`${component.id}-clone`} style={{ "--comp-index": index }}>
+                <div className="component-icon">{iconLibrary[component.icon]}</div>
+                <h3>{component.title}</h3>
+                <p>{component.description}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -1113,6 +1113,13 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
   overflow: hidden;
   position: relative;
   padding: 2rem 0;
+  /* 隐藏滚动条 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.scenario-marquee::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 /* 移除了滚动两端的遮罩效果 */
@@ -1728,6 +1735,13 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
+    /* 隐藏滚动条 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .scenario-marquee::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
   }
 
   .scenario-scroll-container {
@@ -1907,6 +1921,34 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
   transform: scale(1.02);
 }
 
+.architecture-marquee {
+  display: flex;
+  gap: 2rem;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  padding: 1.5rem 0;
+  margin-top: 1.5rem;
+  /* 隐藏滚动条 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.architecture-marquee::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.architecture-scroll-container {
+  display: flex;
+  gap: 2rem;
+  animation: scrollRightToLeft 60s linear infinite;
+  will-change: transform;
+}
+
+.architecture-scroll-container:hover {
+  animation-play-state: paused;
+}
+
 .architecture-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -1921,6 +1963,8 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
   background: var(--home-panel);
   border-radius: 24px;
   border: 1px solid var(--home-panel-border);
+  min-width: 320px;
+  width: 320px;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
@@ -1930,6 +1974,7 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
   transition: all 0.35s ease;
   overflow: hidden;
   animation: slideUp 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  flex-shrink: 0;
 }
 
 .architecture-card::before {
@@ -2025,6 +2070,34 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
   transform: scale(1.02);
 }
 
+.component-marquee {
+  display: flex;
+  gap: 2rem;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  padding: 1.5rem 0;
+  margin-top: 1.5rem;
+  /* 隐藏滚动条 */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.component-marquee::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.component-scroll-container {
+  display: flex;
+  gap: 2rem;
+  animation: scrollRightToLeft 70s linear infinite;
+  will-change: transform;
+}
+
+.component-scroll-container:hover {
+  animation-play-state: paused;
+}
+
 .component-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -2039,6 +2112,8 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
   background: var(--home-panel);
   border-radius: 24px;
   border: 1px solid var(--home-panel-border);
+  min-width: 340px;
+  width: 340px;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -2048,6 +2123,7 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
   transition: all 0.35s ease;
   overflow: hidden;
   animation: slideUp 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  flex-shrink: 0;
 }
 
 .component-card::before {
@@ -2118,6 +2194,33 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
   .component-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
+  }
+
+  .architecture-marquee,
+  .component-marquee {
+    padding: 1rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* 隐藏滚动条 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .architecture-marquee::-webkit-scrollbar,
+  .component-marquee::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  .architecture-scroll-container,
+  .component-scroll-container {
+    animation: scrollRightToLeftMobile 50s linear infinite;
+  }
+
+  .architecture-card,
+  .component-card {
+    min-width: 280px;
+    width: 280px;
   }
   
   .architecture-diagram,
