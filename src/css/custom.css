@@ -49,3 +49,12 @@ html[data-theme='dark'] {
   --ifm-color-primary-lighter: #32d8b4;
   --ifm-color-primary-lightest: #4fddbf;
 }
+
+/* 确保导航栏中的 Download 菜单项与其他菜单项颜色一致 */
+.navbar__link[href*="#hardware"] {
+  color: var(--ifm-navbar-link-color) !important;
+}
+
+.navbar__link[href*="#hardware"]:hover {
+  color: var(--ifm-navbar-link-hover-color) !important;
+}

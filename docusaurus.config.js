@@ -212,10 +212,16 @@ export default {
             label: 'Document',
           },
           {
-            to: '/blog', 
+            to: '/blog',
             activeBasePath: 'blog',
-            label: 'Blog', 
+            label: 'Blog',
             position: 'left'
+          },
+          {
+            to: '/#hardware',
+            label: 'Download',
+            position: 'left',
+            activeBaseClassName: ''
           },
           {
             to: '/community/introduction',
