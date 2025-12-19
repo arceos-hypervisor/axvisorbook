@@ -1903,10 +1903,6 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
     padding: 0.8rem 1rem;
   }
 
-  .hero-terminal-container {
-    padding: 15px;
-  }
-
   .hero-terminal-screen {
     font-size: 12px;
     min-height: 300px;
