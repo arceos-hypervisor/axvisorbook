@@ -17,3 +17,18 @@ axvisor:
   label: AxVisor
   permalink: /axvisor
   description: AxVisor tag description
+
+release:
+  label: Release
+  permalink: /release
+  description: Release tag description
+
+v0.2.0:
+  label: v0.2.0
+  permalink: /v0.2.0
+  description: AxVisor v0.2.0 release tag
+
+hypervisor:
+  label: Hypervisor
+  permalink: /hypervisor
+  description: Hypervisor tag description
