@@ -141,18 +141,6 @@ function HeroBanner() {
         <circle cx="1000" cy="400" r="3" fill="url(#heroGrad2)" opacity="0.5" className="hero-dot-pulse-delayed" />
       </svg>
 
-      {/* 波浪形分割底部 */}
-      <svg className="hero-wave-divider" viewBox="0 0 1200 100" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="waveFill" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="var(--hero-wave-color)" />
-            <stop offset="100%" stopColor="var(--section-bg-1)" />
-          </linearGradient>
-        </defs>
-        <path d="M0,20 Q300,0 600,20 T1200,20 L1200,100 L0,100 Z" fill="url(#waveFill)" />
-        <path d="M0,30 Q300,10 600,30 T1200,30 L1200,100 L0,100 Z" fill="var(--section-bg-1)" opacity="0.5" />
-      </svg>
-
       <div className="hero-content">
         <div className="hero-copy">
           <p className="eyebrow">
@@ -193,6 +181,18 @@ function HeroBanner() {
           <HeroTerminal />
         </div>
       </div>
+      
+      {/* 波浪形分割底部 */}
+      <svg className="hero-wave-divider" viewBox="0 0 1200 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="waveFill" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="var(--hero-wave-color)" />
+            <stop offset="100%" stopColor="var(--section-bg-1)" />
+          </linearGradient>
+        </defs>
+        <path d="M0,20 Q300,0 600,20 T1200,20 L1200,100 L0,100 Z" fill="url(#waveFill)" />
+        <path d="M0,30 Q300,10 600,30 T1200,30 L1200,100 L0,100 Z" fill="var(--section-bg-1)" opacity="0.5" />
+      </svg>
     </section>
   );
 }
