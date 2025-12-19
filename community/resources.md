@@ -1,5 +1,6 @@
 ---
 sidebar_position: 4
+sidebar_label: "社区资源"
 ---
 
 # 社区资源
@@ -10,26 +11,33 @@ sidebar_position: 4
 
 ### 📚 文档
 - [用户文档](/docs/introduction/overview) - 完整的用户指南和教程
-- [API 参考](/docs/api) - 详细的 API 文档
 - [架构设计](/docs/design/architecture/arch) - 系统架构和设计原理
 - [部署指南](/docs/manual/deploy) - 在不同平台上部署 AxVisor 的指南
+- [API 参考](/docs/api) - 详细的 API 文档
 
 ### 📊 演示和示例
-- 查看我们的[快速入门指南](/docs/quickstart)获取基础示例
-- 参考[部署指南](/docs/manual/deploy)了解不同平台的配置
-- 探索[设计文档](/docs/design)深入了解技术实现
+- [快速入门指南](/docs/quickstart) - 基础示例和快速上手
+- [设计文档](/docs/design) - 技术实现细节和原理
+- [部署示例](/docs/manual/deploy) - 不同平台的配置指南
 
 ## 社区贡献
 
 我们欢迎社区成员贡献各种资源！如果您创建了与 AxVisor 相关的工具、教程或其他资源，欢迎分享给社区。
 
 ### 🛠️ 工具和集成
-- 如果您开发了 AxVisor 相关的工具或集成，欢迎在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中分享
-- 查看[贡献指南](/community/contributing)了解如何参与项目开发
+- 社区开发的工具和插件
+- 第三方集成和扩展
+- 开发辅助工具和脚本
 
 ### 📝 教程和文章
-- 社区成员编写的教程和文章可以在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中分享
-- 优秀的教程可能会被收录到官方文档中
+- 社区成员编写的教程
+- 技术文章和最佳实践
+- 使用案例和经验分享
+
+### 🔧 代码示例
+- 示例配置和模板
+- 扩展开发示例
+- 集成代码片段
 
 ## 相关项目
 
@@ -43,16 +51,22 @@ sidebar_position: 4
 ## 学习资源
 
 ### 📖 推荐阅读
-- 查看我们的[设计文档](/docs/design)了解技术实现细节
-- 参考[架构文档](/docs/design/architecture/arch)学习系统设计原理
-- 阅读[内存管理](/docs/design/memory)和[调度器](/docs/design/scheduler)文档深入了解核心模块
+- [设计文档](/docs/design) - 技术实现细节
+- [架构文档](/docs/design/architecture/arch) - 系统设计原理
+- [内存管理](/docs/design/memory) - 内存管理机制
+- [调度器](/docs/design/scheduler) - 任务调度原理
 
-## 贡献您的资源
+### 🎓 学习路径
+1. 从[快速入门](/docs/quickstart)开始
+2. 阅读[设计文档](/docs/design)了解技术细节
+3. 参考[部署指南](/docs/manual/deploy)进行实践
+4. 探索[社区资源](/community/resources)获取更多工具
 
-如果您有与 AxVisor 相关的资源想要分享，欢迎通过以下方式贡献：
+## 分享您的资源
 
-1. 在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中分享您的资源
-2. 提交 PR 到相关文档仓库，添加有用的资源链接
-3. 参与社区讨论，分享您的使用经验和最佳实践
+如果您有与 AxVisor 相关的资源想要分享：
+1. 在社区讨论中分享您的资源
+2. 提交 PR 到相关文档仓库
+3. 参与社区讨论，分享使用经验
 
 我们感谢社区成员的慷慨分享，这些资源对整个社区都非常有价值！

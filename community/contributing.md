@@ -1,5 +1,6 @@
 ---
-sidebar_position: 97
+sidebar_position: 3
+sidebar_label: "贡献指南"
 ---
 
 # 贡献指南
@@ -123,12 +124,12 @@ sidebar_position: 97
 - 项目 README 中的贡献者部分
 - 特殊贡献的专门感谢
 
-## 获得帮助
+## 需要帮助？
 
 如果您在贡献过程中需要帮助：
 
-- 在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中提问
-- 通过 [GitHub Issues](https://github.com/arceos-hypervisor/axvisor/issues) 报告问题
-- 查看我们的[支持页面](/community/support)获取更多帮助渠道
+- 查看[支持页面](/community/support)获取帮助渠道
+- 在社区讨论中提问
+- 参考相关文档和示例
 
 感谢您考虑为 AxVisor 做出贡献！您的参与对项目的成功至关重要。

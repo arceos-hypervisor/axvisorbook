@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+sidebar_label: "关于我们"
 ---
 
 # 关于我们
@@ -33,39 +34,32 @@ AxVisor 是一个基于 ArceOS 的统一模块化虚拟机监视器（Hypervisor
 
 ## 如何参与社区
 
+无论您是开发者、用户还是虚拟化技术爱好者，都可以通过多种方式参与我们的社区：
+
 ### 👀 关注项目
-- ⭐ 在 GitHub 上 [Star 我们的仓库](https://github.com/arceos-hypervisor/axvisor)
-- 📢 关注我们的[博客](/blog)获取最新动态
+- ⭐ 在 GitHub 上关注我们的项目
+- 📢 订阅[博客](/blog)获取最新动态
 - 📋 查看[项目路线图](/docs/roadmap)了解未来计划
 
 ### 💬 参与讨论
-- 💭 在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中分享想法和经验
-- 🐛 报告 bug 或提出功能请求
-- 📖 改进文档，帮助其他用户
+- 分享您的想法和使用经验
+- 提出功能建议和改进意见
+- 帮助其他社区成员解决问题
 
-### 🛠️ 贡献代码
-- 🔧 提交代码修复或新功能
-- 🧪 编写测试用例，提高代码质量
-- 📝 完善文档和示例
+### 🛠️ 做出贡献
+- 提交代码修复或新功能（详见[贡献指南](/community/contributing)）
+- 编写测试用例，提高代码质量
+- 完善文档和示例
 
 ### 🎉 参加活动
-- 🏆 参与代码贡献竞赛
-- 🎤 参加技术分享和研讨会
-- 📅 关注我们的社区活动日历
+- 参与社区组织的技术分享和研讨会
+- 关注我们的社区活动日历
 
-## 社区资源
+## 了解更多
 
-- 📖 [文档](/docs/introduction/overview) - 详细的使用指南和 API 文档
-- 🆘 [获取帮助](/community/support) - 问题反馈和支持渠道
-- 🛠️ [贡献指南](/community/contributing) - 如何参与项目开发
-- 📊 [社区资源](/community/resources) - 工具、教程和第三方集成
-
-## 联系我们
-
-如果您有任何问题或建议，欢迎通过以下方式联系我们：
-
-- 📧 通过 [GitHub Issues](https://github.com/arceos-hypervisor/axvisor/issues) 报告问题
-- 💬 在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中参与讨论
-- 📖 查看[支持页面](/community/support)获取更多帮助渠道
+- 📖 查看[完整文档](/docs/introduction/overview)了解技术细节
+- 🛠️ 阅读[贡献指南](/community/contributing)参与项目开发
+- 🆘 访问[支持页面](/community/support)获取帮助
+- 📊 浏览[社区资源](/community/resources)获取工具和教程
 
 感谢您对 AxVisor 项目的关注！我们期待您的参与和贡献，共同构建更好的虚拟化技术社区。

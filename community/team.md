@@ -1,5 +1,6 @@
 ---
 sidebar_position: 2
+sidebar_label: "团队成员"
 ---
 
 # 团队成员
@@ -308,11 +309,11 @@ AxVisor 项目由一个充满热情的团队维护，包括核心开发者、贡
 
 ## 加入我们
 
-我们欢迎新的贡献者加入！如果您有兴趣参与项目：
+我们欢迎新的贡献者加入！如果您有兴趣参与项目开发：
 
-1. 查看我们的[贡献指南](/community/contributing)了解如何开始
-2. 参与[GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions)中的讨论
-3. 提交Pull Request或报告Issue
+1. 查看[贡献指南](/community/contributing)了解如何开始
+2. 参与社区讨论，了解项目需求
+3. 提交代码贡献或文档改进
 
 持续的高质量贡献者有机会成为核心团队成员。
 
