@@ -190,7 +190,14 @@ sudo umount boot
 
 使用烧写工具（如瑞芯微的 AndroidTool）将完整的 `update.img` 固件烧写到开发板。
 
-![deploy_download](./imgs_roc-rk3568-pc/deploy_download.png)
+烧写统一固件 update.img 的步骤如下:
+
+1. 切换至`升级固件`页。
+2. 按`固件`按钮，打开要升级的固件文件。升级工具会显示详细的固件信息。
+3. 按`升级`按钮开始升级。
+4. 如果升级失败，可以尝试使用[切换升级存储器](https://wiki.t-firefly.com/zh_CN/ROC-RK3568-PC/03-upgrade_firmware_with_flash.html#gu-jian-xia-zai-dao-emmc)里面的方法
+
+![deploy](./imgs_roc-rk3568-pc/deploy.png)
 
 烧写完成后，重新上电启动开发板即可运行 AxVisor。
 
@@ -316,11 +323,9 @@ sudo umount rootfs
 │   ├── arceos-aarch64-rk3568-smp1.toml
 │   └── linux-aarch64-rk3568-smp1.toml
 └── images/
-    ├── arceos.bin
-    └── linux.bin
+    ├── roc-rk3568-pc-arceos
+    └── roc-rk3568-pc-linux
 ```
-
-![deploy_rootfs](./imgs_roc-rk3568-pc/deploy_rootfs.png)
 
 #### 打包完整固件
 
@@ -335,10 +340,231 @@ sudo umount rootfs
 
 使用烧写工具将完整的 `update.img` 固件烧写到开发板。
 
-![deploy_download](./imgs_roc-rk3568-pc/deploy_download.png)
+烧写统一固件 update.img 的步骤如下:
+
+1. 切换至`升级固件`页。
+2. 按`固件`按钮，打开要升级的固件文件。升级工具会显示详细的固件信息。
+3. 按`升级`按钮开始升级。
+4. 如果升级失败，可以尝试使用[切换升级存储器](https://wiki.t-firefly.com/zh_CN/ROC-RK3568-PC/03-upgrade_firmware_with_flash.html#gu-jian-xia-zai-dao-emmc)里面的方法
+
+![deploy](./imgs_roc-rk3568-pc/deploy.png)
 
 烧写完成后，重新上电启动开发板即可运行 AxVisor。
 
 ## 运行验证
 
-开发板启动后，AxVisor 会根据配置自动加载并启动客户机。可以通过串口或 SSH 连接到开发板查看运行状态。
+完成部署后，需要对 AxVisor 的运行状态进行验证，确保虚拟化系统正常工作。本节将详细介绍连接方法、启动过程验证以及常见问题的处理方法。
+
+### 串口连接
+
+在验证运行状态之前，需要通过串口连接到 ROC-RK3568-PC 开发板。
+
+#### 安装串口工具
+
+在主机上安装串口通信工具：
+
+```bash
+# Ubuntu/Debian 系统
+sudo apt install picocom minicom
+
+# 或者使用 minicom
+sudo apt install minicom
+```
+#### 连接设置
+
+ROC-RK3568-PC 的串口参数：
+- 波特率：1500000 (1.5Mbps)
+- 数据位：8
+- 停止位：1
+- 校验位：无
+
+使用 picocom 连接：
+```bash
+# 查看串口设备
+ls /dev/ttyUSB*
+
+# 连接串口（根据实际设备调整）
+picocom -b 1500000 --imap lfcrlf /dev/ttyUSB0
+```
+
+使用 minicom 连接：
+```bash
+# 配置 minicom
+sudo minicom -s
+
+# 或者直接连接
+sudo minicom -D /dev/ttyUSB0 -b 1500000
+```
+
+**退出 picocom：** `Ctrl+A` 然后按 `Ctrl+X`
+**退出 minicom：** `Ctrl+A` 然后按 `Q`
+
+### 启动过程验证
+
+#### AxVisor 启动信息
+
+开发板上电后，应该能看到以下启动信息：
+
+![start_info](./imgs_roc-rk3568-pc/start_info.png)
+
+#### 文件系统加载模式验证
+
+如果使用文件系统加载部署，需要手动创建和启动客户机：
+
+```bash
+# 进入 AxVisor shell
+# AxVisor>
+
+# 列出可用的客户机配置
+ls /guest/configs/
+
+# 创建客户机实例
+vm create /guest/configs/arceos-aarch64-rk3568-smp1.toml
+
+# 启动客户机（VM ID 为 1）
+vm start 1
+
+# 创建第二个客户机
+vm create /guest/configs/linux-aarch64-rk3568-smp1.toml
+
+# 启动第二个客户机（VM ID 为 2）
+vm start 2
+```
+
+#### 客户机运行状态
+
+**Linux 客户机启动信息：**
+```
+axvisor:/$ vm start 2
+[206.542173 0:2 axvisor::vmm::vcpus:341] Initializing VM[2]'s 1 vcpus
+[206.542853 0:2 axvisor::vmm::vcpus:390] Spawning task for VM[2] VCpu[0]
+[206.543573 0:2 axvisor::vmm::vcpus:405] VCpu task Task(15, "VM[2]-VCpu[0]") created cpumask: [0, ]
+[206.544495 0:2 axvm::vm:416] Booting VM[2]
+✓ VM[2] started successfully
+axvisor:/$ [206.545313 0:15 axvisor::vmm::vcpus:428] VM[2] boot delay: 5s
+[211.545942 0:15 axvisor::vmm::vcpus:431] VM[2] VCpu[0] waiting for running
+[211.546673 0:15 axvisor::vmm::vcpus:434] VM[2] VCpu[0] running...
+[  211.551621] Booting Linux on physical CPU 0x0000000000 [0x412fd050]
+[  211.551643] Linux version 5.10.198 (runner@s1lqc) (firefly: 34d433bc5e75/2511210905) (sdk version: rk356x_linux5.10_release_20241220_v1.4.0c.xml) (aarch64-none-linux-gnu-gcc (GNU Toolchain for the A-profile Architecture 10.3-2021.07 (arm-10.29)) 10.3.1 20210621, GNU ld (GNU Toolchain for the A-profile Architecture 10.3-2021.07 (arm-10.29)) 2.36.1.20210621) #16 SMP Fri Nov 21 09:05:49 CST 2025
+
+................
+
+Ubuntu 20.04.6 LTS firefly ttyFIQ0
+
+firefly login: root (automatic login)
+
+/etc/update-motd.d/30-sysinfo: line 152: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 153: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 172: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 173: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 174: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 186: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 187: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 189: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 190: cannot create temp file for here-document: Read-only file system
+ _____ _           __ _
+|  ___(_)_ __ ___ / _| |_   _
+| |_  | | '__/ _ \ |_| | | | |
+|  _| | | | |  __/  _| | |_| |
+|_|   |_|_|  \___|_| |_|\__, |
+                        |___/
+Welcome to Ubuntu 20.04.6 LTS (GNU/Linux 5.10.198 aarch64)
+
+ * Documentation:  http://wiki.t-firefly.com
+ * Management:     http://www.t-firefly.com
+
+System information as of Mon Oct 20 02:53:58 UTC 2025
+
+Up time:
+IP:
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+root@firefly:~#
+```
+
+**ArceOS 客户机启动信息：**
+```
+axvisor:/$ vm start 1
+[146.447613 0:2 axvisor::vmm::vcpus:341] Initializing VM[1]'s 1 vcpus
+[146.448295 0:2 axvisor::vmm::vcpus:390] Spawning task for VM[1] VCpu[0]
+[146.449009 0:2 axvisor::vmm::vcpus:405] VCpu task Task(14, "VM[1]-VCpu[0]") created cpumask: [2, ]
+[146.449928 0:2 axvm::vm:416] Booting VM[1]
+✓ VM[1] started successfully
+axvisor:/$ [146.458789 2:14 axvisor::vmm::vcpus:428] VM[1] boot delay: 0s
+[146.459412 2:14 axvisor::vmm::vcpus:431] VM[1] VCpu[0] waiting for running
+[146.460146 2:14 axvisor::vmm::vcpus:434] VM[1] VCpu[0] running...
+fdt                     : 0x1aa00000
+EL                      : 1
+_start                  : 0xffff800000000000
+stack                   : 0xffff800000088000
+loader                  : [0xac34000, 0xac443c0)
+BootTable space         : [0xad09698 --)
+code                    : [0xffff800000000000, 0xffff800020000000) -> [0xac00000, 0x2ac00000)
+ram                     : 0xffff90000ac00000-> 0xac00000
+debug                   : 0xffff9000fe660000-> 0xfe660000
+eq                      : [0x0, 0x8000000000)
+Table                   : 0x000000000ad0a000
+Table size              : 0x8968
+jump to                 : 0xffff800000002494
+SomeHAL booting...
+Power management method : SMC
+Goto main...
+
+       d8888                            .d88888b.   .d8888b.
+      d88888                           d88P" "Y88b d88P  Y88b
+     d88P888                           888     888 Y88b.
+    d88P 888 888d888  .d8888b  .d88b.  888     888  "Y888b.
+   d88P  888 888P"   d88P"    d8P  Y8b 888     888     "Y88b.
+  d88P   888 888     888      88888888 888     888       "888
+ d8888888888 888     Y88b.    Y8b.     Y88b. .d88P Y88b  d88P
+d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
+
+arch = aarch64
+platform = aarch64-dyn
+target = aarch64-unknown-none-softfloat
+build_mode = release
+log_level = info
+smp = 1
+
+[146.915558 axruntime:136] Logging is enabled.
+[146.916058 axruntime:137] Primary CPU 0 started, arg = 0xacee000.
+[146.916725 axruntime:140] Found physcial memory regions:
+[146.917307 axruntime:142]   [PA:0xac00000, PA:0xac01000) reserved (READ | WRITE | RESERVED)
+[146.918168 axruntime:142]   [PA:0xac01000, PA:0xac2c000) .text (READ | EXECUTE | RESERVED)
+[146.919023 axruntime:142]   [PA:0xac2c000, PA:0xac45000) .rodata (READ | RESERVED)
+[146.919818 axruntime:142]   [PA:0xac45000, PA:0xac48000) .data .tdata .tbss .percpu (READ | WRITE | RESERVED)
+[146.920822 axruntime:142]   [PA:0xac88000, PA:0xacc8000) boot stack (READ | WRITE | RESERVED)
+[146.921700 axruntime:142]   [PA:0xacc8000, PA:0xacee000) .bss (READ | WRITE | RESERVED)
+[146.922534 axruntime:142]   [PA:0xacee000, PA:0xad13000) reserved (READ | WRITE | RESERVED)
+[146.923399 axruntime:142]   [PA:0xad13000, PA:0x1ac00000) free memory (READ | WRITE | FREE)
+[146.924261 axruntime:142]   [PA:0xfe660000, PA:0xfe661000) mmio (READ | WRITE | DEVICE | RESERVED)
+[146.925180 axruntime:220] Initialize global memory allocator...
+[146.925825 axruntime:221]   use TLSF allocator.
+[146.926435 axmm:101] Initialize virtual memory management...
+[146.935554 axruntime:160] Initialize platform devices...
+[147.031697 axruntime:198] Primary CPU 0 init OK.
+Hello, world!
+[147.032345 2:14 axvisor::vmm::vcpus:513] VM[1] run VCpu[0] SystemDown
+[147.033035 2:14 axvm::vm:453] Shutting down VM[1]
+[147.033570 2:14 axvisor::vmm::vcpus:564] VM[1] VCpu[0] stopping because of VM stopping
+[147.034389 2:14 axvisor::vmm::vcpus:570] VM[1] VCpu[0] last VCpu exiting, decreasing running VM count
+[147.035331 2:14 axvisor::vmm::vcpus:574] VM[1] state changed to Stopped
+[147.036050 2:14 axvisor::vmm::vcpus:584] VM[1] VCpu[0] exiting...
+```
+
+> **当前版本的 AxVisor 存在以下限制：**
+> 
+> 1. **Shell 切换限制**：Linux 客户机启动后，无法返回 AxVisor shell，需要重启开发板

@@ -368,8 +368,8 @@ cat > kernel.its << 'EOF'
             arch = "arm64";
             os = "linux";
             compression = "none";
-            load =  <0x80080000>;
-            entry = <0x80080000>;
+            load =  <0x82000000>;
+            entry = <0x820000000>;
             hash-1 {
                 algo = "sha1";
             };
@@ -449,8 +449,8 @@ sudo umount rootfs
 │   ├── arceos-aarch64-e2000_smp1.toml
 │   └── linux-aarch64-e2000_smp1.toml
 └── images/
-    ├── arceos.bin
-    ├── linux.bin
+    ├── phytiumpi-arceos
+    ├── phytiumpi-linux
     └── *.dtb (如果需要)
 ```
 
@@ -512,4 +512,114 @@ sync
 
 ## 运行验证
 
-开发板启动后，AxVisor 会根据配置自动加载并启动客户机。可以通过串口连接到开发板查看运行状态。
+完成部署后，需要对 AxVisor 的运行状态进行验证，确保虚拟化系统正常工作。本节将详细介绍连接方法、启动过程验证以及常见问题的处理方法。
+
+### 串口连接
+
+在验证运行状态之前，需要通过串口连接到飞腾派开发板。
+
+#### 安装串口工具
+
+在主机上安装串口通信工具：
+
+```bash
+# Ubuntu/Debian 系统
+sudo apt install picocom minicom
+
+# 或者使用 minicom
+sudo apt install minicom
+```
+
+#### 连接设置
+
+飞腾派的串口参数：
+- 波特率：115200
+- 数据位：8
+- 停止位：1
+- 校验位：无
+
+使用 picocom 连接：
+```bash
+# 查看串口设备
+ls /dev/ttyUSB*
+
+# 连接串口（根据实际设备调整）
+picocom -b 115200 --imap lfcrlf /dev/ttyUSB0
+```
+
+使用 minicom 连接：
+```bash
+# 配置 minicom
+sudo minicom -s
+
+# 或者直接连接
+sudo minicom -D /dev/ttyUSB0 -b 115200
+```
+
+**退出 picocom：** `Ctrl+A` 然后按 `Ctrl+X`
+**退出 minicom：** `Ctrl+A` 然后按 `Q`
+
+### 启动过程验证
+
+#### AxVisor 启动信息
+
+开发板上电后，应该能看到以下启动信息：
+
+![deploy](./imgs_phytiumpi/deploy.png)
+
+#### 文件系统加载模式验证
+
+如果使用文件系统加载部署，需要手动创建和启动客户机：
+
+```bash
+# 进入 AxVisor shell
+# AxVisor>
+
+# 列出可用的客户机配置
+ls /guest/configs/
+
+# 创建客户机实例
+vm create /guest/configs/arceos-aarch64-e2000-smp1.toml
+
+# 启动客户机（VM ID 为 0）
+vm start 1
+
+# 创建第二个客户机
+vm create /guest/configs/linux-aarch64-e2000-smp1.toml
+
+# 启动第二个客户机（VM ID 为 1）
+vm start 2
+```
+
+#### 客户机运行状态
+
+**Linux 客户机启动信息：**
+```
+axvisor:/$ vm start 2
+[ 86.383762 0:2 axvisor::vmm::vcpus:341] Initializing VM[2]'s 1 vcpus
+[ 86.388597 0:2 axvisor::vmm::vcpus:390] Spawning task for VM[2] VCpu[0]
+[ 86.396416 0:2 axvisor::vmm::vcpus:405] VCpu task Task(14, "VM[2]-VCpu[0]") created cpumask: [3, ]
+[ 86.406568 0:2 axvm::vm:416] Booting VM[2]
+[ 86.409561 3:14 axvisor::vmm::vcpus:428] VM[2] boot delay: 5s
+✓ VM[2] started successfully
+axvisor:/$ [ 91.418803 3:14 axvisor::vmm::vcpus:431] VM[2] VCpu[0] waiting for running
+[ 91.424007 3:14 axvisor::vmm::vcpus:434] VM[2] VCpu[0] running...
+[    0.000000] Booting Linux on physical CPU 0x0000000100 [0x701f6643]
+[    0.000000] Linux version 5.10.209-phytium-embedded-v2.3 (runner@s1lqc) (aarch64-none-linux-gnu-gcc (GNU Toolchain for the A-profile Architecture 10.2-2020.11 (arm-10.16)) 10.2.1 20201103, GNU ld (GNU Toolchain for the A-profile Architecture 10.2-2020.11 (arm-10.16)) 2.35.1.20201028) #1 SMP PREEMPT Thu Nov 20 15:21:23 CST 2025
+[    0.000000] Machine model: Phytium Pi Board
+[    0.000000] earlycon: pl11 at MMIO 0x000000002800d000 (options '')
+[    0.000000] printk: bootconsole [pl11] enabled
+
+............
+
+Welcome to Phytium Pi OS firstlogin!
+```
+
+**ArceOS 客户机启动信息：**
+```
+
+```
+
+> **当前版本的 AxVisor 存在以下限制：**
+> 
+> 1. **Shell 切换限制**：Linux 客户机启动后，无法返回 AxVisor shell，需要重启开发板
