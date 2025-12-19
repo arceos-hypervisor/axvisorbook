@@ -168,7 +168,7 @@ function HeroBanner() {
           </h1>
           <p className="lead">
             <Translate>
-              新一代面向 AIoT 的开源虚拟化解决方案，支持多架构、多客户机，为嵌入式、IoT、边缘计算、汽车电子等应用场景提供高效、安全的虚拟化环境
+              新一代面向 AIoT 的开源虚拟化解决方案，为工控、车载、机器人等提供高效、安全、灵活的虚拟化环境，支持实时和非实时任务混合部署，同时满足 AI 推理和实时控制场景需求
             </Translate>
           </p>
           <div className="hero-actions">
