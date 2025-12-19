@@ -12,7 +12,7 @@
 
 [![GitHub stars](https://img.shields.io/github/stars/arceos-hypervisor/axvisor?logo=github)](https://github.com/arceos-hypervisor/axvisor/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/arceos-hypervisor/axvisor?logo=github)](https://github.com/arceos-hypervisor/axvisor/network)
-[![license](https://img.shields.io/github/license/arceos-hypervisor/axvisor)](https://github.com/arceos-hypervisor/axvisor/blob/master/LICENSE)
+[![license](https://img.shields.io/github/license/arceos-hypervisor/axvisorbook)](LICENSE)
 
 </div>
 
@@ -51,9 +51,4 @@ Feel free to fork this repository and submit a PR.
 
 ## License
 
-AxVisor Book uses the following open-source license:
-
- * Apache-2.0
- * MulanPubL-2.0
- * MulanPSL2
- * GPL-3.0-or-later
+AxVisor Book is licensed under the Apache License, Version 2.0. See the [LICENSE](LICENSE) file for details.

@@ -12,7 +12,7 @@
 
 [![GitHub stars](https://img.shields.io/github/stars/arceos-hypervisor/axvisor?logo=github)](https://github.com/arceos-hypervisor/axvisor/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/arceos-hypervisor/axvisor?logo=github)](https://github.com/arceos-hypervisor/axvisor/network)
-[![license](https://img.shields.io/github/license/arceos-hypervisor/axvisor)](https://github.com/arceos-hypervisor/axvisor/blob/master/LICENSE)
+[![license](https://img.shields.io/github/license/arceos-hypervisor/axvisorbook)](LICENSE)
 
 </div>
 
@@ -52,9 +52,4 @@ mdbook 是一个将 Markdown 文档作为源文件的文档系统，因此，我
 
 ## 许可协议
 
-AxVisor Book 使用如下开源协议：
-
- * Apache-2.0
- * MulanPubL-2.0
- * MulanPSL2
- * GPL-3.0-or-later
+AxVisor Book 采用 Apache License 2.0 开源协议。详情请参阅 [LICENSE](LICENSE) 文件。
