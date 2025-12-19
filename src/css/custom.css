@@ -58,3 +58,45 @@ html[data-theme='dark'] {
 .navbar__link[href*="#hardware"]:hover {
   color: var(--ifm-navbar-link-hover-color) !important;
 }
+
+/* 团队成员卡片样式优化 */
+.team-card .card__body,
+.contributor-card .card__body,
+.advisor-card .card__body {
+  height: 4.5rem; /* 大约3行文字的高度 */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  line-height: 1.5;
+}
+
+/* 确保卡片高度一致 */
+.team-card,
+.contributor-card,
+.advisor-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.team-card .card__footer,
+.contributor-card .card__footer,
+.advisor-card .card__footer {
+  margin-top: auto;
+}
+
+/* 头像样式优化 */
+.team-card__header .avatar--vertical,
+.contributor-card .card__header .avatar--vertical,
+.advisor-card .card__header .avatar--vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.team-card__header .avatar__photo,
+.contributor-card .card__header .avatar__photo,
+.advisor-card .card__header .avatar__photo {
+  margin-bottom: 0.5rem;
+}

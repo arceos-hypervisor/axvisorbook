@@ -19,24 +19,17 @@ AxVisor 是一个开源项目，我们致力于为用户提供全面的支持。
 
 ## 社区支持
 
-### 📧 邮件列表
-- **开发者邮件列表**: [axvisor-dev@googlegroups.com](mailto:axvisor-dev@googlegroups.com)
-  - 用于技术讨论和开发协作
-- **用户邮件列表**: [axvisor-users@googlegroups.com](mailto:axvisor-users@googlegroups.com)
-  - 用于用户问题和使用经验分享
-
-### 💬 即时聊天
-- **QQ群**: 123456789 (AxVisor技术交流群)
-- **微信群**: 扫描下方二维码加入
-
-<!-- 微信二维码图片将在此处添加 -->
+### 💬 社区讨论
+- 在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中参与技术讨论
+- 与其他用户和开发者交流使用经验
+- 分享最佳实践和解决方案
 
 ## 商业支持
 
-如果您需要企业级支持、定制开发或技术咨询，请联系我们：
+AxVisor 是一个开源项目，目前主要依靠社区支持。如果您有企业级需求或定制开发需求，欢迎通过以下方式讨论：
 
-- **邮箱**: [support@axvisor.org](mailto:support@axvisor.org)
-- **电话**: +86-xxx-xxxx-xxxx
+- 在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中描述您的需求
+- 通过 GitHub Issues 提交功能请求
 
 ## 常见问题
 
@@ -47,7 +40,7 @@ AxVisor 是一个开源项目，我们致力于为用户提供全面的支持。
 我们欢迎社区贡献！请查看我们的[贡献指南](/community/contributing)了解如何参与项目开发。
 
 ### 如何报告安全问题？
-如果您发现安全相关的问题，请不要在公开渠道披露，请直接发送邮件至 [security@axvisor.org](mailto:security@axvisor.org)。
+如果您发现安全相关的问题，请不要在公开渠道披露，请通过 GitHub 的私有安全报告功能或联系项目维护者。
 
 ## 获取帮助的最佳实践
 

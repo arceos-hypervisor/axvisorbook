@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# AxVisor 社区
+# 关于我们
 
 AxVisor 是一个基于 ArceOS 的统一模块化虚拟机监视器（Hypervisor），致力于为现代计算环境提供高效、安全、灵活的虚拟化解决方案。我们的社区由开发者、研究人员、企业用户和虚拟化技术爱好者组成，共同推动虚拟化技术的发展和应用。
 
@@ -36,7 +36,7 @@ AxVisor 是一个基于 ArceOS 的统一模块化虚拟机监视器（Hypervisor
 ### 👀 关注项目
 - ⭐ 在 GitHub 上 [Star 我们的仓库](https://github.com/arceos-hypervisor/axvisor)
 - 📢 关注我们的[博客](/blog)获取最新动态
-- 📧 订阅我们的邮件列表获取项目更新
+- 📋 查看[项目路线图](/docs/roadmap)了解未来计划
 
 ### 💬 参与讨论
 - 💭 在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中分享想法和经验
@@ -64,8 +64,8 @@ AxVisor 是一个基于 ArceOS 的统一模块化虚拟机监视器（Hypervisor
 
 如果您有任何问题或建议，欢迎通过以下方式联系我们：
 
-- 📧 邮箱: [community@axvisor.org](mailto:community@axvisor.org)
-- 💬 QQ群: 123456789 (AxVisor技术交流群)
-- 🐦 Twitter: [@AxVisorHypervisor](https://twitter.com/AxVisorHypervisor)
+- 📧 通过 [GitHub Issues](https://github.com/arceos-hypervisor/axvisor/issues) 报告问题
+- 💬 在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中参与讨论
+- 📖 查看[支持页面](/community/support)获取更多帮助渠道
 
 感谢您对 AxVisor 项目的关注！我们期待您的参与和贡献，共同构建更好的虚拟化技术社区。

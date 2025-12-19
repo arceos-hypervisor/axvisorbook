@@ -128,7 +128,7 @@ sidebar_position: 97
 如果您在贡献过程中需要帮助：
 
 - 在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中提问
-- 联系维护者：[maintainers@axvisor.org](mailto:maintainers@axvisor.org)
-- 加入我们的 QQ 群：123456789 (AxVisor技术交流群)
+- 通过 [GitHub Issues](https://github.com/arceos-hypervisor/axvisor/issues) 报告问题
+- 查看我们的[支持页面](/community/support)获取更多帮助渠道
 
 感谢您考虑为 AxVisor 做出贡献！您的参与对项目的成功至关重要。
