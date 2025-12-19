@@ -9,26 +9,23 @@ sidebar_label: "贡献指南"
 
 ## 贡献方式
 
-### 🐛 报告问题
-如果您发现了 bug 或有问题需要反馈：
+### 报告问题
+如果您希望通过反馈 bug 或问题参与贡献：
 
-1. 首先检查 [GitHub Issues](https://github.com/arceos-hypervisor/axvisor/issues) 确认问题尚未被报告
-2. 使用清晰、描述性的标题
-3. 提供详细的问题描述，包括：
-   - 重现步骤
-   - 期望行为
-   - 实际行为
-   - 环境信息（操作系统、版本等）
-   - 相关日志和错误信息
+- 请优先阅读[获取帮助](/community/support)页面中的“问题反馈”部分，按照说明准备复现信息
+- 然后在 [GitHub Issues](https://github.com/arceos-hypervisor/axvisor/issues) 中创建 Issue
 
-### 💡 功能建议
-如果您有新功能的想法：
+这样可以减少重复提问，也便于维护者更高效地定位和解决问题。
 
-1. 在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中发起讨论
-2. 详细描述功能的使用场景和价值
-3. 考虑是否可以作为插件或扩展实现
+### 功能建议
+如果您有新功能的想法并希望推动其实现：
 
-### 🔧 代码贡献
+- 在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中发起讨论，说明使用场景和预期收益
+- 先与社区共同收敛需求，再根据共识选择是否发起实现工作
+
+关于提问与一般使用问题的支持方式，请参考[获取帮助](/community/support)。
+
+### 代码贡献
 我们欢迎代码贡献！以下是贡献代码的流程：
 
 #### 开发环境设置
@@ -74,7 +71,7 @@ sidebar_label: "贡献指南"
    ```
 5. 在 GitHub 上创建 Pull Request
 
-### 📖 文档贡献
+### 文档贡献
 良好的文档对项目至关重要：
 
 - 修正错误或不清楚的文档
@@ -82,7 +79,7 @@ sidebar_label: "贡献指南"
 - 翻译文档到其他语言
 - 改进文档结构和导航
 
-### 🧪 测试贡献
+### 测试贡献
 测试是确保代码质量的关键：
 
 - 编写单元测试

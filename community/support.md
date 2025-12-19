@@ -10,16 +10,16 @@ AxVisor 是一个开源项目，我们致力于为用户提供全面的支持。
 
 ## 支持渠道
 
-### 📖 文档优先
+### 文档优先
 我们的[官方文档](/docs/introduction/overview)提供了详细的使用指南、API 参考和最佳实践。在提问前，请先查阅相关文档，这通常是解决问题最快的方式。
 
-### 🐛 问题反馈 (GitHub Issues)
+### 问题反馈 (GitHub Issues)
 如果您发现了 bug 或有功能建议，请在 [GitHub Issues](https://github.com/arceos-hypervisor/axvisor/issues) 上提交。提交问题时请注意：
 - 先搜索是否已有类似问题
 - 使用清晰、描述性的标题
 - 提供详细的重现步骤、环境信息和错误日志
 
-### 💬 社区讨论 (GitHub Discussions)
+### 社区讨论 (GitHub Discussions)
 对于一般性问题、想法分享或使用经验交流，欢迎在 [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) 中发起讨论。这里是：
 - 分享最佳实践和解决方案的平台
 - 与其他用户和开发者交流经验的地方
