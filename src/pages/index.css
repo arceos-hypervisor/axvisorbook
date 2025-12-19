@@ -1654,236 +1654,6 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
   }
 }
 
-/* ==================== 响应式设计 ==================== */
-@media (max-width: 900px) {
-  .hero-content {
-    flex-direction: column;
-    gap: 2rem;
-    align-items: center;
-  }
-
-  .hero-copy {
-    text-align: center;
-    align-items: center;
-  }
-
-  .hero-actions {
-    justify-content: center;
-  }
-
-  .lead {
-    text-align: center;
-  }
-
-  .hero-visual {
-    width: 100%;
-    max-width: 400px;
-  }
-
-  .hero-grid-visual {
-    min-height: 250px;
-  }
-}
-
-@media (max-width: 640px) {
-  :root {
-    --home-padding: clamp(2.5rem, 8vw, 4rem);
-  }
-
-  .hero-banner,
-  .home-section {
-    padding: clamp(2rem, 6vw, 3rem) 2rem;
-    min-height: fit-content;
-  }
-
-  .architecture-section,
-  .component-design-section {
-    padding-top: clamp(1rem, 4vw, 2rem);
-    padding-bottom: clamp(1rem, 4vw, 2rem);
-  }
-
-  .hero-copy h1 {
-    font-size: 2rem;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-  }
-
-  .button--hero {
-    width: 100%;
-  }
-
-  .hero-stats {
-    grid-template-columns: repeat(2, 1fr);
-    max-width: 100%;
-  }
-
-  .feature-grid,
-  .scenario-marquee,
-  .partner-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hardware-marquee {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .scenario-marquee {
-    padding: 1rem 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    /* 隐藏滚动条 */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-  }
-
-  .scenario-marquee::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-  }
-
-  .scenario-scroll-container {
-    animation: scrollRightToLeftMobile 40s linear infinite;
-    gap: 1rem;
-  }
-
-  .scenario-card {
-    min-width: 280px;
-    width: 280px;
-    height: 45vh;
-    max-height: 420px;
-    gap: 0;
-    padding: 1rem;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .scenario-image-placeholder {
-    width: 100%;
-    height: 50%;
-    display: none;
-  }
-
-  .scenario-image-placeholder::after {
-    background: linear-gradient(180deg, transparent 0%, transparent 50%, var(--home-panel) 100%);
-  }
-
-  html[data-theme="dark"] .scenario-image-placeholder::after {
-    background: linear-gradient(180deg, transparent 0%, transparent 50%, var(--home-panel) 100%);
-  }
-
-  .scenario-content {
-    width: 100%;
-    padding: 1rem;
-    align-items: center;
-    text-align: center;
-  }
-
-  .scenario-text {
-    text-align: center;
-  }
-
-  .scenario-icon {
-    width: 70px;
-    height: 70px;
-    order: -1;
-  }
-
-  .scenario-card h3 {
-    font-size: 1.1rem;
-    white-space: normal;
-  }
-
-  .scenario-card p {
-    font-size: 0.9rem;
-    -webkit-line-clamp: 2;
-  }
-
-  .section-divider-top,
-  .section-divider-bottom {
-    height: clamp(40px, 6vw, 80px);
-  }
-
-  .feature-card,
-  .scenario-card,
-  .partner-card {
-    padding: 1.5rem;
-    min-height: auto;
-  }
-
-  .hardware-card {
-    padding: 1.5rem;
-    min-height: auto;
-    min-width: 100%;
-    max-width: 100%;
-  }
-
-  .hardware-header-container {
-    flex-direction: column;
-    gap: 0.8rem;
-    text-align: center;
-  }
-
-  .hardware-header {
-    text-align: center;
-  }
-
-  .specs-grid,
-  .performance-grid {
-    grid-template-columns: 1fr;
-    gap: 0.6rem;
-  }
-
-  .hardware-actions {
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .hardware-button {
-    padding: 0.8rem 1rem;
-  }
-
-  .shell-terminal-container {
-    padding: 15px;
-  }
-
-  .shell-terminal-screen {
-    font-size: 12px;
-    min-height: 300px;
-    max-height: 400px;
-    padding: 15px;
-  }
-}
-
-/* 减少动画 */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-  }
-}
-
-/* 高对比度模式支持 */
-@media (prefers-contrast: more) {
-  .hero-wave-divider,
-  .section-divider-top,
-  .section-divider-bottom {
-    opacity: 1;
-  }
-
-  .feature-card::before,
-  .hardware-card::before,
-  .scenario-card::before,
-  .partner-card::before {
-    border-width: 3px;
-  }
-}
 
 /* ==================== Features Section ==================== */
 .features-section {
@@ -2188,8 +1958,209 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
   word-spacing: -0.05em;
 }
 
-/* 响应式调整 */
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 900px) {
+  .hero-content {
+    flex-direction: column;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .hero-copy {
+    text-align: center;
+    align-items: center;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
+  .lead {
+    text-align: center;
+  }
+
+  .hero-visual {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .hero-grid-visual {
+    min-height: 250px;
+  }
+}
+
 @media (max-width: 640px) {
+  :root {
+    --home-padding: clamp(2.5rem, 8vw, 4rem);
+  }
+
+  .hero-banner,
+  .home-section {
+    padding: clamp(2rem, 6vw, 3rem) 2rem;
+    min-height: fit-content;
+  }
+
+  .architecture-section,
+  .component-design-section {
+    padding-top: clamp(1rem, 4vw, 2rem);
+    padding-bottom: clamp(1rem, 4vw, 2rem);
+  }
+
+  .hero-copy h1 {
+    font-size: 2rem;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .button--hero {
+    width: 100%;
+  }
+
+  .hero-stats {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 100%;
+  }
+
+  .feature-grid,
+  .scenario-marquee,
+  .partner-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hardware-marquee {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .scenario-marquee {
+    padding: 1rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    /* 隐藏滚动条 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+
+  .scenario-marquee::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
+
+  .scenario-scroll-container {
+    animation: scrollRightToLeftMobile 40s linear infinite;
+    gap: 1rem;
+  }
+
+  .scenario-card {
+    min-width: 280px;
+    width: 280px;
+    height: 45vh;
+    max-height: 420px;
+    gap: 0;
+    padding: 1rem;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .scenario-image-placeholder {
+    width: 100%;
+    height: 50%;
+    display: none;
+  }
+
+  .scenario-image-placeholder::after {
+    background: linear-gradient(180deg, transparent 0%, transparent 50%, var(--home-panel) 100%);
+  }
+
+  html[data-theme="dark"] .scenario-image-placeholder::after {
+    background: linear-gradient(180deg, transparent 0%, transparent 50%, var(--home-panel) 100%);
+  }
+
+  .scenario-content {
+    width: 100%;
+    padding: 1rem;
+    align-items: center;
+    text-align: center;
+  }
+
+  .scenario-text {
+    text-align: center;
+  }
+
+  .scenario-icon {
+    width: 70px;
+    height: 70px;
+    order: -1;
+  }
+
+  .scenario-card h3 {
+    font-size: 1.1rem;
+    white-space: normal;
+  }
+
+  .scenario-card p {
+    font-size: 0.9rem;
+    -webkit-line-clamp: 2;
+  }
+
+  .section-divider-top,
+  .section-divider-bottom {
+    height: clamp(40px, 6vw, 80px);
+  }
+
+  .feature-card,
+  .scenario-card,
+  .partner-card {
+    padding: 1.5rem;
+    min-height: auto;
+  }
+
+  .hardware-card {
+    padding: 1.5rem;
+    min-height: auto;
+    min-width: 100%;
+    max-width: 100%;
+  }
+
+  .hardware-header-container {
+    flex-direction: column;
+    gap: 0.8rem;
+    text-align: center;
+  }
+
+  .hardware-header {
+    text-align: center;
+  }
+
+  .specs-grid,
+  .performance-grid {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+
+  .hardware-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .hardware-button {
+    padding: 0.8rem 1rem;
+  }
+
+  .shell-terminal-container {
+    padding: 15px;
+  }
+
+  .shell-terminal-screen {
+    font-size: 12px;
+    min-height: 300px;
+    max-height: 400px;
+    padding: 15px;
+  }
+
   .architecture-grid,
   .component-grid {
     grid-template-columns: 1fr;
@@ -2232,5 +2203,32 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
   .architecture-diagram img,
   .component-diagram img {
     max-height: 35vh;
+  }
+}
+
+/* 减少动画 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: more) {
+  .hero-wave-divider,
+  .section-divider-top,
+  .section-divider-bottom {
+    opacity: 1;
+  }
+
+  .feature-card::before,
+  .hardware-card::before,
+  .scenario-card::before,
+  .partner-card::before {
+    border-width: 3px;
   }
 }
