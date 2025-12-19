@@ -168,7 +168,7 @@ function HeroBanner() {
           </h1>
           <p className="lead">
             <Translate>
-              新一代开源虚拟化解决方案，支持多架构、多客户机，为嵌入式、IoT、边缘计算、汽车电子等应用场景提供高效、安全的虚拟化环境
+              新一代面向 AIoT 的开源虚拟化解决方案，支持多架构、多客户机，为嵌入式、IoT、边缘计算、汽车电子等应用场景提供高效、安全的虚拟化环境
             </Translate>
           </p>
           <div className="hero-actions">
@@ -396,7 +396,7 @@ function FeatureSection() {
             <Translate>核心优势</Translate>
           </p>
           <h2>
-            <Translate>组件化架构 · 多架构统一</Translate>
+            <Translate>组件化设计 · 多架构统一</Translate>
           </h2>
           <p>
             <Translate>
@@ -762,7 +762,7 @@ function HardwareSection({ onDownloadClick }) {
             <Translate>硬件平台</Translate>
           </p>
           <h2>
-            <Translate>跨平台支持 · 从虚拟化境到真实硬件</Translate>
+            <Translate>跨平台 · 支持常见主流芯片架构</Translate>
           </h2>
           <p>
             <Translate>
