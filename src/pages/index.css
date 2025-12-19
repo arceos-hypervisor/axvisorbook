@@ -1,7 +1,7 @@
 /* ==================== 主题变量 ==================== */
 :root {
   /* 间距和圆角 */
-  --home-padding: clamp(3rem, 5vw, 5rem);
+  --home-padding: clamp(4rem, 6vw, 6rem);
   --home-radius: 28px;
 
   /* 面板样式 */
@@ -1687,12 +1687,12 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
 
 @media (max-width: 640px) {
   :root {
-    --home-padding: clamp(2rem, 8vw, 3rem);
+    --home-padding: clamp(2.5rem, 8vw, 4rem);
   }
 
   .hero-banner,
   .home-section {
-    padding: clamp(1.5rem, 6vw, 2.5rem) 1.5rem;
+    padding: clamp(2rem, 6vw, 3rem) 2rem;
     min-height: fit-content;
   }
 
