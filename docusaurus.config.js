@@ -220,8 +220,7 @@ export default {
           {
             to: '/#hardware',
             label: 'Download',
-            position: 'left',
-            activeBaseClassName: ''
+            position: 'left'
           },
           {
             to: '/community/introduction',
