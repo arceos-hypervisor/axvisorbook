@@ -163,7 +163,7 @@ function HeroBanner() {
               <Translate>AxVisor</Translate>
             </span>
             <em>
-              <Translate>开源、高性能、多架构支持</Translate>
+              <Translate>安全、高性能、多架构</Translate>
             </em>
           </h1>
           <p className="lead">
