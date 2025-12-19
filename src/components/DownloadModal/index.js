@@ -8,8 +8,8 @@ const downloadLinks = {
   qemu: {
     name: "QEMU 模拟环境",
     baidu: {
-      link: "https://pan.baidu.com/s/1example_qemu_link",
-      password: "axvisor",
+      link: "https://pan.baidu.com/e/1MlKooeGsEWHIkcQ_CpOFkg",
+      password: "ce74",
       description: "QEMU 模拟环境完整镜像"
     },
     other: {
@@ -20,8 +20,8 @@ const downloadLinks = {
   phytiumpi: {
     name: "飞腾派",
     baidu: {
-      link: "https://pan.baidu.com/s/1example_phytiumpi_link",
-      password: "axvisor",
+      link: "https://pan.baidu.com/s/1dLQegazeEllMDQ6KyK8_Xg",
+      password: "73fn",
       description: "飞腾派预编译镜像"
     },
     other: {
@@ -32,8 +32,8 @@ const downloadLinks = {
   roc3568: {
     name: "ROC-RK3568-PC",
     baidu: {
-      link: "https://pan.baidu.com/s/1example_roc3568_link",
-      password: "axvisor",
+      link: "https://pan.baidu.com/s/1amD3GkQqaXqV8YFf89ow6Q",
+      password: "3bx3",
       description: "ROC-RK3568-PC 预编译镜像"
     },
     other: {
