@@ -9,144 +9,253 @@ AxVisor 项目由一个充满热情的团队维护，包括核心开发者、贡
 
 ## 核心团队
 
-<div className="row team-grid">
+<div className="row contributor-grid">
 
-<div className="col col--4 margin-bottom--lg">
-<div className="card team-card">
-
-<div className="card__header team-card__header">
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
 <div className="avatar avatar--vertical">
-<div className="avatar__photo avatar__photo--xl">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232e8555'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='white' font-size='40' font-family='Arial, sans-serif'%3E张%3C/text%3E%3C/svg%3E" alt="张三" />
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/ZR233.png" alt="ZR233" />
 </div>
 <div className="avatar__intro">
-<div className="avatar__name">张三</div>
-<div className="avatar__subtitle">项目创始人 & 首席架构师</div>
+<div className="avatar__name">ZR233</div>
+<div className="avatar__subtitle">泉城实验室</div>
 </div>
 </div>
 </div>
-
 <div className="card__body">
-专注于系统架构设计和虚拟化核心技术研发
+核心开发者
 </div>
-
-<div className="card__footer team-card__footer">
-<a className="button button--outline button--secondary button--sm" href="mailto:zhangsan@axvisor.org">📧 邮箱</a>
-<a className="button button--outline button--secondary button--sm" href="https://github.com/zhangsan">💼 GitHub</a>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/ZR233">💼 GitHub</a>
 </div>
-
 </div>
 </div>
 
-<div className="col col--4 margin-bottom--lg">
-<div className="card team-card">
-
-<div className="card__header team-card__header">
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
 <div className="avatar avatar--vertical">
-<div className="avatar__photo avatar__photo--xl">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232e8555'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='white' font-size='40' font-family='Arial, sans-serif'%3E李%3C/text%3E%3C/svg%3E" alt="李四" />
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/ZCShou.png" alt="ZCShou" />
 </div>
 <div className="avatar__intro">
-<div className="avatar__name">李四</div>
-<div className="avatar__subtitle">高级系统工程师</div>
+<div className="avatar__name">ZCShou</div>
+<div className="avatar__subtitle">乾云</div>
 </div>
 </div>
 </div>
-
 <div className="card__body">
-负责内存管理和调度器模块开发
+核心开发者
 </div>
-
-<div className="card__footer team-card__footer">
-<a className="button button--outline button--secondary button--sm" href="mailto:lisi@axvisor.org">📧 邮箱</a>
-<a className="button button--outline button--secondary button--sm" href="https://github.com/lisi">💼 GitHub</a>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/ZCShou">💼 GitHub</a>
 </div>
-
 </div>
 </div>
 
-<div className="col col--4 margin-bottom--lg">
-<div className="card team-card">
-
-<div className="card__header team-card__header">
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
 <div className="avatar avatar--vertical">
-<div className="avatar__photo avatar__photo--xl">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232e8555'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='white' font-size='40' font-family='Arial, sans-serif'%3E王%3C/text%3E%3C/svg%3E" alt="王五" />
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/luodeb.png" alt="luodeb" />
 </div>
 <div className="avatar__intro">
-<div className="avatar__name">王五</div>
-<div className="avatar__subtitle">虚拟化专家</div>
+<div className="avatar__name">luodeb</div>
+<div className="avatar__subtitle">CICV</div>
 </div>
 </div>
 </div>
-
 <div className="card__body">
-专注于虚拟设备驱动和 I/O 虚拟化
+核心开发者
 </div>
-
-<div className="card__footer team-card__footer">
-<a className="button button--outline button--secondary button--sm" href="mailto:wangwu@axvisor.org">📧 邮箱</a>
-<a className="button button--outline button--secondary button--sm" href="https://github.com/wangwu">💼 GitHub</a>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/luodeb">💼 GitHub</a>
 </div>
-
 </div>
 </div>
 
-</div>
-
-<div className="row team-grid">
-
-<div className="col col--4 margin-bottom--lg">
-<div className="card team-card">
-
-<div className="card__header team-card__header">
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
 <div className="avatar avatar--vertical">
-<div className="avatar__photo avatar__photo--xl">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232e8555'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='white' font-size='40' font-family='Arial, sans-serif'%3E赵%3C/text%3E%3C/svg%3E" alt="赵六" />
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/Josen-B.png" alt="Josen-B" />
 </div>
 <div className="avatar__intro">
-<div className="avatar__name">赵六</div>
-<div className="avatar__subtitle">安全研究员</div>
+<div className="avatar__name">Josen-B</div>
+<div className="avatar__subtitle">乾云</div>
 </div>
 </div>
 </div>
-
 <div className="card__body">
-负责安全机制和隔离技术研究
+核心开发者
 </div>
-
-<div className="card__footer team-card__footer">
-<a className="button button--outline button--secondary button--sm" href="mailto:zhaoliu@axvisor.org">📧 邮箱</a>
-<a className="button button--outline button--secondary button--sm" href="https://github.com/zhaoliu">💼 GitHub</a>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/Josen-B">💼 GitHub</a>
 </div>
-
 </div>
 </div>
 
-<div className="col col--4 margin-bottom--lg">
-<div className="card team-card">
+</div>
+<div className="row contributor-grid">
 
-<div className="card__header team-card__header">
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
 <div className="avatar avatar--vertical">
-<div className="avatar__photo avatar__photo--xl">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%232e8555'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='white' font-size='40' font-family='Arial, sans-serif'%3E钱%3C/text%3E%3C/svg%3E" alt="钱七" />
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/shilei-massclouds.png" alt="shilei-massclouds" />
 </div>
 <div className="avatar__intro">
-<div className="avatar__name">钱七</div>
-<div className="avatar__subtitle">技术写作 & 社区经理</div>
+<div className="avatar__name">shilei-massclouds</div>
+<div className="avatar__subtitle">乾云</div>
 </div>
 </div>
 </div>
-
 <div className="card__body">
-负责文档编写和社区运营
+核心开发者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/shilei-massclouds">💼 GitHub</a>
+</div>
+</div>
 </div>
 
-<div className="card__footer team-card__footer">
-<a className="button button--outline button--secondary button--sm" href="mailto:qianqi@axvisor.org">📧 邮箱</a>
-<a className="button button--outline button--secondary button--sm" href="https://github.com/qianqi">💼 GitHub</a>
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/YanLien.png" alt="YanLien" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">YanLien</div>
+<div className="avatar__subtitle">泉城实验室</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+核心开发者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/YanLien">💼 GitHub</a>
+</div>
+</div>
 </div>
 
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/bullhh.png" alt="bullhh" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">bullhh</div>
+<div className="avatar__subtitle">泉城实验室</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+核心开发者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/bullhh">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/aarkegz.png" alt="aarkegz" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">aarkegz</div>
+<div className="avatar__subtitle">清华大学</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+核心开发者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/aarkegz">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+</div>
+<div className="row contributor-grid">
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/buhenxihuan.png" alt="buhenxihuan" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">buhenxihuan</div>
+<div className="avatar__subtitle">CICV</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+核心开发者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/buhenxihuan">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/xyongcn.png" alt="xyongcn" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">xyongcn</div>
+<div className="avatar__subtitle">清华大学</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+核心开发者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/xyongcn">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/elliott10.png" alt="elliott10" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">elliott10</div>
+<div className="avatar__subtitle">清华大学</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+核心开发者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/elliott10">💼 GitHub</a>
+</div>
 </div>
 </div>
 
@@ -154,7 +263,7 @@ AxVisor 项目由一个充满热情的团队维护，包括核心开发者、贡
 
 ## 贡献者
 
-我们感谢所有为 AxVisor 项目做出贡献的开发者！以下是一些主要贡献者（按字母顺序）：
+我们感谢所有为 AxVisor 项目做出贡献的开发者！
 
 <div className="row contributor-grid">
 
@@ -163,19 +272,19 @@ AxVisor 项目由一个充满热情的团队维护，包括核心开发者、贡
 <div className="card__header">
 <div className="avatar avatar--vertical">
 <div className="avatar__photo avatar__photo--lg">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%236f42c1'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='white' font-size='40' font-family='Arial, sans-serif'%3E陈%3C/text%3E%3C/svg%3E" alt="陈八" />
+<img src="https://github.com/yfblock.png" alt="yfblock" />
 </div>
 <div className="avatar__intro">
-<div className="avatar__name">陈八</div>
-<div className="avatar__subtitle">贡献者</div>
+<div className="avatar__name">yfblock</div>
+<div className="avatar__subtitle">北方工业大学</div>
 </div>
 </div>
 </div>
 <div className="card__body">
-贡献了网络虚拟化模块
+贡献者
 </div>
 <div className="card__footer">
-<a className="button button--outline button--secondary button--sm" href="https://github.com/chenba">💼 GitHub</a>
+<a className="button button--outline button--secondary button--sm" href="https://github.com/yfblock">💼 GitHub</a>
 </div>
 </div>
 </div>
@@ -185,19 +294,19 @@ AxVisor 项目由一个充满热情的团队维护，包括核心开发者、贡
 <div className="card__header">
 <div className="avatar avatar--vertical">
 <div className="avatar__photo avatar__photo--lg">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%236f42c1'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='white' font-size='40' font-family='Arial, sans-serif'%3E周%3C/text%3E%3C/svg%3E" alt="周九" />
+<img src="https://github.com/Azure_stars.png" alt="Azure_stars" />
 </div>
 <div className="avatar__intro">
-<div className="avatar__name">周九</div>
-<div className="avatar__subtitle">贡献者</div>
+<div className="avatar__name">Azure_stars</div>
+<div className="avatar__subtitle">清华大学</div>
 </div>
 </div>
 </div>
 <div className="card__body">
-改进了构建系统和 CI/CD 流程
+贡献者
 </div>
 <div className="card__footer">
-<a className="button button--outline button--secondary button--sm" href="https://github.com/zhoujiu">💼 GitHub</a>
+<a className="button button--outline button--secondary button--sm" href="https://github.com/Azure_stars">💼 GitHub</a>
 </div>
 </div>
 </div>
@@ -207,19 +316,19 @@ AxVisor 项目由一个充满热情的团队维护，包括核心开发者、贡
 <div className="card__header">
 <div className="avatar avatar--vertical">
 <div className="avatar__photo avatar__photo--lg">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%236f42c1'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='white' font-size='40' font-family='Arial, sans-serif'%3E吴%3C/text%3E%3C/svg%3E" alt="吴十" />
+<img src="https://github.com/numpy1314.png" alt="numpy1314" />
 </div>
 <div className="avatar__intro">
-<div className="avatar__name">吴十</div>
-<div className="avatar__subtitle">贡献者</div>
+<div className="avatar__name">numpy1314</div>
+<div className="avatar__subtitle">清华大学</div>
 </div>
 </div>
 </div>
 <div className="card__body">
-添加了 ARM 平台支持
+贡献者
 </div>
 <div className="card__footer">
-<a className="button button--outline button--secondary button--sm" href="https://github.com/wushi">💼 GitHub</a>
+<a className="button button--outline button--secondary button--sm" href="https://github.com/numpy1314">💼 GitHub</a>
 </div>
 </div>
 </div>
@@ -229,19 +338,201 @@ AxVisor 项目由一个充满热情的团队维护，包括核心开发者、贡
 <div className="card__header">
 <div className="avatar avatar--vertical">
 <div className="avatar__photo avatar__photo--lg">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%236f42c1'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='white' font-size='40' font-family='Arial, sans-serif'%3E郑%3C/text%3E%3C/svg%3E" alt="郑十一" />
+<img src="https://github.com/eternalcomet.png" alt="eternalcomet" />
 </div>
 <div className="avatar__intro">
-<div className="avatar__name">郑十一</div>
-<div className="avatar__subtitle">贡献者</div>
+<div className="avatar__name">eternalcomet</div>
+<div className="avatar__subtitle">清华大学</div>
 </div>
 </div>
 </div>
 <div className="card__body">
-编写了大量测试用例
+贡献者
 </div>
 <div className="card__footer">
-<a className="button button--outline button--secondary button--sm" href="https://github.com/zhengshiyi">💼 GitHub</a>
+<a className="button button--outline button--secondary button--sm" href="https://github.com/eternalcomet">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+</div>
+<div className="row contributor-grid">
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/AsakuraMizu.png" alt="AsakuraMizu" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">AsakuraMizu</div>
+<div className="avatar__subtitle">清华大学</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+贡献者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/AsakuraMizu">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/Godones.png" alt="Godones" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">Godones</div>
+<div className="avatar__subtitle">北京理工大学</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+贡献者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/Godones">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/Mivik.png" alt="Mivik" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">Mivik</div>
+<div className="avatar__subtitle">清华大学</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+贡献者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/Mivik">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/li041.png" alt="li041" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">li041</div>
+<div className="avatar__subtitle">哈尔滨工业大学</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+贡献者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/li041">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+</div>
+<div className="row contributor-grid">
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/Dayuxiaoshui.png" alt="Dayuxiaoshui" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">Dayuxiaoshui</div>
+<div className="avatar__subtitle">电子科技大学成都学院</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+贡献者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/Dayuxiaoshui">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/Anekoique.png" alt="Anekoique" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">Anekoique</div>
+<div className="avatar__subtitle">杭州电子科技大学</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+贡献者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/Anekoique">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/leeehh.png" alt="leeehh" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">leeehh</div>
+<div className="avatar__subtitle">清华大学</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+贡献者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/leeehh">💼 GitHub</a>
+</div>
+</div>
+</div>
+
+<div className="col col--3 margin-bottom--lg">
+<div className="card contributor-card">
+<div className="card__header">
+<div className="avatar avatar--vertical">
+<div className="avatar__photo avatar__photo--lg">
+<img src="https://github.com/Ivans-11.png" alt="Ivans-11" />
+</div>
+<div className="avatar__intro">
+<div className="avatar__name">Ivans-11</div>
+<div className="avatar__subtitle">清华大学</div>
+</div>
+</div>
+</div>
+<div className="card__body">
+贡献者
+</div>
+<div className="card__footer">
+<a className="button button--outline button--secondary button--sm" href="https://github.com/Ivans-11">💼 GitHub</a>
 </div>
 </div>
 </div>
@@ -250,62 +541,14 @@ AxVisor 项目由一个充满热情的团队维护，包括核心开发者、贡
 
 完整的贡献者列表请查看我们的 [GitHub 贡献者页面](https://github.com/arceos-hypervisor/axvisor/graphs/contributors)。
 
-## 顾问委员会
-
-我们的顾问委员会由学术界和工业界的专家组成，为项目提供战略指导：
-
-<div className="row advisor-grid">
-
-<div className="col col--6 margin-bottom--lg">
-<div className="card advisor-card">
-<div className="card__header">
-<div className="avatar avatar--vertical">
-<div className="avatar__photo avatar__photo--xl">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23d97706'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='white' font-size='40' font-family='Arial, sans-serif'%3E孙%3C/text%3E%3C/svg%3E" alt="孙教授" />
-</div>
-<div className="avatar__intro">
-<div className="avatar__name">孙教授</div>
-<div className="avatar__subtitle">学术顾问</div>
-</div>
-</div>
-</div>
-<div className="card__body">
-虚拟化技术研究专家；某知名大学教授；主要研究方向为系统安全和虚拟化
-</div>
-</div>
-</div>
-
-<div className="col col--6 margin-bottom--lg">
-<div className="card advisor-card">
-<div className="card__header">
-<div className="avatar avatar--vertical">
-<div className="avatar__photo avatar__photo--xl">
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23d97706'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='white' font-size='40' font-family='Arial, sans-serif'%3E刘%3C/text%3E%3C/svg%3E" alt="刘博士" />
-</div>
-<div className="avatar__intro">
-<div className="avatar__name">刘博士</div>
-<div className="avatar__subtitle">工业顾问</div>
-</div>
-</div>
-</div>
-<div className="card__body">
-某大型科技公司首席架构师；在虚拟化和云计算领域有丰富经验
-</div>
-</div>
-</div>
-
-</div>
-
 ## 联系团队
 
 如果您需要联系团队，请使用以下渠道：
 
 | 目的 | 联系方式 | 说明 |
 |------|----------|------|
-| 一般咨询 | [team@axvisor.org](mailto:team@axvisor.org) | 项目相关的一般问题 |
+| 一般咨询 | [GitHub Issues](https://github.com/arceos-hypervisor/axvisor/issues) | 项目相关的一般问题 |
 | 社区讨论 | [GitHub Discussions](https://github.com/arceos-hypervisor/axvisor/discussions) | 技术讨论和社区交流 |
-| 安全问题 | [security@axvisor.org](mailto:security@axvisor.org) | **请勿在公开渠道报告安全问题** |
-| 媒体合作 | [press@axvisor.org](mailto:press@axvisor.org) | 媒体采访、商业合作等 |
 
 ## 加入我们
 
