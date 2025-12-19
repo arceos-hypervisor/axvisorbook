@@ -181,7 +181,7 @@ export default {
       // },
       announcementBar: {
         id: 'tips',
-        content:'🚀 欢迎使用 AxVisor！项目正处于快速发展阶段，相关源代码和文档正在逐步完善中。🚀',
+        content:'🎉 AxVisor v0.2.0 正式发布！查看发布详情 <a href="/axvisorbook/blog/axvisor-v0.2.0-release">这里</a>。',
         backgroundColor: '#e3f2fd',
         textColor: '#0d47a1',
         isCloseable: true,
