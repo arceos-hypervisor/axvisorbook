@@ -13,7 +13,6 @@ sidebar_label: "社区资源"
 - [用户文档](/docs/introduction/overview) - 完整的用户指南和教程
 - [架构设计](/docs/design/architecture/arch) - 系统架构和设计原理
 - [部署指南](/docs/manual/deploy) - 在不同平台上部署 AxVisor 的指南
-- [API 参考](/docs/api) - 详细的 API 文档
 
 ### 演示和示例
 - [快速入门指南](/docs/quickstart) - 基础示例和快速上手
