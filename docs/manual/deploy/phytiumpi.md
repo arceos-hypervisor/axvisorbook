@@ -617,7 +617,77 @@ Welcome to Phytium Pi OS firstlogin!
 
 **ArceOS 客户机启动信息：**
 ```
+axvisor:/$ vm start 1
+[ 54.334010 0:2 axvisor::vmm::vcpus:341] Initializing VM[1]'s 1 vcpus
+[ 54.338845 0:2 axvisor::vmm::vcpus:390] Spawning task for VM[1] VCpu[0]
+[ 54.346663 0:2 axvisor::vmm::vcpus:405] VCpu task Task(14, "VM[1]-VCpu[0]") created cpumask: [2, ]
+[ 54.356815 0:2 axvm::vm:416] Booting VM[1]
+✓ VM[1] started successfully
+axvisor:/$ [ 54.366393 2:14 axvisor::vmm::vcpus:428] VM[1] boot delay: 0s
+[ 54.372783 2:14 axvisor::vmm::vcpus:431] VM[1] VCpu[0] waiting for running
+[ 54.380857 2:14 axvisor::vmm::vcpus:434] VM[1] VCpu[0] running...
+fdt                     : 0xb1800000
+[ 54.422607 2:14 arm_vgic::vtimer::cntp_ctl_el0:33] Write to emulator register: SysRegAddr(3340292), value: 2
+EL                      : 1
+_start                  : 0xffff800000000000
+stack                   : 0xffff800000088000
+loader                  : [0x91a34000, 0x91a443c0)
+BootTable space         : [0x91af3eca --)
+code                    : [0xffff800000000000, 0xffff800020000000) -> [0x91a00000, 0xb1a00000)
+ram                     : 0xffff900091a00000-> 0x91a00000
+debug                   : 0xffff90002800d000-> 0x2800d000
+eq                      : [0x0, 0x8000000000)
+Table                   : 0x0000000091af4000
+Table size              : 0x8136
+jump to                 : 0xffff800000002494
+SomeHAL booting...
+Power management method : SMC
+Goto main...
 
+       d8888                            .d88888b.   .d8888b.
+      d88888                           d88P" "Y88b d88P  Y88b
+     d88P888                           888     888 Y88b.
+    d88P 888 888d888  .d8888b  .d88b.  888     888  "Y888b.
+   d88P  888 888P"   d88P"    d8P  Y8b 888     888     "Y88b.
+  d88P   888 888     888      88888888 888     888       "888
+ d8888888888 888     Y88b.    Y8b.     Y88b. .d88P Y88b  d88P
+d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
+
+arch = aarch64
+platform = aarch64-dyn
+target = aarch64-unknown-none-softfloat
+build_mode = release
+log_level = info
+smp = 1
+
+[ 54.570853 axruntime:136] Logging is enabled.
+[ 54.576418 axruntime:137] Primary CPU 0 started, arg = 0x91aee000.
+[ 54.583792 axruntime:140] Found physcial memory regions:
+[ 54.590306 axruntime:142]   [PA:0x2800d000, PA:0x2800e000) mmio (READ | WRITE | DEVICE | RESERVED)
+[ 54.600462 axruntime:142]   [PA:0x91a00000, PA:0x91a01000) reserved (READ | WRITE | RESERVED)
+[ 54.610173 axruntime:142]   [PA:0x91a01000, PA:0x91a2c000) .text (READ | EXECUTE | RESERVED)
+[ 54.619808 axruntime:142]   [PA:0x91a2c000, PA:0x91a45000) .rodata (READ | RESERVED)
+[ 54.628748 axruntime:142]   [PA:0x91a45000, PA:0x91a48000) .data .tdata .tbss .percpu (READ | WRITE | RESERVED)
+[ 54.640032 axruntime:142]   [PA:0x91a88000, PA:0x91ac8000) boot stack (READ | WRITE | RESERVED)
+[ 54.649928 axruntime:142]   [PA:0x91ac8000, PA:0x91aee000) .bss (READ | WRITE | RESERVED)
+[ 54.659302 axruntime:142]   [PA:0x91aee000, PA:0x91afd000) reserved (READ | WRITE | RESERVED)
+[ 54.669024 axruntime:142]   [PA:0x91afd000, PA:0xb1a00000) free memory (READ | WRITE | FREE)
+[ 54.678658 axruntime:220] Initialize global memory allocator...
+[ 54.685776 axruntime:221]   use TLSF allocator.
+[ 54.691594 axmm:101] Initialize virtual memory management...
+[ 54.703036 axruntime:160] Initialize platform devices...
+[ 54.707015 2:14 arm_vgic::vtimer::cntp_ctl_el0:33] Write to emulator register: SysRegAddr(3340292), value: 1
+[ 54.717706 2:14 arm_vgic::vtimer::cntp_tval_el0:39] Write to emulator register: SysRegAddr(3209220), value: 0
+[ 54.728812 2:14 arm_vgic::vtimer::cntp_tval_el0:41] Current time: 54728812480, deadline: 54728812480
+[ 54.739150 2:14 axvisor::hal::arch:103] Virtual interrupt interface not enabled, enabling now
+[ 54.754071 axruntime:198] Primary CPU 0 init OK.
+Hello, world!
+[ 54.758331 2:14 axvisor::vmm::vcpus:513] VM[1] run VCpu[0] SystemDown
+[ 54.765958 2:14 axvm::vm:453] Shutting down VM[1]
+[ 54.771860 2:14 axvisor::vmm::vcpus:564] VM[1] VCpu[0] stopping because of VM stopping
+[ 54.780974 2:14 axvisor::vmm::vcpus:570] VM[1] VCpu[0] last VCpu exiting, decreasing running VM count
+[ 54.791390 2:14 axvisor::vmm::vcpus:574] VM[1] state changed to Stopped
+[ 54.799205 2:14 axvisor::vmm::vcpus:584] VM[1] VCpu[0] exiting...
 ```
 
 > **当前版本的 AxVisor 存在以下限制：**
