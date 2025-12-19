@@ -479,6 +479,42 @@ function ArchitectureSection() {
         message: "支持多种文件系统，包括 FAT32、EXT4、RAMFS 等。",
       }),
       icon: "wave",
+    },
+    {
+      id: "arch-scheduler",
+      title: translate({ id: "home.arch.scheduler", message: "调度器" }),
+      description: translate({
+        id: "home.arch.scheduler.desc",
+        message: "实现 vCPU 调度和负载均衡，支持多种调度策略和实时保证。",
+      }),
+      icon: "pulse",
+    },
+    {
+      id: "arch-device",
+      title: translate({ id: "home.arch.device", message: "设备虚拟化" }),
+      description: translate({
+        id: "home.arch.device.desc",
+        message: "提供虚拟设备模型，支持 MMIO 和 I/O 中断处理。",
+      }),
+      icon: "server",
+    },
+    {
+      id: "arch-devicetree",
+      title: translate({ id: "home.arch.devicetree", message: "设备树" }),
+      description: translate({
+        id: "home.arch.devicetree.desc",
+        message: "支持设备树配置和动态解析，灵活定义硬件资源。",
+      }),
+      icon: "chip",
+    },
+    {
+      id: "arch-guest",
+      title: translate({ id: "home.arch.guest", message: "客户机管理" }),
+      description: translate({
+        id: "home.arch.guest.desc",
+        message: "管理虚拟机生命周期，支持多客户机操作系统运行。",
+      }),
+      icon: "robot",
     }
   ];
 
@@ -609,6 +645,33 @@ function ComponentDesignSection() {
       }),
       icon: "server",
     },
+    {
+      id: "comp-axsched",
+      title: translate({ id: "home.comp.sched", message: "AxSched" }),
+      description: translate({
+        id: "home.comp.sched.desc",
+        message: "调度器组件，实现灵活的调度策略和负载均衡。",
+      }),
+      icon: "pulse",
+    },
+    {
+      id: "comp-axdevice",
+      title: translate({ id: "home.comp.device", message: "AxDevice" }),
+      description: translate({
+        id: "home.comp.device.desc",
+        message: "设备虚拟化组件，支持多种虚拟设备模型和设备模拟。",
+      }),
+      icon: "chip",
+    },
+    {
+      id: "comp-axguestmgr",
+      title: translate({ id: "home.comp.guestmgr", message: "AxGuestMgr" }),
+      description: translate({
+        id: "home.comp.guestmgr.desc",
+        message: "客户机管理组件，处理虚拟机和客户机系统的交互。",
+      }),
+      icon: "robot",
+    }
   ];
 
   return (
