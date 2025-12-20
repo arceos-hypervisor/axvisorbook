@@ -1720,13 +1720,6 @@ html[data-theme="dark"] .scenario-image-placeholder::after {
 }
 
 /* ==================== 响应式设计 ==================== */
-@media (max-width: 1200px) {
-  .feature-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
-  }
-}
-
 @media (max-width: 900px) {
   .hero-content {
     flex-direction: column;
