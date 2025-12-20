@@ -1373,8 +1373,8 @@ export default function Home() {
 
   return (
     <Layout
-      title={translate({ message: "AxVisor - 基于 ArceOS 的统一组件化超级监管程序" })}
-      description={translate({ message: "AxVisor - 基于 ArceOS 的统一组件化超级监管程序" })}
+      title={translate({ message: "AxVisor - 统一组件化虚拟化管理程序" })}
+      description={translate({ message: "AxVisor - 统一组件化虚拟化管理程序" })}
     >
       <main className="home">
         <PageNavigator sections={navSections} />
