@@ -754,10 +754,10 @@ function HardwareSection({ onDownloadClick }) {
       doc: "docs/quickstart/qemu/aarch64",
       icon: "chip",
       guestSupport: [
-        { name: "ArceOS", description: "ArceOS - 组件化操作系统" },
-        { name: "Linux", description: "Linux - 通用操作系统" },
-        { name: "NimbOS", description: "NimbOS - 轻量级操作系统" },
-        { name: "Starry-OS", description: "Starry-OS - 宏内核操作系统" }
+        { name: "ArceOS", description: "组件化操作系统" },
+        { name: "Linux", description: "通用操作系统" },
+        { name: "NimbOS", description: "轻量级操作系统" },
+        { name: "Starry-OS", description: "宏内核操作系统" }
       ],
       performance: {
         bootTime: "< 10秒",
@@ -773,10 +773,10 @@ function HardwareSection({ onDownloadClick }) {
       doc: "docs/quickstart/board/phytiumpi",
       icon: "chip",
       guestSupport: [
-        { name: "ArceOS", description: "ArceOS - 组件化操作系统" },
-        { name: "Linux", description: "Linux - 通用操作系统" },
-        { name: "RT-Thread", description: "RT-Thread - 实时操作系统" },
-        { name: "Starry-OS", description: "Starry-OS - 宏内核操作系统" }
+        { name: "ArceOS", description: "组件化操作系统" },
+        { name: "Linux", description: "通用操作系统" },
+        { name: "RT-Thread", description: "实时操作系统" },
+        { name: "Starry-OS", description: "宏内核操作系统" }
       ],
       performance: {
         bootTime: "< 3秒",
@@ -792,9 +792,9 @@ function HardwareSection({ onDownloadClick }) {
       doc: "docs/quickstart/board/roc-rk3568-pc",
       icon: "chip",
       guestSupport: [
-        { name: "ArceOS", description: "ArceOS - 组件化操作系统" },
-        { name: "Linux", description: "Linux - 通用操作系统" },
-        { name: "Starry-OS", description: "Starry-OS - 宏内核操作系统" }
+        { name: "ArceOS", description: "组件化操作系统" },
+        { name: "Linux", description: "通用操作系统" },
+        { name: "Starry-OS", description: "宏内核操作系统" }
       ],
       performance: {
         bootTime: "< 5秒",
