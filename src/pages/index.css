@@ -626,7 +626,7 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
 .feature-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2.5rem;
+  gap: 2.0rem;
   width: 100%;
   justify-items: center;
   max-width: 100%;
@@ -638,8 +638,7 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
   background: var(--home-panel);
   border-radius: 24px;
   border: 1px solid var(--home-panel-border);
-  min-height: 280px;
-  min-width: 280px;
+  min-width: 240px;
   max-width: 100%;
   display: flex;
   flex-direction: column;
@@ -773,11 +772,6 @@ html[data-theme="dark"] .hero-terminal-screen::-webkit-scrollbar-thumb:hover {
 .icon-robot-eye {
   fill: var(--ifm-color-primary);
   opacity: 0.8;
-}
-
-.feature-card:hover .icon-pulse {
-  stroke-width: 3;
-  stroke: var(--feature-accent-1);
 }
 
 /* ==================== Hardware Section ==================== */
