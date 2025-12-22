@@ -205,305 +205,544 @@ FAT 文件系统使用簇链来管理文件和目录的存储。提供了完整�
 
 ### 主要特性
 
-- **多架构支持**：支持 x86_64、riscv64 和 aarch64 架构
-- **完整文件类型支持**：常规文件、目录、软链接、FIFO、字符设备、块设备、Socket 等
-- **权限管理**：支持文件的读写执行等权限控制
-- **日志事务**：提供 Journal 日志事务及恢复功能
-- **缓存机制**：实现 block cache 的内存缓存
-- **无系统依赖**：设计为独立库，不依赖特定操作系统
-- **内存安全**：利用 Rust 的所有权系统确保内存安全
-- **异步支持**：为未来的异步 I/O 操作预留接口
-- **可配置性**：支持编译时配置优化
+
+- **完整 Ext4 实现**：支持 Ext4 文件系统的所有核心特性，包括动态 inode 大小、extent 树、块组管理等
+- **Extent 树支持**：使用 extent 树替代传统块映射，提高大文件存储效率，支持连续块分配
+- **日志系统 (JBD2)**：实现 Journaling Block Device 2，支持 ordered 模式，保证文件系统一致性
+- **块设备抽象**：通过 `BlockDevice` trait 抽象底层存储，提供统一的块读写接口
+- **多级缓存系统**：包括位图缓存、inode 表缓存、数据块缓存，支持 LRU 淘汰策略
+- **目录操作**：支持目录创建、遍历、硬链接、符号链接等
+- **文件操作**：支持文件的创建、读取、写入、截断、删除等，支持基于偏移量的随机访问
+- **元数据校验**：支持元数据校验和功能（通过 feature flag 控制）
+
 
 ### 核心组件
 
-#### 1. Ext4BlockWrapper
+#### Ext4FileSystem
 
-`Ext4BlockWrapper` 是块设备的封装类，负责管理 ext4 文件系统的挂载、卸载和基本操作。
+文件系统的核心结构体，管理整个文件系统的状态：
 
-**主要功能：**
-- 初始化和挂载 ext4 文件系统
-- 管理块设备接口
-- 提供文件系统统计信息
-- 处理日志事务
-- 缓存管理和优化
-- 错误恢复机制
-
-**关键方法：**
 ```rust
-impl<K: KernelDevOp> Ext4BlockWrapper<K> {
-    pub fn new(block_dev: K::DevType) -> Result<Self, i32>
-    pub fn new_with_name(block_dev: K::DevType, dev_name: &str) -> Result<Self, i32>
-    pub fn lwext4_mount(&mut self) -> Result<usize, i32>
-    pub fn lwext4_umount(&mut self) -> Result<usize, i32>
-    pub fn lwext4_dir_ls(&self)
-    pub fn print_lwext4_mp_stats(&self)
-    pub fn print_lwext4_block_stats(&self)
-    pub fn ext4_set_debug(&self)
+pub struct Ext4FileSystem {
+    pub superblock: Ext4Superblock,           // 超级块
+    pub group_descs: Vec<Ext4GroupDesc>,      // 块组描述符数组
+    pub block_allocator: BlockAllocator,      // 块分配器
+    pub inode_allocator: InodeAllocator,      // Inode分配器
+    pub bitmap_cache: BitmapCache,            // 位图缓存
+    pub inodetable_cahce: InodeCache,         // Inode表缓存
+    pub datablock_cache: DataBlockCache,      // 数据块缓存
+    pub root_inode: u32,                      // 根目录inode号
+    pub group_count: u32,                     // 块组数量
+    pub mounted: bool,                        // 是否已挂载
+    pub journal_sb_block_start: Option<u32>,  // Journal超级块位置
 }
 ```
 
-**生命周期管理：**
+该结构体封装了文件系统的所有核心状态，是文件系统操作的中心枢纽。超级块包含全局文件系统信息，块组描述符管理各个块组的元数据，各种分配器负责资源管理，缓存系统提高性能。挂载时初始化所有组件，卸载时确保数据持久化并清理资源。
+
+#### BlockDevice Trait
+
+抽象底层块设备的接口，提供统一的块读写操作：
+
 ```rust
-impl<K: KernelDevOp> Drop for Ext4BlockWrapper<K> {
-    fn drop(&mut self) {
-        // 自动卸载文件系统并释放资源
-        self.lwext4_umount().unwrap();
-        let devtype = unsafe { Box::from_raw((*(&self.value).bdif).p_user as *mut K::DevType) };
-        drop(devtype);
-    }
+pub trait BlockDevice {
+    fn read(&mut self, buffer: &mut [u8], block_id: u32, count: u32) -> BlockDevResult<()>;
+    fn write(&mut self, buffer: &[u8], block_id: u32, count: u32) -> BlockDevResult<()>;
+    fn open(&mut self) -> BlockDevResult<()>;
+    fn close(&mut self) -> BlockDevResult<()>;
+    fn total_blocks(&self) -> u64;
+    fn block_size(&self) -> u32;
 }
 ```
 
-**内部状态：**
-- `value`: ext4_blockdev 结构体，包含块设备信息
-- `name`: 设备名称（最大16字节）
-- `mount_point`: 挂载点路径（最大32字节）
-- `pd`: PhantomData，用于类型安全
+这个 trait 定义了块设备的基本操作接口，通过抽象层屏蔽了底层存储的差异。`read` 和 `write` 方法支持多块连续操作，提高了 I/O 效率。`open` 和 `close` 方法允许设备进行初始化和清理工作。`total_blocks` 和 `block_size` 提供了设备的基本信息。这种设计使得 rsext4 可以轻松适配不同的存储介质，如传统的磁盘驱动器、RAM 磁盘、SSD 或甚至是网络存储。通过实现这个 trait，开发者可以为 rsext4 添加新的存储后端支持。
 
-#### 2. Ext4File
+#### Jbd2Dev
 
-`Ext4File` 提供文件级别的操作接口，与块设备解耦，专注于文件操作。
+日志系统的包装器，为块设备添加日志功能：
 
-**主要功能：**
-- 文件的打开、关闭、读取、写入
-- 文件属性获取和设置
-- 目录操作
-- 符号链接处理
-- 文件权限管理
-- 扩展属性支持
-
-**关键方法：**
 ```rust
-impl Ext4File {
-    pub fn new(path: &str, types: InodeTypes) -> Self
-    pub fn open(&mut self, flags: i32) -> Result<(), i32>
-    pub fn close(&mut self) -> Result<(), i32>
-    pub fn read(&mut self, buf: &mut [u8]) -> Result<usize, i32>
-    pub fn write(&mut self, buf: &[u8]) -> Result<usize, i32>
-    pub fn seek(&mut self, offset: i64, whence: i32) -> Result<i64, i32>
-    pub fn ftruncate(&mut self, new_size: u64) -> Result<(), i32>
-    pub fn fstat(&self) -> Result<ext4_inode, i32>
-    pub fn chmod(&mut self, mode: u32) -> Result<(), i32>
+pub struct Jbd2Dev<B: BlockDevice> {
+    block_dev: B,
+    journal_system: Option<JBD2DEVSYSTEM>,
+    use_journal: bool,
 }
 ```
 
-**文件打开标志：**
-```rust
-/// 文件打开模式说明
-/// |---------------------------------------------------------------|
-/// |   r 或 rb                 O_RDONLY                            |
-/// |---------------------------------------------------------------|
-/// |   w 或 wb                 O_WRONLY|O_CREAT|O_TRUNC            |
-/// |---------------------------------------------------------------|
-/// |   a 或 ab                 O_WRONLY|O_CREAT|O_APPEND           |
-/// |---------------------------------------------------------------|
-/// |   r+ 或 rb+ 或 r+b        O_RDWR                              |
-/// |---------------------------------------------------------------|
-/// |   w+ 或 wb+ 或 w+b        O_RDWR|O_CREAT|O_TRUNC              |
-/// |---------------------------------------------------------------|
-/// |   a+ 或 ab+ 或 a+b        O_RDWR|O_CREAT|O_APPEND             |
-/// |---------------------------------------------------------------|
-```
+Jbd2Dev 在 BlockDevice 基础上增加了事务日志支持，确保文件系统操作的原子性和一致性。它维护了一个日志系统状态，可以动态启用或禁用日志功能。`journal_system` 字段存储日志系统的内部状态，`use_journal` 标志控制是否实际使用日志。这种设计允许在性能和安全性之间进行权衡：在格式化或某些特殊操作时可以临时关闭日志以提高性能，而在正常运行时启用日志保证数据一致性。Jbd2Dev 还处理日志的重放，确保系统崩溃后能够恢复到一致状态。
 
-**文件类型枚举：**
+#### 缓存系统
+
+##### BitmapCache
+
+管理块位图和 inode 位图的缓存，支持按需加载和 LRU 淘汰：
+
 ```rust
-pub enum InodeTypes {
-    EXT4_DE_UNKNOWN,     // 未知类型
-    EXT4_DE_REG_FILE,    // 常规文件
-    EXT4_DE_DIR,         // 目录
-    EXT4_DE_CHRDEV,      // 字符设备
-    EXT4_DE_BLKDEV,      // 块设备
-    EXT4_DE_FIFO,        // FIFO管道
-    EXT4_DE_SOCK,        // Socket
-    EXT4_DE_SYMLINK,     // 符号链接
+/// 位图缓存管理器
+pub struct BitmapCache {
+    /// 缓存的位图
+    cache: BTreeMap<CacheKey, CachedBitmap>,
+    /// 最大缓存条目数（LRU淘汰）
+    max_entries: usize,
+    /// 访问计数器（用于LRU）
+    access_counter: u64,
+}
+
+/// 使用闭包修改指定位图，并自动标记为脏
+pub fn modify<B, F>(
+    &mut self,
+    block_dev: &mut Jbd2Dev<B>,
+    key: CacheKey,
+    block_num: u64,
+    f: F,
+) -> BlockDevResult<()>
+where
+    B: BlockDevice,
+    F: FnOnce(&mut [u8]),
+{
+    let bitmap = self.get_or_load_mut(block_dev, key, block_num)?;
+    f(&mut bitmap.data);
+    bitmap.mark_dirty();
+    Ok(())
 }
 ```
 
-#### 3. KernelDevOp Trait
+BitmapCache 通过 LRU 策略管理位图缓存，减少磁盘 I/O，提高分配性能。
 
-`KernelDevOp` 是设备操作的抽象接口，允许不同的块设备实现统一的操作接口。
+##### InodeCache
+
+缓存 inode 表数据，避免频繁磁盘访问：
 
 ```rust
-pub trait KernelDevOp {
-    type DevType;
-    
-    fn write(dev: &mut Self::DevType, buf: &[u8]) -> Result<usize, i32>;
-    fn read(dev: &mut Self::DevType, buf: &mut [u8]) -> Result<usize, i32>;
-    fn seek(dev: &mut Self::DevType, off: i64, whence: i32) -> Result<i64, i32>;
-    fn flush(dev: &mut Self::DevType) -> Result<usize, i32>;
+/// Inode缓存管理器
+pub struct InodeCache {
+    /// 缓存的inode
+    cache: BTreeMap<InodeCacheKey, CachedInode>,
+    /// 最大缓存条目数
+    max_entries: usize,
+    /// 访问计数器
+    access_counter: u64,
+    /// 每个inode的大小
+    inode_size: usize,
+}
+
+/// 使用闭包修改指定inode
+pub fn modify<B, F>(
+    &mut self,
+    block_dev: &mut Jbd2Dev<B>,
+    inode_num: u64,
+    block_num: u64,
+    offset: usize,
+    f: F,
+) -> BlockDevResult<()>
+where
+    B: BlockDevice,
+    F: FnOnce(&mut Ext4Inode),
+{
+    let cached = self.get_or_load_mut(block_dev, inode_num, block_num, offset)?;
+    f(&mut cached.inode);
+    cached.mark_dirty();
+    Ok(())
 }
 ```
 
-**实现示例（VirtIO 块设备）：**
+InodeCache 缓存 inode 结构，支持延迟写回，减少元数据访问延迟。
+
+##### DataBlockCache
+
+缓存文件数据块，支持大文件的高效访问：
+
 ```rust
-impl<H: Hal, T: Transport> KernelDevOp for Disk<H, T> {
-    type DevType = Self;
-    
-    fn read(dev: &mut Self::DevType, buf: &mut [u8]) -> Result<usize, i32> {
-        let mut total_read = 0;
-        while total_read < buf.len() {
-            let read = dev.read_one(&mut buf[total_read..])?;
-            if read == 0 {
-                break;
-            }
-            total_read += read;
+/// 数据块缓存管理器
+pub struct DataBlockCache {
+    /// 缓存的数据块
+    cache: BTreeMap<BlockCacheKey, CachedBlock>,
+    /// 最大缓存条目数
+    max_entries: usize,
+    /// 访问计数器（用于LRU）
+    access_counter: u64,
+    /// 块大小
+    block_size: usize,
+}
+
+/// 获取数据块（如果不存在则从磁盘加载）
+pub fn get_or_load<B: BlockDevice>(
+    &mut self,
+    block_dev: &mut Jbd2Dev<B>,
+    block_num: u64,
+) -> BlockDevResult<&CachedBlock> {
+    if !self.cache.contains_key(&block_num) {
+        if self.cache.len() >= self.max_entries {
+            self.evict_lru(block_dev)?;
         }
-        Ok(total_read)
+        // 加载块数据...
+    }
+    // 返回缓存的块
+    self.cache.get(&block_num).ok_or(BlockDevError::Corrupted)
+}
+```
+
+DataBlockCache 缓存文件内容块，支持随机访问和顺序访问的性能优化。
+
+#### 分配器
+
+##### BlockAllocator
+
+负责数据块的分配和释放，支持连续块分配：
+
+```rust
+/// 块分配器
+pub struct BlockAllocator {
+    blocks_per_group: u32,
+    first_data_block: u32,
+}
+
+/// 在指定块组中分配连续的多个块
+pub fn alloc_contiguous_blocks(
+    &self,
+    bitmap_data: &mut [u8],
+    group_idx: u32,
+    count: u32,
+) -> Result<BlockAlloc, AllocError> {
+    let mut bitmap = BlockBitmapMut::new(bitmap_data, self.blocks_per_group);
+    let block_in_group = self
+        .find_contiguous_free_blocks(&bitmap, count)?
+        .ok_or(AllocError::NoSpace)?;
+    bitmap.allocate_range(block_in_group, count)?;
+    let global_block = self.block_to_global(group_idx, block_in_group);
+    Ok(BlockAlloc {
+        group_idx,
+        block_in_group,
+        global_block,
+    })
+}
+```
+
+BlockAllocator 管理数据块的分配和释放，支持连续块分配以减少碎片，提高 I/O 性能。连续分配算法通过扫描位图找到指定数量的连续空闲块，这种策略能够显著减少文件碎片，提高文件访问的局部性。
+
+##### InodeAllocator
+
+负责 inode 的分配和释放：
+
+```rust
+/// Inode分配器
+pub struct InodeAllocator {
+    inodes_per_group: u32,
+    first_inode: u32,
+}
+
+/// 在指定块组中分配一个inode
+pub fn alloc_inode_in_group(
+    &self,
+    bitmap_data: &mut [u8],
+    group_idx: u32,
+    group_desc: &Ext4GroupDesc,
+) -> Result<InodeAlloc, AllocError> {
+    if group_desc.free_inodes_count() == 0 {
+        return Err(AllocError::NoSpace);
+    }
+    let mut bitmap = InodeBitmapMut::new(bitmap_data, self.inodes_per_group);
+    let inode_in_group = self.find_free_inode(&bitmap)?.ok_or(AllocError::NoSpace)?;
+    bitmap.allocate(inode_in_group)?;
+    let global_inode = self.inode_to_global(group_idx, inode_in_group);
+    Ok(InodeAlloc {
+        group_idx,
+        inode_in_group,
+        global_inode,
+    })
+}
+```
+
+InodeAllocator 管理 inode 分配，确保文件和目录的元数据空间。每个 inode 代表文件系统中的一个文件或目录，分配器维护 inode 位图以跟踪使用情况。
+
+### 内部细节
+
+#### 文件系统布局
+
+Ext4 文件系统按块组组织，每个块组包含：
+
+- **超级块**：文件系统全局元数据
+- **块组描述符**：块组元数据
+- **块位图**：标记块使用情况
+- **inode 位图**：标记 inode 使用情况  
+- **inode 表**：存储 inode 结构
+- **数据块**：实际存储文件数据
+
+超级块结构定义：
+
+```rust
+#[repr(C)]
+pub struct Ext4Superblock {
+    // 基本信息
+    pub s_inodes_count: u32,         // Inode总数
+    pub s_blocks_count_lo: u32,      // 块总数（低32位）
+    pub s_free_blocks_count_lo: u32, // 空闲块数（低32位）
+    pub s_free_inodes_count: u32,    // 空闲inode数
+    pub s_first_data_block: u32,     // 第一个数据块
+    pub s_log_block_size: u32,       // 块大小 = 1024 << s_log_block_size
+    pub s_blocks_per_group: u32,     // 每个块组的块数
+    pub s_inodes_per_group: u32,     // 每个块组的inode数
+    
+    // 状态和特性
+    pub s_magic: u16,                // 魔数 0xEF53
+    pub s_state: u16,                // 文件系统状态
+    pub s_feature_compat: u32,       // 兼容特性标志
+    pub s_feature_incompat: u32,     // 不兼容特性标志
+    pub s_uuid: [u8; 16],            // 128位UUID
+    // ... 更多字段
+}
+```
+
+块组描述符结构：
+
+```rust
+#[repr(C)]
+pub struct Ext4GroupDesc {
+    // 基本信息（32字节）
+    pub bg_block_bitmap_lo: u32,     // 块位图块号（低32位）
+    pub bg_inode_bitmap_lo: u32,     // Inode位图块号（低32位）
+    pub bg_inode_table_lo: u32,      // Inode表起始块号（低32位）
+    pub bg_free_blocks_count_lo: u16, // 空闲块数（低16位）
+    pub bg_free_inodes_count_lo: u16, // 空闲inode数（低16位）
+    pub bg_used_dirs_count_lo: u16,   // 目录数（低16位）
+    pub bg_flags: u16,                // 标志
+    // ... 更多字段
+}
+```
+
+文件系统布局提供了高效的元数据管理和数据访问机制。块组结构将相关元数据集中存储，减少了磁盘寻道时间，提高了 I/O 性能。
+
+#### 挂载过程
+
+挂载过程涉及读取和验证文件系统元数据，初始化各种组件：
+
+```rust
+/// 打开Ext4文件系统
+pub fn mount<B: BlockDevice>(block_dev: &mut Jbd2Dev<B>) -> Result<Self, RSEXT4Error> {
+    // 1. 读取超级块
+    let superblock = read_superblock(block_dev).map_err(|_| RSEXT4Error::IoError)?;
+    
+    // 2. 验证魔数
+    if superblock.s_magic != EXT4_SUPER_MAGIC {
+        return Err(RSEXT4Error::InvalidMagic);
     }
     
-    fn write(dev: &mut Self::DevType, buf: &[u8]) -> Result<usize, i32> {
-        let mut total_written = 0;
-        while total_written < buf.len() {
-            let written = dev.write_one(&buf[total_written..])?;
-            if written == 0 {
-                break;
-            }
-            total_written += written;
-        }
-        Ok(total_written)
+    // 3. 计算块组数量并读取块组描述符
+    let group_count = superblock.block_groups_count();
+    let group_descs = Self::load_group_descriptors(block_dev, group_count)?;
+    
+    // 4. 初始化分配器和缓存
+    let block_allocator = BlockAllocator::new(&superblock);
+    let inode_allocator = InodeAllocator::new(&superblock);
+    let bitmap_cache = BitmapCache::default();
+    let inode_cache = InodeCache::new(INODE_CACHE_MAX, inode_size);
+    let datablock_cache = DataBlockCache::new(DATABLOCK_CACHE_MAX, BLOCK_SIZE);
+    
+    // 5. 构造文件系统实例
+    let mut fs = Self {
+        superblock,
+        group_descs,
+        block_allocator,
+        inode_allocator,
+        bitmap_cache,
+        inodetable_cahce: inode_cache,
+        datablock_cache,
+        root_inode: 2,
+        group_count,
+        mounted: true,
+        journal_sb_block_start: None,
+    };
+    
+    // 6. 检查和创建根目录
+    let root_inode = fs.get_root(block_dev)?;
+    if root_inode.i_mode == 0 || !root_inode.is_dir() {
+        fs.create_root_dir(block_dev)?;
     }
     
-    fn seek(dev: &mut Self::DevType, off: i64, whence: i32) -> Result<i64, i32> {
-        let new_pos = match whence {
-            SEEK_SET => off,
-            SEEK_CUR => dev.position() as i64 + off,
-            SEEK_END => dev.size() as i64 + off,
-            _ => return Err(EINVAL as i32),
+    Ok(fs)
+}
+```
+
+挂载过程确保文件系统处于一致状态，并初始化所有必要的组件。
+
+#### 文件操作流程
+
+##### 文件读取
+
+文件读取涉及路径解析、extent映射和数据缓存：
+
+```rust
+///读取整个文件内容
+pub fn read<B: BlockDevice>(
+    dev: &mut Jbd2Dev<B>,
+    fs: &mut Ext4FileSystem,
+    path: &str,
+) -> BlockDevResult<Option<Vec<u8>>> {
+    read_file(dev, fs, path)
+}
+
+/// read_at 计算文件offset后读取
+pub fn read_at<B: BlockDevice>(
+    dev: &mut Jbd2Dev<B>,
+    fs: &mut Ext4FileSystem,
+    file: &mut OpenFile,
+    len: usize,
+) -> BlockDevResult<Vec<u8>> {
+    refresh_open_file_inode(dev, fs, file)?;
+    let file_size = file.inode.size() as u64;
+    if file.offset >= file_size {
+        return Ok(Vec::new());
+    }
+    
+    let extent_map = resolve_inode_block_allextend(fs, dev, &mut file.inode)?;
+    // 解析extent树获取块映射，然后读取数据块缓存
+    // ...
+}
+```
+
+文件读取通过extent树高效定位数据块，支持随机访问。extent树将逻辑块号映射到物理块号，减少了间接块的开销。对于大文件，这种映射方式特别高效。
+
+##### 文件写入
+
+文件写入涉及块分配、extent更新和缓存管理：
+
+```rust
+///写入文件:基于当前offset追加写入
+pub fn write_at<B: BlockDevice>(
+    dev: &mut Jbd2Dev<B>,
+    fs: &mut Ext4FileSystem,
+    file: &mut OpenFile,
+    data: &[u8],
+) -> BlockDevResult<()> {
+    write_file(dev, fs, &file.path, file.offset, data)?;
+    file.offset = file.offset.saturating_add(data.len() as u64);
+    refresh_open_file_inode(dev, fs, file)?;
+    Ok(())
+}
+```
+
+文件写入通过extent树管理块分配，支持动态扩展。写入操作首先检查是否有足够的空闲块，然后分配块并更新extent树，最后将数据写入缓存。
+
+#### Extent 树机制
+
+Extent 树是 Ext4 的核心特性，用于高效管理大文件的块映射。传统的块映射使用间接块，随着文件增大，间接块层次会增加，导致访问效率降低。Extent 树通过记录连续块范围解决了这个问题，每个 extent 条目表示一段连续的块映射，大大减少了元数据开销。
+
+```rust
+/// 内存中的 extent 树节点表示
+pub enum ExtentNode {
+    /// 叶子节点：存储实际的块映射
+    Leaf {
+        header: Ext4ExtentHeader,
+        entries: Vec<Ext4Extent>,
+    },
+    /// 内部节点：存储子节点的块号
+    Index {
+        header: Ext4ExtentHeader,
+        entries: Vec<Ext4ExtentIdx>,
+    },
+}
+
+/// 绑定到单个 inode 的 extent 树视图
+pub struct ExtentTree<'a> {
+    pub inode: &'a mut Ext4Inode,
+}
+```
+
+Extent 树支持连续块范围的映射，减少元数据开销，提高大文件性能。
+
+#### 日志系统 (JBD2)
+
+JBD2 保证文件系统一致性：
+
+```rust
+///提交事务
+pub fn commit_transaction<B: BlockDevice>(
+    &mut self,
+    block_dev: &mut B,
+) -> Result<bool, ()> {
+    let tid = self.sequence;
+    // 写描述符块
+    let mut desc_buffer = vec![0; BLOCK_SIZE];
+    let mut new_jbd_header = JournalHeaderS::default();
+    new_jbd_header.h_blocktype = 1; // Descriptor
+    new_jbd_header.h_sequence = tid;
+    new_jbd_header.to_disk_bytes(&mut desc_buffer[0..JournalHeaderS::disk_size()]);
+    
+    // 写数据块标签和数据
+    for (idx, update) in self.commit_queue.iter().enumerate() {
+        let mut tag = JournalBlockTagS {
+            t_blocknr: update.0 as u32,
+            t_checksum: 0,
+            t_flags: 0,
         };
-        
-        if new_pos < 0 || new_pos > dev.size() as i64 {
-            return Err(EINVAL as i32);
+        // 处理最后一个标签和逃逸标记
+        if idx == self.commit_queue.len() - 1 {
+            tag.t_flags |= JBD2_FLAG_LAST_TAG;
         }
-        
-        dev.set_position(new_pos as u64);
-        Ok(new_pos)
+        // 写入标签和数据块
     }
-    
-    fn flush(_dev: &mut Self::DevType) -> Result<usize, i32> {
-        // VirtIO 块设备通常不需要显式刷新
-        Ok(0)
-    }
+    Ok(true)
 }
 ```
-### 内部实现细节
 
-#### 1. 内存管理
+JBD2 通过预写日志确保操作的原子性，防止文件系统损坏。日志记录了元数据变更，在系统崩溃时可以重放日志恢复一致性。
 
-使用 `alloc` crate 进行内存管理，支持 `no_std` 环境。关键数据结构使用 `Box` 进行堆分配。
+#### 缓存策略
 
-**内存分配策略：**
+缓存策略包括按需加载、LRU淘汰和延迟写入：
+
 ```rust
-// 自定义内存分配器实现
-#[no_mangle]
-pub extern "C" fn ext4_user_malloc(size: c_size_t) -> *mut c_void {
-    // 使用 Rust 全局分配器
-    let layout = Layout::from_size_align(size + CTRL_BLK_SIZE, 8).unwrap();
-    let ptr = unsafe { alloc(layout) };
-    
-    if ptr.is_null() {
-        return null_mut();
+/// 获取位图（如果不存在则从磁盘加载）
+pub fn get_or_load<B: BlockDevice>(
+    &mut self,
+    block_dev: &mut Jbd2Dev<B>,
+    key: CacheKey,
+    block_num: u64,
+) -> BlockDevResult<&CachedBitmap> {
+    if !self.cache.contains_key(&key) {
+        if self.cache.len() >= self.max_entries {
+            self.evict_lru(block_dev)?;
+        }
+        block_dev.read_block(block_num as u32)?;
+        let buffer = block_dev.buffer();
+        let data = buffer.to_vec();
+        let bitmap = CachedBitmap::new(data, block_num);
+        self.cache.insert(key, bitmap);
     }
-    
-    // 存储控制块信息
-    let ptr = ptr.cast::<MemoryControlBlock>();
-    unsafe { ptr.write(MemoryControlBlock { size }) }
-    ptr.add(1).cast()
+    self.access_counter += 1;
+    // 更新访问时间戳
+    self.cache.get(&key).ok_or(BlockDevError::Corrupted)
 }
 ```
 
-**内存对齐和优化：**
-- 所有数据结构按照 8 字节对齐
-- 使用零拷贝技术减少内存复制
-- 实现内存池管理减少分配开销
+缓存策略平衡内存使用和I/O性能。
 
-#### 2. 错误处理
+#### 错误处理
 
-使用 Rust 的 `Result` 类型进行错误处理，同时保持与 C 库的错误码兼容。
+错误处理使用Result类型和错误传播：
 
-**错误映射：**
 ```rust
-// C 错误码到 Rust 错误的映射
-fn map_c_error(ret: c_int) -> Result<(), i32> {
-    match ret {
-        EOK => Ok(()),
-        EIO => Err(EIO),
-        ENOMEM => Err(ENOMEM),
-        EINVAL => Err(EINVAL),
-        _ => Err(ret),
-    }
+/// 块设备错误类型
+pub enum BlockDevError {
+    IoError,
+    BufferTooSmall { provided: usize, required: usize },
+    InvalidInput,
+    Corrupted,
+    NoSpace,
+    Unsupported,
+    WriteError,
 }
 ```
 
-**错误恢复机制：**
-- 文件系统自动检测和恢复
-- 日志回滚机制
-- 块设备错误重试
+所有操作返回Result，确保错误被正确处理和传播。
 
-#### 3. 并发安全
+#### 性能优化
 
-通过 `PhantomData` 确保类型安全，但实际的并发安全需要上层实现保证。
+性能优化包括连续I/O、批量操作和零拷贝：
 
-**线程安全设计：**
-```rust
-// 使用 RefCell 提供内部可变性
-pub struct FileWrapper(RefCell<Ext4File>);
+- **连续I/O**：extent 树减少随机访问
+- **批量操作**：缓存减少磁盘I/O次数  
+- **零拷贝**：直接操作缓存缓冲区，避免数据拷贝
+- **内存池**：复用内存分配，提高效率
 
-// 使用 Arc 提供共享所有权
-pub struct Ext4FileSystem<H: Hal, T: Transport> {
-    inner: Ext4BlockWrapper<Disk<H, T>>,
-    root: Arc<dyn VfsNodeOps>,
-}
-
-unsafe impl<H: Hal, T: Transport> Sync for Ext4FileSystem<H, T> {}
-unsafe impl<H: Hal, T: Transport> Send for Ext4FileSystem<H, T> {}
-```
-
-**锁策略：**
-- 文件级别锁：避免全局锁竞争
-- 读写锁：支持并发读取
-- 自旋锁：短临界区保护
-
-#### 4. 日志系统
-
-集成 `log` crate，提供分级日志输出，支持调试和问题排查。
-
-**日志级别：**
-```rust
-// 日志级别映射
-#[cfg(feature = "print")]
-unsafe extern "C" fn printf(str: *const c_char, mut args: ...) -> c_int {
-    // 将 C printf 转换为 Rust log
-    let mut s = String::new();
-    let bytes_written = printf_compat::format(str as _, args.as_va_list(), 
-                                             printf_compat::output::fmt_write(&mut s));
-    info!("[lwext4] {}", s);
-    bytes_written
-}
-```
-
-**调试功能：**
-```rust
-// 启用调试输出
-pub fn ext4_set_debug(&self) {
-    unsafe {
-        ext4_dmask_set(DEBUG_ALL);
-    }
-}
-
-// 性能统计
-pub fn print_lwext4_mp_stats(&self) {
-    let mut stats: ext4_mount_stats = unsafe { core::mem::zeroed() };
-    let c_mountpoint = &self.mount_point as *const _ as *const c_char;
-    
-    unsafe {
-        ext4_mount_point_stats(c_mountpoint, &mut stats);
-    }
-    
-    // 打印详细统计信息
-    trace!("inodes_count = {}", stats.inodes_count);
-    trace!("free_inodes_count = {}", stats.free_inodes_count);
-    trace!("blocks_count = {}", stats.blocks_count);
-    trace!("free_blocks_count = {}", stats.free_blocks_count);
-}
-```
+这些优化使得 rsext4 在嵌入式和性能敏感场景下具备更好的表现。
