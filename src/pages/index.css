@@ -201,7 +201,7 @@ html {
   position: relative;
   display: flex;
   gap: 4rem;
-  width: min(1400px, 100%);
+  width: min(1600px, 100%);
   align-items: center;
   justify-content: flex-start;
   z-index: 15;
