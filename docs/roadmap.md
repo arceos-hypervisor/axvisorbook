@@ -13,7 +13,7 @@ AxVisor 被设计为一个基于 [ArceOS](https://github.com/arceos-org/arceos) 
 
 AxVisor 项目自启动以来，经历了从概念验证到功能完善的发展过程。目前项目正处于快速迭代阶段，逐步增加新功能和改进现有功能，因此，在 v0.2 版本之前，文档，功能等都可能会很快过时，但随着第一个版本的发布，相关内容将逐步稳定。
 
-```mermaid
+<!-- ```mermaid
 timeline
     title AxVisor 版本发布规划
     section 2025年
@@ -64,7 +64,7 @@ timeline
             : 企业级功能完整
             : 认证与合规支持
             : 商业化服务生态
-```
+``` -->
 
 ## 硬件平台
 
