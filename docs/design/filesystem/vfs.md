@@ -4,8 +4,6 @@ sidebar_position: 3
 
 # 虚拟文件系统
 
-## 概述
-
 Axfs VFS (Virtual File System) 是 Axvisor 操作系统的虚拟文件系统接口层，为上层应用提供统一的文件系统抽象接口。作为 ArceOS 生态系统的核心组件之一，Axfs VFS 采用 Rust 语言编写，充分利用了 Rust 的内存安全特性和高性能优势，为现代操作系统提供了可靠、高效的文件系统基础设施。
 
 Axfs VFS 提供了一套完整的文件系统抽象接口，支持文件和目录的创建、读取、写入、删除等基本操作。其核心特性包括：
@@ -48,7 +46,7 @@ pub trait VfsNodeOps: Send + Sync {
 
 ### 核心设计模式
 
-#### 1. Trait 对象模式
+#### Trait 对象模式
 
 Axfs VFS 使用 Rust 的 trait 对象实现运行时多态，这种设计模式允许在编译时不确定具体类型的情况下，通过统一的接口调用不同实现的方法。Trait 对象模式在 Axfs VFS 中的应用体现了 Rust 的零成本抽象特性，既提供了高级的多态能力，又保持了运行时性能。
 
@@ -68,7 +66,7 @@ pub trait VfsNodeOps: Send + Sync {
 pub type VfsNodeRef = Arc<dyn VfsNodeOps>;
 ```
 
-#### 2. Arc 引用计数模式
+#### Arc 引用计数模式
 
 使用 `Arc<T>` 实现节点的共享所有权是 Axfs VFS 中的关键设计选择。`Arc` (Atomically Reference Counted) 是 Rust 提供的线程安全引用计数指针，它允许多个所有者共享同一数据，并在最后一个引用离开作用域时自动清理资源。这种模式在文件系统场景中特别有用，因为同一个文件或目录可能被多个进程同时访问。
 
@@ -90,7 +88,7 @@ spawn(move || {
 });
 ```
 
-#### 3. 错误处理模式
+#### 错误处理模式
 
 统一的错误处理机制是 Axfs VFS 设计中的重要组成部分。通过定义 `VfsResult` 类型别名和统一的错误传播方式，使得文件系统操作中的错误处理更加一致和可维护。这种模式借鉴了 Rust 的 `Result` 类型设计理念，强制调用者处理可能的错误情况，从而提高了系统的健壮性。
 
@@ -110,7 +108,7 @@ fn read_at(&self, offset: u64, buf: &mut [u8]) -> VfsResult<usize> {
 
 ## 核心组件
 
-### 1. VfsOps Trait
+### VfsOps Trait
 
 文件系统级别的操作接口，负责管理整个文件系统的生命周期。`VfsOps` trait 定义了文件系统级别的操作，包括挂载、卸载、格式化等高级操作。这些操作通常影响整个文件系统，而不是单个文件或目录。通过将这些操作集中在 `VfsOps` trait 中，Axfs VFS 实现了关注点分离，使得文件系统管理逻辑与节点操作逻辑相互独立。
 
@@ -147,7 +145,7 @@ pub trait VfsOps: Send + Sync {
 - `statfs()` 返回文件系统统计信息
 - `root_dir()` 是访问文件系统的入口点
 
-### 2. VfsNodeOps Trait
+### VfsNodeOps Trait
 
 节点级别的操作接口，处理文件和目录的具体操作。`VfsNodeOps` trait 是 Axfs VFS 中最核心的接口，它定义了文件系统节点（文件和目录）的所有可能操作。这个 trait 的设计充分考虑了文件和目录的不同特性，将操作分为通用操作、文件特有操作和目录特有操作三类。通过这种方式，Axfs VFS 既保证了接口的完整性，又允许不同类型的节点只实现相关的操作，提高了代码的清晰度和可维护性。
 
@@ -189,7 +187,7 @@ pub trait VfsNodeOps: Send + Sync {
 }
 ```
 
-### 3. 数据结构
+### 数据结构
 
 Axfs VFS 定义了一系列核心数据结构来表示文件系统中的各种概念。这些数据结构经过精心设计，既保持了与 Unix 文件系统的兼容性，又充分利用了 Rust 的类型系统优势。每个数据结构都有明确的职责和语义，共同构成了一个完整、一致的文件系统模型。
 

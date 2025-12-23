@@ -4,7 +4,6 @@ sidebar_position: 2
 
 # 组件设计
 
-## 组件概述
 AxFS（ArceOS File System）是 AxVisor 虚拟化平台的核心文件系统组件，负责为操作系统内核和应用提供统一的文件系统访问接口。它作为虚拟化环境中的存储抽象层，支持多种文件系统类型（Ext4、FAT32、RAMFS等），并为用户空间提供类POSIX的文件操作API。
 
 主要职责为：
@@ -151,7 +150,7 @@ pub struct OpenOptions {
 
 ## API 设计
 
-### 高级 API (api/)
+### 高级 API
 
 提供 `std::fs` 风格的接口：
 
@@ -174,7 +173,7 @@ pub fn current_dir() -> io::Result<String>
 pub fn set_current_dir(path: &str) -> io::Result<()>
 ```
 
-### 低级 API (fops.rs)
+### 低级 API
 
 提供带权限的文件操作：
 
@@ -227,7 +226,7 @@ axfs 尽量保证对其他组件较少的依赖程度，仅依赖于 axdriver、
 
 - axerrno：提供统一的错误处理机制，定义文件系统操作中的错误类型和处理方式
 
-## 第三方通用库
+### 第三方通用库
 
 - cap_access：提供能力访问控制，管理文件系统访问权限
 
