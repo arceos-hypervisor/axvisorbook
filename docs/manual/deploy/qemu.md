@@ -127,12 +127,12 @@ rm -rf rootfs
 文件系统中的目录结构如下：
 ```
 /guest/
-├── configs/
-│   ├── arceos-aarch64-qemu-smp1.toml
-│   └── linux-aarch64-qemu-smp1.toml
-└── images/
-    ├── qemu-aarch64-arceos
-    └── qemu-aarch64-linux
+   ├── configs/
+   │   ├── arceos-aarch64-qemu-smp1.toml
+   │   └── linux-aarch64-qemu-smp1.toml
+   └── images/
+       ├── qemu-aarch64-arceos
+       └── qemu-aarch64-linux
 ```
 
 #### 准备开发板配置文件
@@ -200,11 +200,11 @@ QEMU 配置文件定义了 QEMU 的启动参数，包括 CPU 类型、内存大�
 
 使用以下命令启动 AxVisor，该命令会自动编译 AxVisor 及其依赖项，并在 QEMU AArch64 环境中运行：
 
-    ```bash
-    cargo xtask qemu \
+```bash
+cargo xtask qemu \
     --build-config tmp/configs/qemu-aarch64.toml \
     --qemu-config tmp/configs/qemu-aarch64-info.toml
-    ```
+```
 
 ### 运行验证
 
@@ -501,14 +501,14 @@ rm -rf rootfs
 文件系统中的目录结构如下：
 ```
 /guest/
-├── configs/
-│   └── nimbos-x86_64-qemu-smp1.toml
-└── images/
-    ├── axvm-bios.bin
-    └── qemu-x86_64-nimbos
+   ├── configs/
+   │   └── nimbos-x86_64-qemu-smp1.toml
+   └── images/
+       ├── axvm-bios.bin
+       └── qemu-x86_64-nimbos
 ```
 
-### 准备开发板配置文件
+#### 准备开发板配置文件
 
 开发板配置文件定义了 AxVisor 在特定硬件平台上的基本运行参数。对于 QEMU x86_64 环境，配置文件位于 `configs/board/qemu-x86_64.toml`，我们直接使用这个配置文件，不需要改动。直接将开发板配置文件复制到 `tmp/configs` 目录即可。
 
@@ -539,7 +539,7 @@ features = [
 
 **注意：** 文件系统加载模式下，`vm_configs` 保持为空数组 `[]`。
 
-### 准备 QEMU 配置文件
+#### 准备 QEMU 配置文件
 
 QEMU 配置文件定义了 QEMU 的启动参数，包括 CPU 类型、内存大小、设备配置等。我们需要将 QEMU 配置文件复制到工作目录，并根据实际情况修改 rootfs 路径。
 
@@ -568,11 +568,11 @@ QEMU 配置文件定义了 QEMU 的启动参数，包括 CPU 类型、内存大�
 
 使用以下命令启动 AxVisor，该命令会自动编译 AxVisor 及其依赖项，并在 QEMU x86_64 环境中运行：
 
-    ```bash
-    cargo xtask qemu \
+```bash
+cargo xtask qemu \
     --build-config tmp/configs/qemu-x86_64.toml \
     --qemu-config tmp/configs/qemu-x86_64-info.toml
-    ```
+```
 
 ### 运行验证
 

@@ -63,7 +63,9 @@ AxVisor 支持两种客户机加载方式：内存加载部署（编译时将客
 
 ### 部署步骤
 
-#### 步骤1：准备客户机配置文件
+#### 一、前期准备
+
+##### 1. 准备客户机配置文件
 
 复制客户机配置文件模板到工作目录：
 ```bash
@@ -87,7 +89,7 @@ sed -i "s|kernel_path = \".*\"|kernel_path = \"/guest/images/linux.bin\"|g" tmp/
 
 如果客户机配置文件中有 `dtb_path` 字段，同样需要修改为本地构建环境中的设备树文件路径。
 
-#### 步骤2：配置构建文件
+##### 2. 配置构建文件
 
 使用 `cargo xtask defconfig phytiumpi` 命令设置飞腾派为默认构建配置：
 ```bash
@@ -120,7 +122,7 @@ features = [
 
 **注意：** 文件系统加载模式下，`vm_configs` 保持为空数组 `[]`。
 
-#### 步骤3：编译 AxVisor
+##### 3. 编译 AxVisor
 
 编译 AxVisor：
 ```bash
@@ -129,7 +131,7 @@ cargo xtask build
 
 编译完成后，AxVisor 镜像位于 `target/aarch64-unknown-none-softfloat/release/axvisor.bin`。
 
-#### 步骤4：获取飞腾派 SDK
+##### 4. 准备飞腾派 SDK
 
 由于目前缺乏专用的 AxVisor 板级构建框架，这里复用飞腾派官方 Linux SDK 的构建流程来生成最终可启动镜像。整个部署操作需要在飞腾派 SDK 目录中执行相关命令，以便直接使用 SDK 提供的镜像和工具链。
 
@@ -146,9 +148,10 @@ git clone https://gitee.com/phytium_embedded/phytium-pi-os.git
 - **master 分支**：基于 Buildroot 2022.02 版本，默认适配 Linux 5.10 和 Linux 4.19 内核版本
 - **2024.02 分支**：基于 Buildroot 2024.02 版本，默认适配 Linux 6.6 内核版本
 
-#### 步骤5：构建 SDK 环境
+#### 二、构建 SDK
 
-**1. 配置构建环境**
+##### 1. 配置 SDK 构建环境
+
 ```bash
 cd phytium-pi-os
 make phytiumpi_desktop_defconfig
@@ -156,13 +159,14 @@ make phytiumpi_desktop_defconfig
 
 > **注意**：官方 SDK 提供了多种不同的配置文件，可根据需要选择合适的配置。
 
-**2. 修复构建问题（master 分支）**
+##### 2. 修复构建问题（master 分支）
 
 master 分支的 Buildroot 版本比较旧，在 Ubuntu 24.04 上构建可能会出错，需要进行相应的修复：
 
 ![sdk_fix](./imgs_phytiumpi/sdk_fix.png)
 
-**3. 执行构建**
+##### 3. 执行 SDK 构建
+
 ```bash
 make
 ```
@@ -171,14 +175,14 @@ make
 
 ![sdk_images](./imgs_phytiumpi/sdk_images.png)
 
-#### 步骤6：生成 fitImage
+##### 4. 生成 fitImage
 
-**1. 进入 SDK 镜像输出目录**
+**进入 SDK 镜像输出目录**
 ```bash
 cd <SDK_PATH>/output/images
 ```
 
-**2. 创建 fitImage 配置文件**
+**创建 fitImage 配置文件**
 
 创建或修改 `kernel.its` 文件：
 ```bash
@@ -246,60 +250,64 @@ EOF
 
 > **注意**：如果需要自定义 `load` 和 `entry` 地址，这些值必须 2MB 对齐（地址值的低 21 位必须为 0）。例如：`0x82000000`、`0x82200000`、`0x82400000` 等都是有效的 2MB 对齐地址。
 
-**3. 复制 AxVisor 镜像**
+**复制 AxVisor 镜像**
 ```bash
 cp <AXVISOR_PATH>/target/aarch64-unknown-none-softfloat/release/axvisor.bin .
 ```
 
-**4. 生成 fitImage 镜像**
+**生成 fitImage 镜像**
 ```bash
 ../host/bin/mkimage_phypi -f kernel.its fitImage
 ```
 
-#### 步骤7：添加客户机配置到根文件系统
+##### 5. 添加客户机配置到根文件系统
 
 在文件系统加载模式下，需要将客户机镜像和配置文件添加到根文件系统中。AxVisor 默认从 `/guest` 目录加载客户机文件。
+
+**创建挂载点并挂载文件系统**
 ```bash
-# 创建挂载点
 mkdir -p rootfs
-
-# 挂载 rootfs.ext2
 sudo mount rootfs.ext2 rootfs
+```
 
-# 创建目录结构
+**创建目录结构**
+```bash
 sudo mkdir -p rootfs/guest/configs
 sudo mkdir -p rootfs/guest/images
+```
 
-# 复制客户机配置文件
+**复制客户机配置文件**
+```bash
 sudo cp <AXVISOR_PATH>/tmp/configs/arceos-aarch64-e2000_smp1.toml rootfs/guest/configs/
 sudo cp <AXVISOR_PATH>/tmp/configs/linux-aarch64-e2000_smp1.toml rootfs/guest/configs/
+```
 
-# 复制客户机镜像
+**复制客户机镜像**
+```bash
 sudo cp <AXVISOR_PATH>/tmp/images/phytiumpi_arceos/phytiumpi rootfs/guest/images/phytiumpi-arceos
 sudo cp <AXVISOR_PATH>/tmp/images/phytiumpi_linux/phytiumpi rootfs/guest/images/phytiumpi-linux
+```
 
-# 如果有设备树文件，也需要复制
-# sudo cp <DTB_PATH> rootfs/guest/images/
-
-# 卸载
+**卸载文件系统**
+```bash
 sudo umount rootfs
 ```
 
 文件系统中的目录结构如下：
 ```
 /guest/
-├── configs/
-│   ├── arceos-aarch64-e2000_smp1.toml
-│   └── linux-aarch64-e2000_smp1.toml
-└── images/
-    ├── phytiumpi-arceos
-    ├── phytiumpi-linux
-    └── *.dtb (如果需要)
+   ├── configs/
+   │   ├── arceos-aarch64-e2000_smp1.toml
+   │   └── linux-aarch64-e2000_smp1.toml
+   └── images/
+       ├── phytiumpi-arceos
+       ├── phytiumpi-linux
+       └── *.dtb (如果需要)
 ```
 
-#### 步骤8：生成 SD 卡镜像
+##### 6. 生成 SD 卡镜像
 
-**1. 创建 genimage 配置文件**
+**创建 genimage 配置文件**
 
 创建或修改 `genimage.cfg` 文件：
 ```bash
@@ -331,19 +339,19 @@ image sdcard.img {
 EOF
 ```
 
-**2. 创建所需目录**
+**创建所需目录**
 ```bash
 mkdir -p tmp root
 ```
 
-**3. 生成 SD 卡镜像**
+**生成 SD 卡镜像**
 ```bash
 ../host/bin/genimage --inputpath ./ --outputpath ./ --config genimage.cfg --tmppath ./tmp --rootpath ./root
 ```
 
 生成的 `sdcard.img` 位于当前目录 `<SDK_PATH>/output/images/sdcard.img`。
 
-#### 步骤9：烧写到 SD 卡
+#### 三、烧录到 SD 卡
 
 将生成的 `sdcard.img` 烧写到 SD 卡：
 ```bash
