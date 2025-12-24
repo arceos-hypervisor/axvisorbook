@@ -1,10 +1,9 @@
 ---
-title: "qemu"
-sidebar_label: "qemu"
+title: "QEMU"
+sidebar_label: "QEMU"
 ---
 
-# qemu
-
+# QEMU
 ## 环境要求
 
 ### 硬件要求
@@ -217,7 +216,7 @@ QEMU 配置文件定义了 QEMU 的启动参数，包括 CPU 类型、内存大�
 
 开发板上电后，应该能看到以下启动信息：
 
-![start_info](./imgs_roc-rk3568-pc/start_info.png)
+![start_info](./imgs_qemu/aarch64_start.png)
 
 ##### 启动客户机
 
@@ -449,7 +448,7 @@ cargo xtask image download qemu_x86_64_nimbos --output-dir tmp/images
 
 AxVisor 所支持的客户机镜像的构建脚本和构建产物可以在 [axvisor-guest](https://github.com/arceos-hypervisor/axvisor-guest) 仓库中找到。
 
-### 准备客户机配置文件
+#### 准备客户机配置文件
 
 客户机配置文件定义了每个虚拟机的具体参数，包括内存布局、CPU 分配和设备访问等，相关客户机配置文件全部位于 `configs/vms` 目录下。我们需要将适用于 QEMU x86_64 的客户机配置文件复制到 `tmp/configs` 目录。
 
@@ -569,7 +568,7 @@ QEMU 配置文件定义了 QEMU 的启动参数，包括 CPU 类型、内存大�
 
 使用以下命令启动 AxVisor，该命令会自动编译 AxVisor 及其依赖项，并在 QEMU x86_64 环境中运行：
 
-```bash
+    ```bash
     cargo xtask qemu \
     --build-config tmp/configs/qemu-x86_64.toml \
     --qemu-config tmp/configs/qemu-x86_64-info.toml
@@ -585,7 +584,7 @@ QEMU 配置文件定义了 QEMU 的启动参数，包括 CPU 类型、内存大�
 
 开发板上电后，应该能看到以下启动信息：
 
-![start_info](./imgs_roc-rk3568-pc/start_info.png)
+![start_info](./imgs_qemu/aarch64_start.png)
 
 ##### 启动客户机
 
