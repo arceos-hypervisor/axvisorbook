@@ -66,35 +66,17 @@ cargo xtask image ls
 
 AxVisor 所支持的客户机镜像的构建脚本和构建产物可以在 [axvisor-guest](https://github.com/arceos-hypervisor/axvisor-guest) 仓库中找到。
 
-### 准备开发板配置文件
-
-开发板配置文件定义了 AxVisor 在 RK3568 硬件平台上的基本运行参数。配置文件位于 `configs/board/roc-rk3568-pc.toml`，直接复制到工作目录即可：
-
-```bash
-# 复制开发板配置文件
-cp configs/board/roc-rk3568-pc.toml tmp/configs/
-```
-
 ## 部署到开发板
 
 ### 部署方式概述
 
-AxVisor 支持两种客户机加载方式，用户可以根据实际需求选择合适的部署方案：
+AxVisor 支持两种客户机加载方式：内存加载部署（编译时将客户机镜像打包进 AxVisor 二进制文件，启动时自动从内存加载）和文件系统加载部署（客户机镜像存放在开发板文件系统中，运行时动态从文件系统加载）。本文档采用文件系统加载部署方式进行介绍。
 
-| 部署方式 | 加载位置 | 启动方式 | 配置要求 | 适用场景 |
-|---------|----------|----------|----------|----------|
-| **内存加载部署** | AxVisor 二进制文件 | 启动时自动加载 | `image_location = "memory"` | 快速启动、生产环境 |
-| **文件系统加载部署** | 开发板文件系统 | 运行时手动加载 | `image_location = "fs"` | 开发调试、多客户机管理 |
-
-**内存加载部署**：编译时将客户机镜像打包进 AxVisor 二进制文件中，AxVisor 启动后直接从内存中加载客户机镜像。客户机配置文件设置 `image_location = "memory"`，并在 `.build.toml` 中的 `vm_configs` 字段指定要打包的客户机配置文件。
-
-**文件系统加载部署**：客户机镜像独立存放在开发板的文件系统中，AxVisor 启动后从文件系统加载客户机镜像。客户机配置文件设置 `image_location = "fs"`，`.build.toml` 中的 `vm_configs` 字段设置为空数组 `[]`，并启用文件系统相关特性。
+在此部署方式下，客户机配置文件需设置 `image_location = "fs"`，`.build.toml` 中的 `vm_configs` 字段设置为空数组 `[]`，并启用文件系统相关特性。
 
 > **重要说明**：由于瑞芯微提供的 SDK 对整个部署方式进行了预定义，难以实现自定义部署方式，因此我们通过构建后编辑瑞芯微原生镜像的方式来实现部署。整个部署操作要求在 ROC-RK3568-PC 的 SDK 目录中执行相关命令，以便直接使用 SDK 生成的各种镜像和工具。
 
-### 文件系统加载部署
-
-文件系统加载部署方式允许在运行时动态创建和启动客户机，非常适合开发和调试环境。
+### 部署步骤
 
 #### 步骤1：准备客户机配置文件
 
@@ -394,6 +376,8 @@ cd <SDK_PATH>
 
 烧写完成后，重新上电启动开发板即可运行 AxVisor。
 
+> **快速体验**：如果您不想自己编译构建，我们也提供了预构建的固件镜像，可以直接下载体验。请访问[AxVisor 官方网站](https://arceos-hypervisor.github.io/axvisorbook/#hardware)获取适用于 ROC-RK3568-PC 的预构建固件。
+
 ## 运行验证
 
 完成部署后，需要对 AxVisor 的运行状态进行验证，确保虚拟化系统正常工作。本节将详细介绍连接方法、启动过程验证以及常见问题的处理方法。
@@ -450,93 +434,30 @@ sudo minicom -D /dev/ttyUSB0 -b 1500000
 
 ![start_info](./imgs_roc-rk3568-pc/start_info.png)
 
-#### 文件系统加载模式验证
+#### 启动客户机
 
-如果使用文件系统加载部署，需要手动创建和启动客户机：
+进入 AxVisor shell 后，可以通过以下命令创建和启动客户机：
 
 ```bash
-# 进入 AxVisor shell
-# AxVisor>
-
 # 列出可用的客户机配置
 ls /guest/configs/
 
-# 创建客户机实例
+# 创建 ArceOS 客户机实例
 vm create /guest/configs/arceos-aarch64-rk3568-smp1.toml
 
 # 启动客户机（VM ID 为 1）
 vm start 1
 
-# 创建第二个客户机
+# 创建 Linux 客户机实例
 vm create /guest/configs/linux-aarch64-rk3568-smp1.toml
 
-# 启动第二个客户机（VM ID 为 2）
+# 启动客户机（VM ID 为 2）
 vm start 2
 ```
 
+> **限制说明**：当前版本中，Linux 客户机启动后无法返回 AxVisor shell，如需操作其他客户机需要重启开发板。
+
 #### 客户机运行状态
-
-**Linux 客户机启动信息：**
-```
-axvisor:/$ vm start 2
-[206.542173 0:2 axvisor::vmm::vcpus:341] Initializing VM[2]'s 1 vcpus
-[206.542853 0:2 axvisor::vmm::vcpus:390] Spawning task for VM[2] VCpu[0]
-[206.543573 0:2 axvisor::vmm::vcpus:405] VCpu task Task(15, "VM[2]-VCpu[0]") created cpumask: [0, ]
-[206.544495 0:2 axvm::vm:416] Booting VM[2]
-✓ VM[2] started successfully
-axvisor:/$ [206.545313 0:15 axvisor::vmm::vcpus:428] VM[2] boot delay: 5s
-[211.545942 0:15 axvisor::vmm::vcpus:431] VM[2] VCpu[0] waiting for running
-[211.546673 0:15 axvisor::vmm::vcpus:434] VM[2] VCpu[0] running...
-[  211.551621] Booting Linux on physical CPU 0x0000000000 [0x412fd050]
-[  211.551643] Linux version 5.10.198 (runner@s1lqc) (firefly: 34d433bc5e75/2511210905) (sdk version: rk356x_linux5.10_release_20241220_v1.4.0c.xml) (aarch64-none-linux-gnu-gcc (GNU Toolchain for the A-profile Architecture 10.3-2021.07 (arm-10.29)) 10.3.1 20210621, GNU ld (GNU Toolchain for the A-profile Architecture 10.3-2021.07 (arm-10.29)) 2.36.1.20210621) #16 SMP Fri Nov 21 09:05:49 CST 2025
-
-................
-
-Ubuntu 20.04.6 LTS firefly ttyFIQ0
-
-firefly login: root (automatic login)
-
-/etc/update-motd.d/30-sysinfo: line 152: cannot create temp file for here-document: Read-only file system
-/etc/update-motd.d/30-sysinfo: line 153: cannot create temp file for here-document: Read-only file system
-/etc/update-motd.d/30-sysinfo: line 172: cannot create temp file for here-document: Read-only file system
-/etc/update-motd.d/30-sysinfo: line 173: cannot create temp file for here-document: Read-only file system
-/etc/update-motd.d/30-sysinfo: line 174: cannot create temp file for here-document: Read-only file system
-/etc/update-motd.d/30-sysinfo: line 186: cannot create temp file for here-document: Read-only file system
-/etc/update-motd.d/30-sysinfo: line 187: cannot create temp file for here-document: Read-only file system
-/etc/update-motd.d/30-sysinfo: line 189: cannot create temp file for here-document: Read-only file system
-/etc/update-motd.d/30-sysinfo: line 190: cannot create temp file for here-document: Read-only file system
- _____ _           __ _
-|  ___(_)_ __ ___ / _| |_   _
-| |_  | | '__/ _ \ |_| | | | |
-|  _| | | | |  __/  _| | |_| |
-|_|   |_|_|  \___|_| |_|\__, |
-                        |___/
-Welcome to Ubuntu 20.04.6 LTS (GNU/Linux 5.10.198 aarch64)
-
- * Documentation:  http://wiki.t-firefly.com
- * Management:     http://www.t-firefly.com
-
-System information as of Mon Oct 20 02:53:58 UTC 2025
-
-Up time:
-IP:
-
-The programs included with the Ubuntu system are free software;
-the exact distribution terms for each program are described in the
-individual files in /usr/share/doc/*/copyright.
-
-Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
-applicable law.
-
-The programs included with the Ubuntu system are free software;
-the exact distribution terms for each program are described in the
-individual files in /usr/share/doc/*/copyright.
-
-Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
-applicable law.
-
-root@firefly:~#
-```
 
 **ArceOS 客户机启动信息：**
 ```
@@ -608,6 +529,64 @@ Hello, world!
 [147.036050 2:14 axvisor::vmm::vcpus:584] VM[1] VCpu[0] exiting...
 ```
 
-> **当前版本的 AxVisor 存在以下限制：**
-> 
-> 1. **Shell 切换限制**：Linux 客户机启动后，无法返回 AxVisor shell，需要重启开发板
+**Linux 客户机启动信息：**
+```
+axvisor:/$ vm start 2
+[206.542173 0:2 axvisor::vmm::vcpus:341] Initializing VM[2]'s 1 vcpus
+[206.542853 0:2 axvisor::vmm::vcpus:390] Spawning task for VM[2] VCpu[0]
+[206.543573 0:2 axvisor::vmm::vcpus:405] VCpu task Task(15, "VM[2]-VCpu[0]") created cpumask: [0, ]
+[206.544495 0:2 axvm::vm:416] Booting VM[2]
+✓ VM[2] started successfully
+axvisor:/$ [206.545313 0:15 axvisor::vmm::vcpus:428] VM[2] boot delay: 5s
+[211.545942 0:15 axvisor::vmm::vcpus:431] VM[2] VCpu[0] waiting for running
+[211.546673 0:15 axvisor::vmm::vcpus:434] VM[2] VCpu[0] running...
+[  211.551621] Booting Linux on physical CPU 0x0000000000 [0x412fd050]
+[  211.551643] Linux version 5.10.198 (runner@s1lqc) (firefly: 34d433bc5e75/2511210905) (sdk version: rk356x_linux5.10_release_20241220_v1.4.0c.xml) (aarch64-none-linux-gnu-gcc (GNU Toolchain for the A-profile Architecture 10.3-2021.07 (arm-10.29)) 10.3.1 20210621, GNU ld (GNU Toolchain for the A-profile Architecture 10.3-2021.07 (arm-10.29)) 2.36.1.20210621) #16 SMP Fri Nov 21 09:05:49 CST 2025
+
+................
+
+Ubuntu 20.04.6 LTS firefly ttyFIQ0
+
+firefly login: root (automatic login)
+
+/etc/update-motd.d/30-sysinfo: line 152: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 153: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 172: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 173: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 174: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 186: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 187: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 189: cannot create temp file for here-document: Read-only file system
+/etc/update-motd.d/30-sysinfo: line 190: cannot create temp file for here-document: Read-only file system
+ _____ _           __ _
+|  ___(_)_ __ ___ / _| |_   _
+| |_  | | '__/ _ \ |_| | | | |
+|  _| | | | |  __/  _| | |_| |
+|_|   |_|_|  \___|_| |_|\__, |
+                        |___/
+Welcome to Ubuntu 20.04.6 LTS (GNU/Linux 5.10.198 aarch64)
+
+ * Documentation:  http://wiki.t-firefly.com
+ * Management:     http://www.t-firefly.com
+
+System information as of Mon Oct 20 02:53:58 UTC 2025
+
+Up time:
+IP:
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+root@firefly:~#
+```

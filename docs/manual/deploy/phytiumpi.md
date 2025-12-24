@@ -24,6 +24,17 @@ cd axvisor
 mkdir -p tmp/{configs,images}
 ```
 
+### 准备设备树文件
+
+设备树文件可以通过在开发板上运行 Linux 系统导出，也可以下载项目提供的设备树文件使用。
+
+项目提供的 Linux 镜像文件夹中包含设备树文件，可直接下载到 `tmp/images` 目录：
+
+```bash
+# 下载包含设备树的 Linux 镜像
+cargo xtask image download phytiumpi_linux --output-dir tmp/images
+```
+
 ### 准备客户机镜像
 
 为了便于验证 AxVisor 的功能，AxVisor 项目提供了预构建的客户机镜像。AxVisor 构建系统集成了客户机镜像管理功能，使用 `cargo xtask image` 相关命令即可查看及下载客户机镜像：
@@ -44,20 +55,13 @@ AxVisor 所支持的客户机镜像的构建脚本和构建产物可以在 [axvi
 
 ### 部署方式概述
 
-AxVisor 支持两种客户机加载方式，用户可以根据实际需求选择合适的部署方案：
+AxVisor 支持两种客户机加载方式：内存加载部署（编译时将客户机镜像打包进 AxVisor 二进制文件，启动时自动从内存加载）和文件系统加载部署（客户机镜像存放在开发板文件系统中，运行时动态从文件系统加载）。本文档采用文件系统加载部署方式进行介绍。
 
-| 部署方式 | 加载位置 | 启动方式 | 配置要求 | 适用场景 |
-|---------|----------|----------|----------|----------|
-| **内存加载部署** | AxVisor 二进制文件 | 启动时自动加载 | `image_location = "memory"` | 快速启动、生产环境 |
-| **文件系统加载部署** | 开发板文件系统 | 运行时手动加载 | `image_location = "fs"` | 开发调试、多客户机管理 |
-
-**内存加载部署**：编译时将客户机镜像打包进 AxVisor 二进制文件中，AxVisor 启动后直接从内存中加载客户机镜像。客户机配置文件设置 `image_location = "memory"`，并在 `.build.toml` 中的 `vm_configs` 字段指定要打包的客户机配置文件。
-
-**文件系统加载部署**：客户机镜像独立存放在开发板的文件系统中，AxVisor 启动后从文件系统加载客户机镜像。客户机配置文件设置 `image_location = "fs"`，`.build.toml` 中的 `vm_configs` 字段设置为空数组 `[]`，并启用文件系统相关特性。
+在此部署方式下，客户机配置文件需设置 `image_location = "fs"`，`.build.toml` 中的 `vm_configs` 字段设置为空数组 `[]`，并启用文件系统相关特性。
 
 > **重要说明**：飞腾固件以及 U-Boot 并不开源，Phytium-Pi-OS 中默认以二进制文件的形式提供飞腾固件 + U-Boot 固件组合体 `fip-all.bin`，`fip-all.bin` 会被直接写入最终 IMAGE 镜像的开头位置。整个部署操作要求在飞腾派的 SDK 目录中执行相关命令，以便直接使用 SDK 生成的各种镜像和工具。
 
-### 文件系统加载部署
+### 部署步骤
 
 #### 步骤1：准备客户机配置文件
 
@@ -351,6 +355,8 @@ sync
 
 烧写完成后，将 SD 卡插入开发板并上电启动即可运行 AxVisor。
 
+> **快速体验**：如果您不想自己编译构建，我们也提供了预构建的固件镜像，可以直接下载体验。请访问[AxVisor 官方网站](https://arceos-hypervisor.github.io/axvisorbook/#hardware)获取适用于飞腾派的预构建固件。
+
 ## 运行验证
 
 完成部署后，需要对 AxVisor 的运行状态进行验证，确保虚拟化系统正常工作。本节将详细介绍连接方法、启动过程验证以及常见问题的处理方法。
@@ -408,53 +414,30 @@ sudo minicom -D /dev/ttyUSB0 -b 115200
 
 ![deploy](./imgs_phytiumpi/deploy.png)
 
-#### 文件系统加载模式验证
+#### 启动客户机
 
-如果使用文件系统加载部署，需要手动创建和启动客户机：
+进入 AxVisor shell 后，可以通过以下命令创建和启动客户机：
 
 ```bash
-# 进入 AxVisor shell
-# AxVisor>
-
 # 列出可用的客户机配置
 ls /guest/configs/
 
-# 创建客户机实例
+# 创建 ArceOS 客户机实例
 vm create /guest/configs/arceos-aarch64-e2000-smp1.toml
 
 # 启动客户机（VM ID 为 1）
 vm start 1
 
-# 创建第二个客户机
+# 创建 Linux 客户机实例
 vm create /guest/configs/linux-aarch64-e2000-smp1.toml
 
-# 启动第二个客户机（VM ID 为 1）
+# 启动客户机（VM ID 为 2）
 vm start 2
 ```
 
+> **限制说明**：当前版本中，Linux 客户机启动后无法返回 AxVisor shell，如需操作其他客户机需要重启开发板。
+
 #### 客户机运行状态
-
-**Linux 客户机启动信息：**
-```
-axvisor:/$ vm start 2
-[ 86.383762 0:2 axvisor::vmm::vcpus:341] Initializing VM[2]'s 1 vcpus
-[ 86.388597 0:2 axvisor::vmm::vcpus:390] Spawning task for VM[2] VCpu[0]
-[ 86.396416 0:2 axvisor::vmm::vcpus:405] VCpu task Task(14, "VM[2]-VCpu[0]") created cpumask: [3, ]
-[ 86.406568 0:2 axvm::vm:416] Booting VM[2]
-[ 86.409561 3:14 axvisor::vmm::vcpus:428] VM[2] boot delay: 5s
-✓ VM[2] started successfully
-axvisor:/$ [ 91.418803 3:14 axvisor::vmm::vcpus:431] VM[2] VCpu[0] waiting for running
-[ 91.424007 3:14 axvisor::vmm::vcpus:434] VM[2] VCpu[0] running...
-[    0.000000] Booting Linux on physical CPU 0x0000000100 [0x701f6643]
-[    0.000000] Linux version 5.10.209-phytium-embedded-v2.3 (runner@s1lqc) (aarch64-none-linux-gnu-gcc (GNU Toolchain for the A-profile Architecture 10.2-2020.11 (arm-10.16)) 10.2.1 20201103, GNU ld (GNU Toolchain for the A-profile Architecture 10.2-2020.11 (arm-10.16)) 2.35.1.20201028) #1 SMP PREEMPT Thu Nov 20 15:21:23 CST 2025
-[    0.000000] Machine model: Phytium Pi Board
-[    0.000000] earlycon: pl11 at MMIO 0x000000002800d000 (options '')
-[    0.000000] printk: bootconsole [pl11] enabled
-
-............
-
-Welcome to Phytium Pi OS firstlogin!
-```
 
 **ArceOS 客户机启动信息：**
 ```
@@ -531,6 +514,24 @@ Hello, world!
 [ 54.799205 2:14 axvisor::vmm::vcpus:584] VM[1] VCpu[0] exiting...
 ```
 
-> **当前版本的 AxVisor 存在以下限制：**
-> 
-> 1. **Shell 切换限制**：Linux 客户机启动后，无法返回 AxVisor shell，需要重启开发板
+**Linux 客户机启动信息：**
+```
+axvisor:/$ vm start 2
+[ 86.383762 0:2 axvisor::vmm::vcpus:341] Initializing VM[2]'s 1 vcpus
+[ 86.388597 0:2 axvisor::vmm::vcpus:390] Spawning task for VM[2] VCpu[0]
+[ 86.396416 0:2 axvisor::vmm::vcpus:405] VCpu task Task(14, "VM[2]-VCpu[0]") created cpumask: [3, ]
+[ 86.406568 0:2 axvm::vm:416] Booting VM[2]
+[ 86.409561 3:14 axvisor::vmm::vcpus:428] VM[2] boot delay: 5s
+✓ VM[2] started successfully
+axvisor:/$ [ 91.418803 3:14 axvisor::vmm::vcpus:431] VM[2] VCpu[0] waiting for running
+[ 91.424007 3:14 axvisor::vmm::vcpus:434] VM[2] VCpu[0] running...
+[    0.000000] Booting Linux on physical CPU 0x0000000100 [0x701f6643]
+[    0.000000] Linux version 5.10.209-phytium-embedded-v2.3 (runner@s1lqc) (aarch64-none-linux-gnu-gcc (GNU Toolchain for the A-profile Architecture 10.2-2020.11 (arm-10.16)) 10.2.1 20201103, GNU ld (GNU Toolchain for the A-profile Architecture 10.2-2020.11 (arm-10.16)) 2.35.1.20201028) #1 SMP PREEMPT Thu Nov 20 15:21:23 CST 2025
+[    0.000000] Machine model: Phytium Pi Board
+[    0.000000] earlycon: pl11 at MMIO 0x000000002800d000 (options '')
+[    0.000000] printk: bootconsole [pl11] enabled
+
+............
+
+Welcome to Phytium Pi OS firstlogin!
+```
