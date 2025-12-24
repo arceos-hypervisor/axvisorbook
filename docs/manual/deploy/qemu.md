@@ -24,6 +24,8 @@ sidebar_label: "QEMU"
 
 本文档介绍如何在 QEMU AArch64 环境中启动和验证 AxVisor 项目。在 QEMU AArch64 环境中，AxVisor 支持同时启动运行多个客户机操作系统，以下将启动 ArceOS 和 Linux 两个客户机操作系统。
 
+> **提示**：如果您希望跳过编译步骤快速体验，也可以使用我们提供的预构建镜像。请访问 [AxVisor 官方网站](https://arceos-hypervisor.github.io/axvisorbook/#hardware) 获取预构建的文件系统镜像，并直接跳转到[构建及启动](#构建及启动)章节
+
 ### 前期准备
 
 在开始构建和启动 AxVisor 之前，需要完成以下准备工作：
@@ -419,6 +421,8 @@ test pass!
 
 本部分介绍在 QEMU x86_64 环境中部署 AxVisor 项目，用于在文件系统中启动 NimbOS 客户机操作系统。
 
+> **提示**：如果您希望跳过编译步骤快速体验，也可以使用我们提供的预构建镜像。请访问 [AxVisor 官方网站](https://arceos-hypervisor.github.io/axvisorbook/#hardware) 获取预构建的文件系统镜像，并直接跳转到[构建及启动](#构建及启动)章节
+
 ### 前期准备
 
 在开始构建和启动 AxVisor 之前，需要完成以下准备工作：
@@ -468,8 +472,6 @@ sed -i "s|bios_path = \".*\"|bios_path = \"/guest/images/axvm-bios.bin\"|g" tmp/
 #### 添加客户机配置到根文件系统
 
 在文件系统加载模式下，需要将客户机镜像和配置文件添加到根文件系统中。AxVisor 默认从 `/guest` 目录加载客户机文件。
-
-> **提示**：如果您希望跳过编译步骤快速体验，也可以使用我们提供的预构建镜像。请访问 [AxVisor 官方网站](https://arceos-hypervisor.github.io/axvisorbook/#hardware) 获取预构建的文件系统镜像。
 
 ```bash
 # 创建一个 256MB 的 FAT32 文件系统镜像

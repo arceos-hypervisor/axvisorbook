@@ -7,6 +7,8 @@ sidebar_label: "飞腾派"
 
 本文详细介绍如何在飞腾派开发板上部署和运行 AxVisor 虚拟化系统，包括 AxVisor + Linux 客户机、AxVisor + ArceOS 客户机以及 AxVisor + 多客户机等场景。
 
+> **快速体验**：如果您不想自己编译构建，我们也提供了预构建的固件镜像，可以直接下载体验。请访问[AxVisor 官方网站](https://arceos-hypervisor.github.io/axvisorbook/#hardware)获取适用于飞腾派的预构建固件，并直接跳转到[烧录到 SD 卡](#三烧录到-sd-卡)章节
+
 ## 开发环境
 
 AxVisor 及飞腾派的 SDK 仅支持在 Linux 系统中进行开发。本文中的构建及部署环境均采用 Ubuntu 24.04 系统作为开发环境。
@@ -362,8 +364,6 @@ sync
 **注意：** 将 `/dev/sdX` 替换为实际的 SD 卡设备名称（可通过 `lsblk` 命令查看）。
 
 烧写完成后，将 SD 卡插入开发板并上电启动即可运行 AxVisor。
-
-> **快速体验**：如果您不想自己编译构建，我们也提供了预构建的固件镜像，可以直接下载体验。请访问[AxVisor 官方网站](https://arceos-hypervisor.github.io/axvisorbook/#hardware)获取适用于飞腾派的预构建固件。
 
 ## 运行验证
 

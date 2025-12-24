@@ -12,6 +12,8 @@ description: "ROC-RK3568-PC 开发板上 AxVisor 虚拟化系统的完整部署�
 - **AxVisor + ArceOS 客户机**：在虚拟化环境中运行 ArceOS 系统
 - **AxVisor + 多客户机**：同时运行多个不同类型的客户机系统
 
+> **快速体验**：如果您不想自己编译构建，我们也提供了预构建的固件镜像，可以直接下载体验。请访问[AxVisor 官方网站](https://arceos-hypervisor.github.io/axvisorbook/#hardware)获取适用于 ROC-RK3568-PC 的预构建固件，并直接跳转到[烧录到开发板](#三烧录到开发板)章节
+
 ## 开发环境
 
 AxVisor 及 ROC-RK3568-PC 的 SDK 仅支持在 Linux 系统中进行开发。本文档基于 **Ubuntu 24.04** 系统验证，其他 Linux 发行版可能需要相应调整。
@@ -373,8 +375,6 @@ cd <SDK_PATH>
 ![deploy](./imgs_roc-rk3568-pc/deploy.png)
 
 烧写完成后，重新上电启动开发板即可运行 AxVisor。
-
-> **快速体验**：如果您不想自己编译构建，我们也提供了预构建的固件镜像，可以直接下载体验。请访问[AxVisor 官方网站](https://arceos-hypervisor.github.io/axvisorbook/#hardware)获取适用于 ROC-RK3568-PC 的预构建固件。
 
 ## 运行验证
 
