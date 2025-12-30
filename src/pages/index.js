@@ -751,7 +751,7 @@ function HardwareSection({ onDownloadClick }) {
       id: "qemu",
       name: "QEMU",
       arch: "多架构虚拟化支持",
-      doc: "docs/quickstart/qemu/aarch64",
+      doc: "docs/manual/deploy/qemu",
       icon: "chip",
       guestSupport: [
         { name: "ArceOS", description: "组件化操作系统" },
@@ -770,7 +770,7 @@ function HardwareSection({ onDownloadClick }) {
       id: "phytiumpi",
       name: "飞腾派",
       arch: "ARM 商用芯片",
-      doc: "docs/quickstart/board/phytiumpi",
+      doc: "docs/manual/deploy/phytiumpi",
       icon: "chip",
       guestSupport: [
         { name: "ArceOS", description: "组件化操作系统" },
@@ -789,7 +789,7 @@ function HardwareSection({ onDownloadClick }) {
       id: "roc3568",
       name: "ROC-RK3568-PC",
       arch: "ARM big.LITTLE 异构",
-      doc: "docs/quickstart/board/roc-rk3568-pc",
+      doc: "docs/manual/deploy/roc-rk3568-pc",
       icon: "chip",
       guestSupport: [
         { name: "ArceOS", description: "组件化操作系统" },
