@@ -8,6 +8,16 @@ ZCShou:
     x: ZCShou
     github: ZCShou
 
+Josen-B:
+  name: Josen-B
+  title: AxVisor Kernel Engineer @ QCLIC
+  url: https://github.com/Josen-B
+  image_url: https://github.com/Josen-B.png
+  page: true
+  socials:
+    x: Josen-B
+    github: Josen-B
+
 test:
   name: Test
   title: Test for authors

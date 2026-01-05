@@ -32,3 +32,13 @@ hypervisor:
   label: Hypervisor
   permalink: /hypervisor
   description: Hypervisor tag description
+
+filesystem:
+  label: FileSystem
+  permalink: /filesystem
+  description: File System tag description
+
+linux:
+  label: Linux
+  permalink: /linux
+  description: Linux tag description
