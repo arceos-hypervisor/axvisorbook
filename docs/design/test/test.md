@@ -4,54 +4,50 @@ sidebar_position: 6
 
 # 测试流程
 
-AxVisor 的测试流程分为两个主要部分：**自动测试（CI）** 和 **本地测试**。自动测试通过 GitHub Actions 在代码提交时自动执行，而本地测试则允许开发者在提交代码前验证功能。
+AxVisor 的测试流程基于 **axci** 仓库提供的统一测试脚本和 GitHub Actions 工作流。测试分为**自动测试（CI）**和**本地测试**两种方式。
+
+## 统一测试脚本（axci）
+
+**axci** 仓库是整个测试流程的核心，提供了所有测试相关的脚本和工作流配置。
+
+仓库地址：[https://github.com/arceos-hypervisor/axci](https://github.com/arceos-hypervisor/axci)
+
+### axci 仓库结构
+
+```
+axci/
+├── .github/
+│   └── workflows/          # GitHub Actions 工作流
+│       ├── check.yml       # 代码质量检查
+│       ├── test.yml        # 集成测试
+│       ├── deploy.yml      # 文档部署
+│       ├── release.yml     # 版本发布
+│       └── verify-tag.yml  # 标签验证
+├── check.sh                # 本地代码质量检查脚本
+├── tests.sh                # 本地集成测试脚本
+└── README.md               # 使用文档
+```
+
+### 提供的测试工具
+
+| 类型 | 工具 | 用途 |
+|------|------|------|
+| CI 工作流 | `.github/workflows/*.yml` | GitHub Actions 自动化测试 |
+| 本地脚本 | `check.sh` | 代码质量检查（fmt、clippy、build、doc） |
+| 本地脚本 | `tests.sh` | 本地集成测试（QEMU + Board） |
+
+### 使用方式
+
+axci 中的测试工具**不直接使用**，而是在各组件仓库中被调用：
+
+- **自动测试**：通过 GitHub Actions 的 `workflow_call` 机制引用
+- **本地测试**：通过组件仓库的 `scripts/check.sh` 和 `scripts/test.sh` 调用
 
 ## 自动测试（CI）
 
-自动测试通过 GitHub Actions 实现，在代码提交、创建 Pull Request 或推送标签时自动触发。整个自动测试流程基于 **axci** 仓库提供的共享工作流。
+自动测试通过 GitHub Actions 实现，在代码提交、创建 Pull Request 或推送标签时自动触发。
 
-**重要说明**：CI 测试可以使用完整自建的本地集成测试环境，包括所有测试设备（QEMU 虚拟机和物理开发板），能够执行完整的测试矩阵。
-
-### 整体架构
-
-为了简化各个组件仓库的 CI 配置维护工作，我们设计了基于共享工作流的 CI 架构。整个测试流程的核心是 **axci** 仓库，它提供了一组可复用的 GitHub Actions 工作流，其他组件仓库通过 `workflow_call` 机制引用这些工作流。
-
-```mermaid
-graph TB
-    subgraph "GitHub"
-        A[axci 仓库<br/>共享工作流]
-        B[组件仓库<br/>arm_vcpu 等]
-        C[测试目标仓库<br/>axvisor/starry]
-    end
-    
-    subgraph "本地测试环境"
-        D[Runner 服务器]
-        E[QEMU 虚拟机]
-        F[物理开发板]
-    end
-    
-    A -->|workflow_call| B
-    B -->|检出测试目标| C
-    B -->|patch 组件| C
-    B -->|触发测试| D
-    D -->|执行 QEMU 测试| E
-    D -->|执行 Board 测试| F
-    
-    style A fill:#e1f5ff
-    style B fill:#fff4e1
-    style C fill:#f0f0f0
-    style D fill:#e8f5e9
-    style E fill:#fce4ec
-    style F fill:#f3e5f5
-```
-
-**核心组件：**
-
-1. **axci 仓库**：提供共享的 CI 工作流集合
-2. **组件仓库**（如 arm_vcpu）：引用 axci 的工作流
-3. **测试目标仓库**（如 axvisor、starry）：被测项目的完整代码库
-4. **本地 Runner 服务器**：执行实际的测试任务
-5. **测试设备**：物理开发板或 QEMU 虚拟机
+**重要说明**：CI 测试使用完整自建的本地集成测试环境，包括所有测试设备（QEMU 虚拟机和物理开发板），能够执行完整的测试矩阵。
 
 ### CI 工作流配置
 
@@ -399,27 +395,66 @@ GitHub Actions 会为每个测试生成详细的报告，包括：
 
 ## 本地测试
 
-除了 GitHub Actions 自动化测试，开发者还可以在本地运行测试，以便在提交代码前验证功能。本地测试包括**代码质量检查**和**集成测试**两部分。
+本地测试允许开发者在提交代码前进行快速验证。本地测试使用 **axci** 仓库提供的 `check.sh` 和 `tests.sh` 脚本。
 
+**重要说明**：本地测试仅使用开发者本地机器上的 QEMU 和已连接的开发板，测试环境相对有限。完整的集成测试环境仅在 CI 中提供。
 
-### 测试环境准备
+### 测试脚本
 
-#### 基础依赖安装
+axci 提供了两个本地测试脚本：
+
+| 脚本 | 功能 |
+|------|------|
+| `axci/check.sh` | 代码质量检查（fmt、clippy、build、doc） |
+| `axci/tests.sh` | 集成测试（QEMU + Board） |
+
+**重要**：这些脚本不直接使用，而是在组件仓库中被调用。
+
+### 在组件仓库中使用
+
+每个组件仓库都提供了自己的测试脚本，这些脚本会自动下载并调用 axci 中的测试工具。
+
+#### 代码质量检查
+
+```bash
+# 在组件仓库根目录运行
+./scripts/check.sh
+```
+
+#### 集成测试
+
+```bash
+# 运行所有测试
+./scripts/test.sh
+
+# 仅运行 axvisor QEMU 测试
+./scripts/test.sh -t axvisor-qemu
+
+# 详细输出
+./scripts/test.sh -v
+
+# 仅显示命令（不执行）
+./scripts/test.sh --dry-run
+```
+
+### 环境准备
+
+#### 基础依赖
 
 ```bash
 # 安装 Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# 安装 QEMU（用于 QEMU 测试）
+# 安装 QEMU
 sudo apt install qemu-system-arm qemu-system-x86
 
 # 安装 ostool
 cargo install ostool --version ^0.8
 ```
 
-#### Board 测试环境配置
+#### Board 测试环境（可选）
 
-如果要运行物理开发板测试，需要配置以下环境变量：
+如果要运行物理开发板测试，需要配置环境变量：
 
 ```bash
 # ~/.bashrc 或 ~/.zshrc
@@ -432,79 +467,4 @@ export BOARD_COMM_NET_IFACE="eth0"
 export TFTP_DIR="/home/user/tftp"
 ```
 
-#### 测试镜像准备
-
-测试镜像会自动从 GitHub Releases 下载：
-- 下载位置：`/tmp/.axvisor-images/`
-- 下载源：`https://github.com/arceos-hypervisor/axvisor-guest/releases`
-
-### 测试脚本
-
-AxVisor 提供了两个统一的本地测试脚本，它们被封装在 **axci** 仓库中，这些脚本不直接使用，而是在组件仓库中被调用
-
-1. **`check.sh`**：代码质量检查脚本
-   - 检查代码格式（`cargo fmt`）
-   - 构建检查（`cargo build`）
-   - Clippy 检查（`cargo clippy`）
-   - 文档检查（`cargo doc`）
-
-2. **`tests.sh`**：集成测试脚本
-   - QEMU 虚拟机测试
-   - 物理开发板测试
-   - 支持多种测试目标
-
-每个组件仓库（如 `arm_vcpu`）都提供了自己的测试脚本，这些脚本会自动下载并调用 axci 中的测试工具。
-
-#### 代码质量检查
-
-在组件仓库根目录运行：
-
-```bash
-# 运行代码质量检查
-./scripts/check.sh
-```
-
-这个命令会：
-1. 自动下载或更新 axci 仓库到 `scripts/.axci/` 目录
-2. 运行代码格式检查、构建检查、Clippy 检查和文档检查
-3. 输出详细的检查结果
-
-**示例输出：**
-
-```
-Downloading axci repository...
-[axvcpu] 检查代码格式
-✓ [axvcpu] 代码格式检查通过
-[axvcpu] 构建检查 (target: aarch64-unknown-none-softfloat)
-✓ [axvcpu] 构建检查通过
-[axvcpu] Clippy 检查
-✓ [axvcpu] Clippy 检查通过
-[axvcpu] 文档检查
-✓ [axvcpu] 文档检查通过
-```
-
-#### 集成测试
-
-在组件仓库根目录运行：
-
-```bash
-# 运行所有测试
-./scripts/test.sh
-
-# 仅运行 axvisor QEMU 测试
-./scripts/test.sh -t axvisor-qemu
-
-# 仅运行特定测试
-./scripts/test.sh -t axvisor-board-phytiumpi-arceos
-
-# 详细输出
-./scripts/test.sh -v
-
-# 仅显示要执行的命令（不实际执行）
-./scripts/test.sh --dry-run
-```
-
-这个命令会：
-1. 自动下载或更新 axci 仓库到 `scripts/.axci/` 目录
-2. 运行指定的集成测试
-3. 输出详细的测试结果
+测试镜像会自动从 GitHub Releases 下载到 `/tmp/.axvisor-images/`。
