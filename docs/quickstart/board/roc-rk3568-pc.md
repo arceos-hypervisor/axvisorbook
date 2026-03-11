@@ -7,6 +7,34 @@ sidebar_label: "ROC-RK3568-PC"
 
 本文档介绍如何在 ROC-RK3568-PC 开发板上启动和验证 AxVisor 项目。在 ROC-RK3568-PC 开发板环境中，AxVisor 支持同时启动运行多个客户机操作系统，以下将启动 ArceOS 和 Linux 两个客户机操作系统。
 
+## 快速开始
+
+AxVisor 提供了 `quick-start.sh` 脚本，可以快速完成环境准备和系统启动。
+
+### 使用一键启动脚本
+
+在 AxVisor 根目录下运行：
+
+```bash
+# 第一步：准备环境（下载镜像、配置文件、检查 ostool）
+./quick-start.sh roc-rk3568-pc setup
+
+# 第二步：启动系统
+./quick-start.sh roc-rk3568-pc run --arceos    # ArceOS 客户机
+./quick-start.sh roc-rk3568-pc run --linux     # Linux 客户机
+./quick-start.sh roc-rk3568-pc run --multi     # 多客户机（ArceOS + Linux）
+```
+
+**注意**：
+1. 运行 `setup` 后，请确认串口设备配置正确（默认 `/dev/ttyUSB0`，波特率 `1500000`）
+2. 波特率已自动设置为 1500000，如需修改请编辑 `tmp/configs/roc-rk3568-pc-runtime.toml` 文件
+
+### 查看帮助
+
+```bash
+./quick-start.sh --help
+```
+
 ## 1. 环境要求
 
 ### 硬件要求
@@ -59,11 +87,11 @@ cargo install ostool
 在提供的 Linux 镜像文件夹中包含设备树文件，可直接使用，这里下载到我们创建的 `tmp/images` 目录。
 
 ```bash
-# 下载 Linux 镜像
-cargo xtask image download roc-rk3568-pc_linux --output-dir tmp/images
-
 # 列出所有可用镜像
 cargo xtask image ls
+
+# 下载 Linux 镜像
+cargo xtask image download roc-rk3568-pc_linux --output-dir tmp/images
 ```
 
 ### 准备客户机镜像
@@ -71,14 +99,14 @@ cargo xtask image ls
 为了便于验证 AxVisor 的功能，AxVisor 项目提供了预构建的客户机镜像，并在 AxVisor 构建系统中集成了客户机镜像管理功能，使用 `cargo xtask image` 相关命令就可以查看及下载客户机镜像。这里我们直接将适用于 QEMU AArch64 的客户机镜像下载到我们创建的 `tmp/images` 目录即可。
 
 ```bash
+# 列出所有可用镜像
+cargo xtask image ls
+
 # 下载 ArceOS 镜像
 cargo xtask image download roc-rk3568-pc_arceos --output-dir tmp/images
 
 # 下载 Linux 镜像
 cargo xtask image download roc-rk3568-pc_linux --output-dir tmp/images
-
-# 列出所有可用镜像
-cargo xtask image ls
 ```
 AxVisor 所支持的客户机镜像的构建脚本和构建产物可以在 [axvisor-guest](https://github.com/arceos-hypervisor/axvisor-guest) 仓库中找到。
 
@@ -89,10 +117,46 @@ AxVisor 所支持的客户机镜像的构建脚本和构建产物可以在 [axvi
 ```bash
 # 复制开发板配置文件
 cp configs/board/roc-rk3568-pc.toml tmp/configs/
-
-# 复制 U-Boot 配置文件
-cp .github/workflows/uboot.toml tmp/configs/
 ```
+
+### 准备 U-Boot 配置文件
+
+U-Boot 配置文件定义了与开发板 U-Boot 通信的参数，包括串口设备、波特率、设备树文件路径等。我们需要将 U-Boot 配置文件复制到工作目录，并根据实际情况修改相关参数。
+
+1. 复制 U-Boot 配置文件：
+    ```bash
+    cp .github/workflows/uboot.toml tmp/configs/roc-rk3568-pc-runtime.toml
+    ```
+
+2. 修改 U-Boot 配置文件中的参数：
+    ```bash
+    # 移除不需要的命令
+    sed -i '/^board_power_off_cmd = "\${env:BOARD_POWER_OFF}"/d' tmp/configs/roc-rk3568-pc-runtime.toml
+    sed -i '/^board_reset_cmd = "\${env:BOARD_POWER_RESET}"/d' tmp/configs/roc-rk3568-pc-runtime.toml
+
+    # 移除 [net] 配置段
+    sed -i '/^\[net\]/d' tmp/configs/roc-rk3568-pc-runtime.toml
+    sed -i '/^interface = "\${env:BOARD_COMM_NET_IFACE}"/d' tmp/configs/roc-rk3568-pc-runtime.toml
+    sed -i '/^tftp_dir = "\${env:TFTP_DIR}"/d' tmp/configs/roc-rk3568-pc-runtime.toml
+
+    # 设置波特率为 1500000
+    sed -i 's|baud_rate\s*=.*|baud_rate = "1500000"|g' tmp/configs/roc-rk3568-pc-runtime.toml
+
+    # 设置设备树文件路径
+    DTB_PATH="$(pwd)/tmp/images/roc-rk3568-pc_linux/roc-rk3568-pc.dtb"
+    sed -i 's|^dtb_file = "\${env:BOARD_DTB}"|dtb_file = "'"$DTB_PATH"'"|g' tmp/configs/roc-rk3568-pc-runtime.toml
+    ```
+
+3. 配置串口选项：
+    ```bash
+    # 搜索 serial = "${env:BOARD_COMM_UART_DEV}" 找到配置项
+    # 将其修改为实际的串口设备，例如：serial = "/dev/ttyUSB0"
+    ```
+
+    **注意**：
+    - 脚本不会自动修改串口配置，需要手动设置
+    - 请确认串口设备配置正确（默认 `/dev/ttyUSB0`，波特率 `1500000`）
+    - 如需修改，请编辑 `tmp/configs/roc-rk3568-pc-runtime.toml` 文件
 
 ### 准备客户机配置文件
 
@@ -110,78 +174,47 @@ cp .github/workflows/uboot.toml tmp/configs/
 
   ```bash
   # 修改 ArceOS 客户机配置
-  sed -i "s|kernel_path = \"/path/arceos-aarch64-dyn.bin\"|kernel_path = \"../images/roc-rk3568-pc_arceos/roc-rk3568-pc\"|g" tmp/configs/arceos-aarch64-rk3568-smp1.toml
+  sed -i 's|^kernel_path = .*|kernel_path = "../images/roc-rk3568-pc_arceos/roc-rk3568-pc"|g' tmp/configs/arceos-aarch64-rk3568-smp1.toml
+  sed -i 's|^image_location = "fs"|image_location = "memory"|g' tmp/configs/arceos-aarch64-rk3568-smp1.toml
 
   # 修改 Linux 客户机配置
-  sed -i "s|kernel_path = \"/path/Image\"|kernel_path = \"../images/roc-rk3568-pc_linux/roc-rk3568-pc\"|g" tmp/configs/linux-aarch64-rk3568-smp1.toml
+  sed -i 's|^kernel_path = .*|kernel_path = "../images/roc-rk3568-pc_linux/roc-rk3568-pc"|g' tmp/configs/linux-aarch64-rk3568-smp1.toml
+  sed -i 's|^image_location = "fs"|image_location = "memory"|g' tmp/configs/linux-aarch64-rk3568-smp1.toml
   ```
 
-## 构建及启动
+## 编译及启动
 
-完成前期准备后，我们可以开始构建和启动 AxVisor。
-
-### 生成配置和修改配置
-
-使用 `cargo xtask defconfig roc-rk3568-pc` 命令设置 QEMU AArch64 为默认构建配置。实际上，这个命令会将 `configs/board/roc-rk3568-pc.toml` 复制为 `.build.toml`，作为默认的构建配置。
-
-AxVisor 构建系统集成了 Uboot 通信脚本，使用 `cargo xtask uboot` 命令生成 `.uboot.toml` 文件。该文件包含使用 ostool 工具启动时必要的配置。
-需要修改 `.uboot.toml` 文件中 `serial` 为开发板串口设备在PC上的设备号，默认为 `/dev/ttyUSB0` 。需修改 `baud_rate` 为串口波特率,默认为 `115200` ，对于 roc-rk3568-pc开发板使用波特率为 `1500000` 。还需要在 `.uboot.toml` 文件中添加一行用于指定设备树文件，该文件用于axvisor启动。
-
-```bash
-# 修改波特率为 1500000
-sed -i 's|baud_rate\s*=.*|baud_rate = "1500000"|g' .uboot.toml
-
-# 在.uboot.toml添加一行指向dtb
-echo 'dtb_file = "tmp/images/roc-rk3568-pc_linux/roc-rk3568-pc.dtb"' >> .uboot.toml
-```
-
-### 编译及启动
-
-AxVisor 构建系统集成了 UBoot 通信脚本，使用 `cargo xtask uboot` 命令即可启动 QEMU 虚拟机。该命令会自动先编译 AxVisor 及其所有依赖项，然后生成适合在 roc-rk3568-pc 环境中运行的二进制文件，最后与 UBoot 通信下载镜像并启动。
+AxVisor 构建系统集成了 UBoot 通信脚本，使用 `cargo xtask uboot` 命令即可启动。该命令会自动先编译 AxVisor 及其所有依赖项，然后生成适合在 roc-rk3568-pc 环境中运行的二进制文件，最后与 UBoot 通信下载镜像并启动。
 
 #### 启动单个 ArceOS 客户机
 
-指定使用的客户机配置文件，修改 `.build.toml` 文件中 `vm_configs` 字段，使其指向要使用的客户机配置文件，这样将会基于此客户机配置文件启动客户机，若不指定使用的客户机配置文件，axvisor启动后将会进入 shell 界面等待下一步指令。
-
 ```bash
-sed -i 's|vm_configs\s*=.*|vm_configs = \["tmp/configs/arceos-aarch64-rk3568-smp1.toml"\]|g' .build.toml
-```
-
-所有配置完成后，即可启动测试
-
-```bash
-# 启动axvisor
-cargo xtask uboot 
+# 启动 axvisor
+cargo xtask uboot \
+    --build-config tmp/configs/roc-rk3568-pc.toml \
+    --uboot-config tmp/configs/roc-rk3568-pc-runtime.toml \
+    --vmconfigs tmp/configs/arceos-aarch64-rk3568-smp1.toml
 ```
 
 #### 启动单个 Linux 客户机
 
-指定使用的客户机配置文件，修改 `.build.toml` 文件中 `vm_configs` 字段，使其指向要使用的客户机配置文件，这样将会基于此客户机配置文件启动客户机，若不指定使用的客户机配置文件，axvisor启动后将会进入 shell 界面等待下一步指令。
-
 ```bash
-sed -i 's|vm_configs\s*=.*|vm_configs = \["tmp/configs/linux-aarch64-rk3568-smp1.toml"\]|g' .build.toml
-```
-
-所有配置完成后，即可启动测试
-
-```bash
-# 启动axvisor
-cargo xtask uboot 
+# 启动 axvisor
+cargo xtask uboot \
+    --build-config tmp/configs/roc-rk3568-pc.toml \
+    --uboot-config tmp/configs/roc-rk3568-pc-runtime.toml \
+    --vmconfigs tmp/configs/linux-aarch64-rk3568-smp1.toml
 ```
 
 #### 启动多个客户机
 
-指定使用的客户机配置文件，修改 `.build.toml` 文件中 `vm_configs` 字段，使其指向要使用的客户机配置文件，这样将会基于此客户机配置文件启动客户机，若不指定使用的客户机配置文件，axvisor启动后将会进入 shell 界面等待下一步指令。
-
 ```bash
-sed -i 's|vm_configs\s*=.*|vm_configs = \["tmp/configs/arceos-aarch64-rk3568-smp1.toml,tmp/configs/linux-aarch64-rk3568-smp1.toml"\]|g' .build.toml
-```
-
-所有配置完成后，即可启动测试
-
-```bash
-# 启动axvisor
-cargo xtask uboot 
+# 启动 axvisor
+cargo xtask uboot \
+    --build-config tmp/configs/roc-rk3568-pc.toml \
+    --uboot-config tmp/configs/roc-rk3568-pc-runtime.toml \
+    --vmconfigs tmp/configs/arceos-aarch64-rk3568-smp1.toml \
+    --vmconfigs tmp/configs/linux-aarch64-rk3568-smp1.toml
 ```
 
 ## 常见问题
@@ -278,5 +311,5 @@ cargo xtask uboot
 
   # 重新构建并启动，查看详细错误信息
   cargo xtask build
-  cargo xtask uboot --build-config tmp/configs/roc-rk3568-pc.toml --uboot-config tmp/configs/uboot.toml --vmconfigs tmp/configs/客户机配置文件.toml
+  cargo xtask uboot --build-config tmp/configs/roc-rk3568-pc.toml --uboot-config tmp/configs/roc-rk3568-pc-runtime.toml --vmconfigs tmp/configs/客户机配置文件.toml
   ```
