@@ -76,3 +76,19 @@ sidebar_position: 2
 ![PXE](./images_test/pxe1.png)
 
 x86 架构的引导程序（BIOS）中一般都集成了 PXE 客户端，我们需要提供一个服务端。目前，在 Linux 下没有类似于 Windows 下的 All in One 的工具，只能是分别搭建！
+
+## 设备列表
+
+| 名称 | 链接 |
+| --- | --- |
+| USB转TTL串口模块 | [京东](https://item.jd.com/100018523151.html?spmTag=YTAyNDAuYjAwMjQ5My5jMDAwMDQwMjcuMSUyM3NrdV9jYXJk) |
+| 继电器 | [京东](https://item.jd.com/10097683135285.html) |
+| 单孔插座 | [京东](https://item.jd.com/100311081672.html?pcdk=vMR-sqxpE2tCoXSZM1ofFJc_r-QGAeKfIL6pac7YtZI%3D.M8AW.sbc1) |
+| 电源插头 | [京东](https://item.jd.com/18230802111.html) |
+| 多芯铜线 | [京东](https://item.jd.com/100149590048.html?spmTag=YTAyNDAuYjAwMjQ5My5jMDAwMDQwMjcuMTAlMjNza3VfY2FyZA&pcdk=F-20vN74l_cE_s0fEhM0_OTtKo7rwatdEdLeHNwrNLhw5cxftcnGZ1FNP-SBKMZe.rQ4a.tlbT) |
+| 单芯铜线1.5平方毫米 x 5m （黄、绿、红、蓝、黑 各1个） | [京东](https://item.jd.com/10205689004518.html?spmTag=YTAyNDAuYjAwMjQ5My5jMDAwMDQwMjcuNCUyM3NrdV9jYXJk&pcdk=bRpQyzTuqdlU7s5o6dUNAhFLlaRC6jfQGZI1WkXz8STMZ6W4fmiONAQn7f5W91ve.rQ4a.tlbT) |
+| 插座 | [京东](https://item.jd.com/4144407.html?spmTag=YTAyNDAuYjAwMjQ5My5jMDAwMDQwMjcuMSUyM3NrdV9jYXJk) |
+| 杜邦线公对母 10P 1米 | [京东](https://item.jd.com/10096789079817.html?spmTag=YTAyNDAuYjAwMjQ5My5jMDAwMDQwMjcuMyUyM3NrdV9jYXJk&pcdk=jcnIIu3m7b1X6gLVXdlC-2DToZI3w8vgE6q4sMaArIW41ct2Szzj8PRJXwVZSFlJ.rQ4a.tlbT) |
+| 串口转换器（USB TO RS485） | [京东](https://item.jd.com/100032798844.html?spmTag=YTAyNDAuYjAwMjQ5My5jMDAwMDQwMjcuMTAlMjNza3VfY2FyZA) |
+| 普联（TP-LINK） 云交换TL-SG2016K 16口全千兆Web网管 云管理交换机 企业级交换器 监控网络网线分线器 分流器 | [京东](https://item.jd.com/100020659606.html?pcdk=Dk_1U__WOd6oIsvxhb60LgrageaMxKTeWHFKXmiagcDmiRqmhUE0ag0gJt-aWAPL.rQ4a.tlbT&spmTag=YTAyMTkuYjAwMjM1Ni5jMDAwMDcyMTAua2V5d29yZF9lbnRlciUyQ2EwMjQwLmIwMDI0OTMuYzAwMDA0MDI3LjUlMjNza3VfY2FyZA#switch-sku) |
+| 西普莱（SIPOLAR）A-223工业级20口USB3.0集线器扩展坞手机平板刷机充电单口2A电流内置200W电源大功率hub分线器 1M数据线 A-223 | [京东](https://item.jd.com/16097624301.html?pcdk=sn-3W_1P4mUm3DBFokCEXMUdAoI5E2KlmKIYrSjrnDCG15rQkc_UpQrtEodqnOeH.3z6a.aI3x&spmTag=YTAyNDAuYjAwMjQ5My5jMDAwMDQwMjcuMyUyM3NrdV9jYXJk) |
